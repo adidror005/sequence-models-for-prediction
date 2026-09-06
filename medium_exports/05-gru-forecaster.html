@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GRU Forecasting: A Leaner Gated Memory — Medium export</title>
+<style>
+:root { color-scheme: light; }
+body { margin: 0; color: #242424; background: #f5f5f2; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.toolbar { position: sticky; top: 0; z-index: 5; padding: 14px 20px; color: #fff; background: #17324d; box-shadow: 0 2px 8px #0002; }
+.toolbar-inner { max-width: 1080px; margin: auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.toolbar strong { margin-right: auto; }
+button, .toolbar a { border: 1px solid #ffffff77; border-radius: 999px; padding: 8px 14px; color: white; background: transparent; font-weight: 600; text-decoration: none; cursor: pointer; }
+button.primary { color: #17324d; background: white; }
+.copy-status { width: 100%; color: #d9e6f2; font-size: 13px; }
+.instructions { max-width: 920px; margin: 28px auto 0; padding: 18px 24px; border-radius: 12px; background: #fff7d6; line-height: 1.5; }
+.instructions h2 { margin-top: 0; font-size: 20px; }
+.instructions code { background: #ffffff99; padding: 2px 5px; }
+.article-shell { max-width: 820px; margin: 28px auto 80px; padding: 56px 64px; background: white; box-shadow: 0 1px 8px #00000012; }
+.article-content { font-family: Georgia, Cambria, "Times New Roman", serif; font-size: 21px; line-height: 1.62; }
+.article-content h1 { margin: 0 0 12px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 46px; line-height: 1.12; letter-spacing: -0.025em; }
+.article-content h2 { margin: 50px 0 14px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 30px; line-height: 1.22; }
+.article-content h3 { margin: 34px 0 10px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 24px; line-height: 1.3; }
+.article-content p { margin: 0 0 24px; }
+.article-content ul, .article-content ol { margin: 0 0 24px; padding-left: 30px; }
+.article-content li { margin: 7px 0; }
+.article-content blockquote { margin: 32px 0; padding: 4px 0 4px 24px; border-left: 4px solid #242424; font-size: 25px; font-style: italic; }
+.article-content a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.article-content a.needs-live-url { text-decoration-color: #d93025; text-decoration-style: wavy; }
+.article-content img { display: block; max-width: 100%; height: auto; margin: 36px auto 10px; }
+.article-content figure { margin: 38px 0; }
+.article-content figcaption { color: #6b6b6b; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; text-align: center; }
+.article-content pre, .highlight { overflow-x: auto; margin: 28px 0; padding: 20px; border-radius: 6px; background: #f5f5f5; font-size: 15px; line-height: 1.5; }
+.article-content code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+.article-content :not(pre) > code { padding: 2px 5px; border-radius: 3px; background: #f2f2f2; font-size: 0.82em; }
+.article-content hr { margin: 48px 0; border: 0; text-align: center; }
+.article-content hr::after { content: "···"; letter-spacing: 14px; }
+pre { line-height: 125%; }
+td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+.highlight .hll { background-color: #ffffcc }
+.highlight { background: #f8f8f8; }
+.highlight .c { color: #3D7B7B; font-style: italic } /* Comment */
+.highlight .err { border: 1px solid #F00 } /* Error */
+.highlight .k { color: #008000; font-weight: bold } /* Keyword */
+.highlight .o { color: #666 } /* Operator */
+.highlight .ch { color: #3D7B7B; font-style: italic } /* Comment.Hashbang */
+.highlight .cm { color: #3D7B7B; font-style: italic } /* Comment.Multiline */
+.highlight .cp { color: #9C6500 } /* Comment.Preproc */
+.highlight .cpf { color: #3D7B7B; font-style: italic } /* Comment.PreprocFile */
+.highlight .c1 { color: #3D7B7B; font-style: italic } /* Comment.Single */
+.highlight .cs { color: #3D7B7B; font-style: italic } /* Comment.Special */
+.highlight .gd { color: #A00000 } /* Generic.Deleted */
+.highlight .ge { font-style: italic } /* Generic.Emph */
+.highlight .ges { font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.highlight .gr { color: #E40000 } /* Generic.Error */
+.highlight .gh { color: #000080; font-weight: bold } /* Generic.Heading */
+.highlight .gi { color: #008400 } /* Generic.Inserted */
+.highlight .go { color: #717171 } /* Generic.Output */
+.highlight .gp { color: #000080; font-weight: bold } /* Generic.Prompt */
+.highlight .gs { font-weight: bold } /* Generic.Strong */
+.highlight .gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+.highlight .gt { color: #04D } /* Generic.Traceback */
+.highlight .kc { color: #008000; font-weight: bold } /* Keyword.Constant */
+.highlight .kd { color: #008000; font-weight: bold } /* Keyword.Declaration */
+.highlight .kn { color: #008000; font-weight: bold } /* Keyword.Namespace */
+.highlight .kp { color: #008000 } /* Keyword.Pseudo */
+.highlight .kr { color: #008000; font-weight: bold } /* Keyword.Reserved */
+.highlight .kt { color: #B00040 } /* Keyword.Type */
+.highlight .m { color: #666 } /* Literal.Number */
+.highlight .s { color: #BA2121 } /* Literal.String */
+.highlight .na { color: #687822 } /* Name.Attribute */
+.highlight .nb { color: #008000 } /* Name.Builtin */
+.highlight .nc { color: #00F; font-weight: bold } /* Name.Class */
+.highlight .no { color: #800 } /* Name.Constant */
+.highlight .nd { color: #A2F } /* Name.Decorator */
+.highlight .ni { color: #717171; font-weight: bold } /* Name.Entity */
+.highlight .ne { color: #CB3F38; font-weight: bold } /* Name.Exception */
+.highlight .nf { color: #00F } /* Name.Function */
+.highlight .nl { color: #767600 } /* Name.Label */
+.highlight .nn { color: #00F; font-weight: bold } /* Name.Namespace */
+.highlight .nt { color: #008000; font-weight: bold } /* Name.Tag */
+.highlight .nv { color: #19177C } /* Name.Variable */
+.highlight .ow { color: #A2F; font-weight: bold } /* Operator.Word */
+.highlight .w { color: #BBB } /* Text.Whitespace */
+.highlight .mb { color: #666 } /* Literal.Number.Bin */
+.highlight .mf { color: #666 } /* Literal.Number.Float */
+.highlight .mh { color: #666 } /* Literal.Number.Hex */
+.highlight .mi { color: #666 } /* Literal.Number.Integer */
+.highlight .mo { color: #666 } /* Literal.Number.Oct */
+.highlight .sa { color: #BA2121 } /* Literal.String.Affix */
+.highlight .sb { color: #BA2121 } /* Literal.String.Backtick */
+.highlight .sc { color: #BA2121 } /* Literal.String.Char */
+.highlight .dl { color: #BA2121 } /* Literal.String.Delimiter */
+.highlight .sd { color: #BA2121; font-style: italic } /* Literal.String.Doc */
+.highlight .s2 { color: #BA2121 } /* Literal.String.Double */
+.highlight .se { color: #AA5D1F; font-weight: bold } /* Literal.String.Escape */
+.highlight .sh { color: #BA2121 } /* Literal.String.Heredoc */
+.highlight .si { color: #A45A77; font-weight: bold } /* Literal.String.Interpol */
+.highlight .sx { color: #008000 } /* Literal.String.Other */
+.highlight .sr { color: #A45A77 } /* Literal.String.Regex */
+.highlight .s1 { color: #BA2121 } /* Literal.String.Single */
+.highlight .ss { color: #19177C } /* Literal.String.Symbol */
+.highlight .bp { color: #008000 } /* Name.Builtin.Pseudo */
+.highlight .fm { color: #00F } /* Name.Function.Magic */
+.highlight .vc { color: #19177C } /* Name.Variable.Class */
+.highlight .vg { color: #19177C } /* Name.Variable.Global */
+.highlight .vi { color: #19177C } /* Name.Variable.Instance */
+.highlight .vm { color: #19177C } /* Name.Variable.Magic */
+.highlight .il { color: #666 } /* Literal.Number.Integer.Long */
+@media (max-width: 760px) {
+  .article-shell { margin: 0; padding: 36px 22px 60px; box-shadow: none; }
+  .article-content { font-size: 19px; }
+  .article-content h1 { font-size: 36px; }
+  .instructions { margin: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <strong>Medium export · 05-gru-forecaster.md</strong>
+    <button class="primary" onclick="copyRichArticle()">Copy rich article</button>
+    <button onclick="selectArticle()">Select article</button>
+    <a href="index.html">Export index</a>
+    <span id="copy-status" class="copy-status" aria-live="polite"></span>
+  </div>
+</div>
+<aside class="instructions">
+  <h2>Transfer notes</h2>
+  <p><strong>Replace 4 local series link(s) with live Medium URLs before publishing.</strong></p>
+  <p><strong>Suggested Medium tags:</strong> GRU, Recurrent Neural Networks, Time Series, Forecasting, Deep Learning</p>
+  <p>This preview contains 8 code block(s) and 1 rendered table image(s). After pasting, recreate code using Medium’s native code-block control and upload every image from the export package.</p>
+  <details><summary>Images required by this article</summary><ul><li><a href="table_images/05-gru-forecaster-table-1.png" target="_blank">table_images/05-gru-forecaster-table-1.png</a></li></ul></details>
+</aside>
+<main class="article-shell">
+  <article class="article-content"><h1>GRU Forecasting: A Leaner Gated Memory</h1>
+<p><em>How update and reset gates create a compact alternative to the LSTM</em></p>
+<p><strong>Series:</strong> Sequence Models for Prediction, Part 6 of 15</p>
+<p>The gated recurrent unit, or GRU, starts from the same premise as the LSTM: a recurrent network needs learned control over what it remembers.</p>
+<p>It reaches that goal with a simpler mechanism. There is no separate exposed hidden state and long-lived cell state. One state carries the sequence forward, governed primarily by an update gate and a reset gate.</p>
+<p>Fewer gates mean fewer parameters and sometimes faster training. They do not guarantee better forecasting.</p>
+<h2>The two gates</h2>
+<p>Notation varies across implementations, but the core behavior is stable.</p>
+<p>The <strong>update gate</strong> decides how much of the previous state to retain versus replace. The <strong>reset gate</strong> controls how strongly the previous state influences the new candidate content.</p>
+<p>One common description is:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>update:     z_t = sigmoid(...)
+reset:      r_t = sigmoid(...)
+candidate:  n_t = tanh(input + r_t ⊙ transformed_previous_state)
+state:      h_t = (1 - z_t) ⊙ n_t + z_t ⊙ h_(t-1)
+</pre></div>
+</code></pre>
+<p>If the update gate is near one, the old state flows forward. If it is near zero, the candidate replaces it. The reset gate lets the candidate ignore parts of the past when constructing new information.</p>
+<p>The result is a learned, adaptive smoothing process over hidden representations.</p>
+<h2>A direct forecasting architecture</h2>
+<p>A compact forecaster can use one 64-unit GRU layer:</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">rnn</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">GRU</span><span class="p">(</span>
+    <span class="n">input_size</span><span class="o">=</span><span class="n">n_features</span><span class="p">,</span>
+    <span class="n">hidden_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+    <span class="n">batch_first</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</code></pre>
+<p>As with the LSTM, only the final output state is retained. Dropout and a dense layer turn it into the next 24 hourly values.</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>[batch, 168, features]
+        ↓ GRU
+[batch, 168, 64]
+        ↓ final state
+[batch, 64]
+        ↓ linear head
+[batch, 24]
+</pre></div>
+</code></pre>
+<p>The GRU must compress the useful contents of the entire input window into 64 numbers.</p>
+<h2>GRU versus LSTM</h2>
+<p>The comparison is often presented too simply: GRU is faster; LSTM remembers longer. Reality depends on the task, data, implementation, and tuning.</p>
+<p>The structural differences are clearer:</p>
+<figure><img alt="Table with columns: Property, LSTM, GRU" src="table_images/05-gru-forecaster-table-1.png"/><figcaption>Table 1. Property · LSTM · GRU</figcaption></figure>
+<p>With six input features and 64 hidden units, this GRU has 15,384 trainable parameters; the equivalent LSTM has 19,992.</p>
+<p>That difference can matter on smaller datasets. Lower capacity may reduce overfitting, while the simpler state update may or may not preserve the specific long-range details the forecast needs.</p>
+<h2>Choosing between GRU and LSTM</h2>
+<p>There is no architectural rule that decides the winner before training. The GRU’s lower parameter count can be an advantage when data are limited, while the LSTM’s separate cell state can offer more control when several timescales must coexist.</p>
+<p>Compare them under the same:</p>
+<ul>
+<li>hidden width and number of layers;</li>
+<li>input window and forecast head;</li>
+<li>optimizer budget;</li>
+<li>chronological validation periods;</li>
+<li>random seeds.</li>
+</ul>
+<p>Also compare total parameters and wall-clock time. Equal hidden width is not equal capacity because the LSTM has an additional gate.</p>
+<h2>Strengths of the GRU</h2>
+<p>The GRU is compelling when:</p>
+<ul>
+<li>sequential state updates match the problem;</li>
+<li>an LSTM feels unnecessarily large;</li>
+<li>training data or compute is limited;</li>
+<li>online inference benefits from carrying one state forward;</li>
+<li>input width may change but parameter efficiency matters.</li>
+</ul>
+<p>It is often an excellent first recurrent model because it provides most of the gated-memory idea with less machinery.</p>
+<h2>Limitations</h2>
+<p>Like the LSTM, the GRU processes time steps sequentially and compresses the entire history into a fixed-size final state.</p>
+<p>It has no explicit mechanism for a forecast horizon to retrieve a particular old hour. Its theoretical memory can exceed its practical memory.</p>
+<p>It is also easy to mistake a recurrent inductive bias for proof of predictability. Smooth, persistent targets can make a GRU look impressive even when a naive forecast is equally useful.</p>
+<h2>Complete PyTorch implementation</h2>
+<p>The GRU implementation is structurally close to the LSTM forecaster, but PyTorch’s GRU maintains one recurrent state rather than a separate hidden and cell state.</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">GRUForecaster</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">n_features</span><span class="p">,</span>
+        <span class="n">horizon</span><span class="p">,</span>
+        <span class="n">hidden</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+        <span class="n">dropout</span><span class="o">=</span><span class="mf">0.10</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">GRU</span><span class="p">(</span>
+            <span class="n">input_size</span><span class="o">=</span><span class="n">n_features</span><span class="p">,</span>
+            <span class="n">hidden_size</span><span class="o">=</span><span class="n">hidden</span><span class="p">,</span>
+            <span class="n">batch_first</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden</span><span class="p">,</span> <span class="n">horizon</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="c1"># states: [batch, lookback, hidden]</span>
+        <span class="n">states</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">final_state</span> <span class="o">=</span> <span class="n">states</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">head</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">final_state</span><span class="p">)</span>
+        <span class="p">)</span>
+
+
+<span class="n">LOOKBACK</span> <span class="o">=</span> <span class="mi">168</span>
+<span class="n">N_FEATURES</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">HORIZON</span> <span class="o">=</span> <span class="mi">24</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">GRUForecaster</span><span class="p">(</span>
+    <span class="n">n_features</span><span class="o">=</span><span class="n">N_FEATURES</span><span class="p">,</span>
+    <span class="n">horizon</span><span class="o">=</span><span class="n">HORIZON</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">LOOKBACK</span><span class="p">,</span> <span class="n">N_FEATURES</span><span class="p">)</span>
+<span class="n">y_hat</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">y_hat</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">HORIZON</span><span class="p">)</span>
+</pre></div>
+</code></pre>
+<p>The same verified implementation is available in the <a href="code/sequence_models.py">companion model module</a>. The complete Dataset, DataLoader, and fit/evaluate workflow is explained in the <a class="needs-live-url" href="pytorch-data-pipeline-and-training-loop.html">shared PyTorch training companion</a>.</p>
+<h2>Training and failure modes</h2>
+<p>The GRU shares recurrent training issues with the LSTM: sequential computation, sensitivity to state width, and possible loss of precise early information. Gradient clipping, careful input scaling, validation-based early stopping, and repeated seeds are useful safeguards.</p>
+<p>A final-state head can become a bottleneck on long windows. Alternatives include pooling all states, applying attention over them, or giving each forecast horizon its own query.</p>
+<p>For streaming inference, the hidden state can be carried forward rather than recomputing the full window. That serving mode should be represented during training; otherwise stale state and reset behavior can create surprises.</p>
+<p>Part 7 leaves recurrence behind. A 1D convolution learns local temporal shapes in parallel—but its receptive field and pooling strategy determine what it can remember.</p>
+<h2>Further reading</h2>
+<ul>
+<li><a href="https://arxiv.org/abs/1406.1078">Cho et al., “Learning Phrase Representations using RNN Encoder-Decoder for Statistical Machine Translation”</a></li>
+</ul>
+<hr/>
+<p><strong>Series navigation:</strong> <a class="needs-live-url" href="index.html">Series index</a> · <a class="needs-live-url" href="04-lstm-forecaster.html">Previous: LSTM forecasting</a> · <a class="needs-live-url" href="06-cnn1d-forecaster.html">Next: 1D CNN forecasting</a></p>
+</article>
+</main>
+<script>
+async function copyRichArticle() {
+  const source = document.querySelector('.article-content');
+  const clone = source.cloneNode(true);
+  const status = document.getElementById('copy-status');
+  clone.querySelectorAll('img').forEach((img) => img.src = new URL(img.getAttribute('src'), location.href).href);
+  clone.querySelectorAll('a').forEach((a) => a.href = new URL(a.getAttribute('href'), location.href).href);
+  const rich = new Blob([clone.innerHTML], {type: 'text/html'});
+  const plain = new Blob([source.innerText], {type: 'text/plain'});
+  try {
+    await navigator.clipboard.write([new ClipboardItem({'text/html': rich, 'text/plain': plain})]);
+    status.textContent = 'Copied as rich text. Paste it into a new Medium draft.';
+  } catch (error) {
+    selectArticle();
+    const copied = document.execCommand('copy');
+    status.textContent = copied
+      ? 'Copied using the compatibility fallback. Paste it into Medium.'
+      : 'Clipboard access was blocked. The article is selected; press Command/Ctrl+C.';
+  }
+}
+function selectArticle() {
+  const range = document.createRange();
+  range.selectNodeContents(document.querySelector('.article-content'));
+  const selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+  document.getElementById('copy-status').textContent = 'Article selected. Press Command/Ctrl+C to copy it.';
+}
+</script>
+</body>
+</html>

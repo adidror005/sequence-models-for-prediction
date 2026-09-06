@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://adidror005.github.io/sequence-models-for-prediction/sitemap.xml

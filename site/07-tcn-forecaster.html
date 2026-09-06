@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TCN Forecasting: Long Memory Through Dilated Convolutions — Sequence Models for Prediction</title>
+<meta name="description" content="How causal filters create an efficient sequence model—and how to calculate what it can actually see">
+<link rel="canonical" href="https://adidror005.github.io/sequence-models-for-prediction/07-tcn-forecaster.html">
+<link rel="stylesheet" href="styles.css">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="TCN Forecasting: Long Memory Through Dilated Convolutions">
+<meta property="og:description" content="How causal filters create an efficient sequence model—and how to calculate what it can actually see">
+<meta property="og:url" content="https://adidror005.github.io/sequence-models-for-prediction/07-tcn-forecaster.html">
+<meta property="og:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="TCN Forecasting: Long Memory Through Dilated Convolutions">
+<meta name="twitter:description" content="How causal filters create an efficient sequence model—and how to calculate what it can actually see">
+<meta name="twitter:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="index.html"><span class="brand-mark">S</span><span>Sequence Models<br><small>for Prediction</small></span></a>
+  <nav aria-label="Primary navigation"><a href="index.html#series">All articles</a><a href="index.html#about">About</a><a class="github-link" href="https://github.com/adidror005/sequence-models-for-prediction">View source</a></nav>
+</header>
+<div class="reading-progress" style="--progress: 53.33%"></div>
+<main>
+  <header class="article-hero">
+    <a class="back-link" href="index.html">← Series home</a>
+    <p class="eyebrow">Part 8 of 15 · Models</p>
+    <h1>TCN Forecasting: Long Memory Through Dilated Convolutions</h1>
+    <p class="dek">How causal filters create an efficient sequence model—and how to calculate what it can actually see</p>
+  </header>
+  <div class="reading-layout">
+    <article class="article-content">
+
+<p>A temporal convolutional network replaces recurrent memory with a hierarchy of causal filters.</p>
+<p>The key idea is dilation. A standard convolution reads neighboring positions. A dilated convolution leaves gaps between the positions it samples. Stack layers with exponentially increasing dilation, and the network can connect recent outputs to a long history using a short computational path.</p>
+<p>This makes TCNs parallelizable across time while preserving a clear notion of historical direction.</p>
+<h2 id="causal-convolution">Causal convolution</h2>
+<p>For a forecast representation at historical time <code>u</code>, a causal convolution may use <code>u</code> and earlier inputs but not later ones.</p>
+<p>With kernel size three and dilation one, the filter reads:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>u, u-1, u-2
+</pre></div>
+</code></pre>
+<p>With dilation two:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>u, u-2, u-4
+</pre></div>
+</code></pre>
+<p>With dilation eight:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>u, u-8, u-16
+</pre></div>
+</code></pre>
+<p>A compact PyTorch layer can implement causality by padding and then cropping the extra values from the right:</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pad</span><span class="p">:</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">pad</span><span class="p">]</span>
+</pre></div>
+</code></pre>
+<p>The output length matches the input length, and no activation at position <code>u</code> depends on a later input row.</p>
+<h2 id="dilation-grows-memory-exponentially">Dilation grows memory exponentially</h2>
+<p>Consider four kernel-three layers with dilations:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>1, 2, 4, 8
+</pre></div>
+</code></pre>
+<p>For stride one, the theoretical receptive field is:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>R = 1 + (kernel_size - 1) × Σ dilations
+  = 1 + 2 × (1 + 2 + 4 + 8)
+  = 31 hours
+</pre></div>
+</code></pre>
+<p>This calculation should be done for every TCN design.</p>
+<p>The input tensor contains 168 hours. The model’s final activation—the one used for forecasting—can depend on only the last 31 input rows.</p>
+<p>Feeding a long tensor does not guarantee long memory.</p>
+<h2 id="a-minimal-architecture">A minimal architecture</h2>
+<p>Each causal layer produces 64 channels, followed by ReLU and, in the first three layers, dropout. The final time position goes into a 24-output linear head.</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>[batch, features, 168]
+        ↓ dilation 1
+        ↓ dilation 2
+        ↓ dilation 4
+        ↓ dilation 8
+[batch, 64, 168]
+        ↓ take final position
+[batch, 64]
+        ↓
+[batch, 24]
+</pre></div>
+</code></pre>
+<p>This implementation is intentionally compact. Many production TCNs also use residual blocks, normalization, repeated layers per dilation, and carefully tuned kernels.</p>
+<p>Residual connections improve optimization and make deeper stacks practical.</p>
+<h2 id="residual-blocks-make-depth-usable">Residual blocks make depth usable</h2>
+<p>A typical TCN groups one or more dilated convolutions into a residual block:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>block_output = activation(convolution_path(x) + shortcut(x))
+</pre></div>
+</code></pre>
+<p>If input and output channels differ, the shortcut can use a one-by-one convolution to match their dimensions. The direct path lets information and gradients bypass a block, so adding depth does not force every layer to rewrite the representation.</p>
+<p>Normalization and dropout are commonly placed inside the convolutional path. Exact ordering varies, and it should be treated as part of the architecture rather than an inconsequential implementation detail.</p>
+<h2 id="producing-a-forecast">Producing a forecast</h2>
+<p>For direct multi-horizon forecasting, the model can take the final causal activation and map it to all future steps. This mirrors a recurrent final-state head.</p>
+<p>Other options preserve the full TCN output sequence and apply pooling or horizon-specific queries. For sequence-to-sequence tasks, a causal output can be produced at every input position.</p>
+<p>The final-position design is efficient and naturally aligned with the forecast origin. Its risk is compression: one channel vector must carry everything needed for every future horizon.</p>
+<h2 id="designing-for-the-required-memory">Designing for the required memory</h2>
+<p>To cover the entire raw 168-hour window with one kernel-three layer per dilation, extend the stack:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>dilations = [1, 2, 4, 8, 16, 32, 64]
+R = 1 + 2 × 127 = 255 hours
+</pre></div>
+</code></pre>
+<p>The larger field covers the full 168-step input. It also adds depth and computation, so receptive field, channel width, and residual structure should be tuned together.</p>
+<p>Theoretical receptive field means that a path exists. Effective receptive field describes how strongly the trained network actually uses distant positions. Gradient-based sensitivity or controlled input perturbations can reveal whether the oldest context matters in practice.</p>
+<h2 id="tcn-strengths">TCN strengths</h2>
+<p>TCNs offer:</p>
+<ul>
+<li>parallel computation across time;</li>
+<li>a controllable receptive field;</li>
+<li>short gradient paths to distant inputs;</li>
+<li>translation-equivariant local detectors;</li>
+<li>natural causal streaming behavior;</li>
+<li>modest parameter growth with additional features.</li>
+</ul>
+<p>They are often a strong default when local and multi-scale temporal patterns dominate.</p>
+<h2 id="tcn-limitations">TCN limitations</h2>
+<p>The receptive field must be designed, not assumed. A theoretically large field also does not guarantee that every old position has equal effective influence.</p>
+<p>Padding can create boundary effects. Very deep dilation schedules may skip useful local detail unless layers are combined carefully. A final-position head can bottleneck information, and a compact TCN may need residual connections to train reliably.</p>
+<h2 id="complete-pytorch-implementation">Complete PyTorch implementation</h2>
+<p>The complete implementation below reproduces the notebook’s compact four-layer TCN. <code>CausalConv1d</code> pads both sides internally and then removes the right-side outputs, ensuring that position <code>u</code> cannot use a later input. The calculated receptive field is stored on the model for inspection.</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">CausalConv1d</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">in_channels</span><span class="p">,</span>
+        <span class="n">out_channels</span><span class="p">,</span>
+        <span class="n">kernel_size</span><span class="p">,</span>
+        <span class="n">dilation</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">left_padding</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">kernel_size</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="p">)</span> <span class="o">*</span> <span class="n">dilation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv1d</span><span class="p">(</span>
+            <span class="n">in_channels</span><span class="p">,</span>
+            <span class="n">out_channels</span><span class="p">,</span>
+            <span class="n">kernel_size</span><span class="o">=</span><span class="n">kernel_size</span><span class="p">,</span>
+            <span class="n">dilation</span><span class="o">=</span><span class="n">dilation</span><span class="p">,</span>
+            <span class="n">padding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left_padding</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">left_padding</span><span class="p">:</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">left_padding</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">y</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">TCNForecaster</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">n_features</span><span class="p">,</span>
+        <span class="n">horizon</span><span class="p">,</span>
+        <span class="n">channels</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+        <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="n">dilations</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+        <span class="n">dropout</span><span class="o">=</span><span class="mf">0.10</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">in_channels</span> <span class="o">=</span> <span class="n">n_features</span>
+
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">dilation</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dilations</span><span class="p">):</span>
+            <span class="n">layers</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span>
+                <span class="n">CausalConv1d</span><span class="p">(</span>
+                    <span class="n">in_channels</span><span class="p">,</span>
+                    <span class="n">channels</span><span class="p">,</span>
+                    <span class="n">kernel_size</span><span class="p">,</span>
+                    <span class="n">dilation</span><span class="p">,</span>
+                <span class="p">),</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+            <span class="p">])</span>
+            <span class="k">if</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">dilations</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">))</span>
+            <span class="n">in_channels</span> <span class="o">=</span> <span class="n">channels</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">layers</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">channels</span><span class="p">,</span> <span class="n">horizon</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">receptive_field</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="p">(</span>
+            <span class="n">kernel_size</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="p">)</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">(</span><span class="n">dilations</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">channel_first</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">(</span><span class="n">channel_first</span><span class="p">)</span>
+        <span class="n">final_state</span> <span class="o">=</span> <span class="n">states</span><span class="p">[:,</span> <span class="p">:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">final_state</span><span class="p">)</span>
+
+
+<span class="n">LOOKBACK</span> <span class="o">=</span> <span class="mi">168</span>
+<span class="n">N_FEATURES</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">HORIZON</span> <span class="o">=</span> <span class="mi">24</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">TCNForecaster</span><span class="p">(</span>
+    <span class="n">n_features</span><span class="o">=</span><span class="n">N_FEATURES</span><span class="p">,</span>
+    <span class="n">horizon</span><span class="o">=</span><span class="n">HORIZON</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">LOOKBACK</span><span class="p">,</span> <span class="n">N_FEATURES</span><span class="p">)</span>
+<span class="n">y_hat</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">y_hat</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">HORIZON</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">model</span><span class="o">.</span><span class="n">receptive_field</span> <span class="o">==</span> <span class="mi">31</span>
+</pre></div>
+</code></pre>
+<p>This intentionally matches the 31-step experimental model. To cover the entire 168-step input, pass <code>dilations=(1, 2, 4, 8, 16, 32, 64)</code> and consider adding residual blocks. The same verified compact implementation is available in the <a href="code/sequence_models.py">companion model module</a>. The full Dataset, DataLoader, and fit/evaluate workflow is explained in the <a href="pytorch-data-pipeline-and-training-loop.html">shared PyTorch training companion</a>.</p>
+<h2 id="training-and-failure-modes">Training and failure modes</h2>
+<p>Very shallow TCNs underuse long inputs. Very deep ones can be difficult to optimize without residual connections. Large dilation jumps may miss useful fine-scale interactions unless smaller dilations remain in the stack.</p>
+<p>Padding produces synthetic boundary values, and the final-position head may overemphasize recent context. Inspect performance as lookback and receptive field change, not just as channel count changes.</p>
+<p>Part 9 moves from fixed filters to content-dependent global connections: the Transformer.</p>
+<h2 id="further-reading">Further reading</h2>
+<ul>
+<li><a href="https://arxiv.org/abs/1803.01271" rel="noopener noreferrer">Bai, Kolter, and Koltun, “An Empirical Evaluation of Generic Convolutional and Recurrent Networks for Sequence Modeling”</a></li>
+</ul>
+<hr/>
+</article>
+    <aside class="toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#causal-convolution">Causal convolution</a></li><li><a href="#dilation-grows-memory-exponentially">Dilation grows memory exponentially</a></li><li><a href="#a-minimal-architecture">A minimal architecture</a></li><li><a href="#residual-blocks-make-depth-usable">Residual blocks make depth usable</a></li><li><a href="#producing-a-forecast">Producing a forecast</a></li><li><a href="#designing-for-the-required-memory">Designing for the required memory</a></li><li><a href="#tcn-strengths">TCN strengths</a></li><li><a href="#tcn-limitations">TCN limitations</a></li><li><a href="#complete-pytorch-implementation">Complete PyTorch implementation</a></li><li><a href="#training-and-failure-modes">Training and failure modes</a></li><li><a href="#further-reading">Further reading</a></li></ol></aside>
+  </div>
+  <nav class="article-pager" aria-label="Article navigation"><a class="pager-card previous" href="06-cnn1d-forecaster.html"><span>Previous</span><strong>1D CNN Forecasting: Learning Local Shapes in Parallel</strong></a><a class="pager-card next" href="08-transformer-forecaster.html"><span>Next</span><strong>Transformer Forecasting: Let Every Time Step Look at Every Other Step</strong></a></nav>
+</main>
+<footer class="site-footer"><p>Sequence Models for Prediction · Open code, reproducible experiments, honest baselines.</p><a href="index.html">Series index</a></footer>
+</body>
+</html>

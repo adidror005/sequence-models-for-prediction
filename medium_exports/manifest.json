@@ -1,0 +1,205 @@
+[
+  {
+    "part": 1,
+    "title": "Sequence Models for Prediction: A Practical Map",
+    "source": "01-sequence-models-for-prediction.md",
+    "html": "01-sequence-models-for-prediction.html",
+    "suggested_tags": "Time Series, Forecasting, Deep Learning, Neural Networks, Machine Learning",
+    "code_blocks": 14,
+    "table_images": [],
+    "images": [],
+    "local_links_to_replace": 17
+  },
+  {
+    "part": 2,
+    "title": "A Leak-Free PyTorch Dataset, DataLoader, and Training Loop for Sequence Prediction",
+    "source": "pytorch-data-pipeline-and-training-loop.md",
+    "html": "pytorch-data-pipeline-and-training-loop.html",
+    "suggested_tags": "PyTorch, Time Series, Deep Learning, Data Engineering, Machine Learning",
+    "code_blocks": 24,
+    "table_images": [],
+    "images": [],
+    "local_links_to_replace": 3
+  },
+  {
+    "part": 3,
+    "title": "Linear Forecasting: The Baseline That Sees the Whole Window",
+    "source": "02-linear-forecaster.md",
+    "html": "02-linear-forecaster.html",
+    "suggested_tags": "Linear Regression, Time Series, Forecasting, Machine Learning, Baselines",
+    "code_blocks": 12,
+    "table_images": [],
+    "images": [],
+    "local_links_to_replace": 4
+  },
+  {
+    "part": 4,
+    "title": "MLP Forecasting: A Nonlinear Map from Past Window to Future Path",
+    "source": "03-mlp-forecaster.md",
+    "html": "03-mlp-forecaster.html",
+    "suggested_tags": "Neural Networks, MLP, Time Series, Forecasting, Deep Learning",
+    "code_blocks": 6,
+    "table_images": [
+      "table_images/03-mlp-forecaster-table-1.png"
+    ],
+    "images": [
+      "table_images/03-mlp-forecaster-table-1.png"
+    ],
+    "local_links_to_replace": 4
+  },
+  {
+    "part": 5,
+    "title": "LSTM Forecasting: Learning What to Remember",
+    "source": "04-lstm-forecaster.md",
+    "html": "04-lstm-forecaster.html",
+    "suggested_tags": "LSTM, Recurrent Neural Networks, Time Series, Forecasting, Deep Learning",
+    "code_blocks": 8,
+    "table_images": [],
+    "images": [],
+    "local_links_to_replace": 4
+  },
+  {
+    "part": 6,
+    "title": "GRU Forecasting: A Leaner Gated Memory",
+    "source": "05-gru-forecaster.md",
+    "html": "05-gru-forecaster.html",
+    "suggested_tags": "GRU, Recurrent Neural Networks, Time Series, Forecasting, Deep Learning",
+    "code_blocks": 8,
+    "table_images": [
+      "table_images/05-gru-forecaster-table-1.png"
+    ],
+    "images": [
+      "table_images/05-gru-forecaster-table-1.png"
+    ],
+    "local_links_to_replace": 4
+  },
+  {
+    "part": 7,
+    "title": "1D CNN Forecasting: Learning Local Shapes in Parallel",
+    "source": "06-cnn1d-forecaster.md",
+    "html": "06-cnn1d-forecaster.html",
+    "suggested_tags": "Convolutional Neural Networks, Time Series, Forecasting, Deep Learning, CNN",
+    "code_blocks": 12,
+    "table_images": [],
+    "images": [],
+    "local_links_to_replace": 4
+  },
+  {
+    "part": 8,
+    "title": "TCN Forecasting: Long Memory Through Dilated Convolutions",
+    "source": "07-tcn-forecaster.md",
+    "html": "07-tcn-forecaster.html",
+    "suggested_tags": "TCN, Convolutional Neural Networks, Time Series, Forecasting, Deep Learning",
+    "code_blocks": 20,
+    "table_images": [],
+    "images": [],
+    "local_links_to_replace": 4
+  },
+  {
+    "part": 9,
+    "title": "Transformer Forecasting: Let Every Time Step Look at Every Other Step",
+    "source": "08-transformer-forecaster.md",
+    "html": "08-transformer-forecaster.html",
+    "suggested_tags": "Transformers, Attention, Time Series, Forecasting, Deep Learning",
+    "code_blocks": 12,
+    "table_images": [],
+    "images": [],
+    "local_links_to_replace": 4
+  },
+  {
+    "part": 10,
+    "title": "Patch Transformer Forecasting: Turning Time Steps into Temporal Tokens",
+    "source": "09-patch-transformer-forecaster.md",
+    "html": "09-patch-transformer-forecaster.html",
+    "suggested_tags": "PatchTST, Transformers, Time Series, Forecasting, Deep Learning",
+    "code_blocks": 10,
+    "table_images": [],
+    "images": [],
+    "local_links_to_replace": 4
+  },
+  {
+    "part": 11,
+    "title": "N-BEATS-Style Forecasting: Explaining the Past to Build the Future",
+    "source": "10-nbeats-style-forecaster.md",
+    "html": "10-nbeats-style-forecaster.html",
+    "suggested_tags": "N-BEATS, Time Series, Forecasting, Neural Networks, Deep Learning",
+    "code_blocks": 6,
+    "table_images": [
+      "table_images/10-nbeats-style-forecaster-table-1.png"
+    ],
+    "images": [
+      "table_images/10-nbeats-style-forecaster-table-1.png"
+    ],
+    "local_links_to_replace": 4
+  },
+  {
+    "part": 12,
+    "title": "Which Time-Series Model Should You Use?",
+    "source": "11-choosing-a-sequence-model.md",
+    "html": "11-choosing-a-sequence-model.html",
+    "suggested_tags": "Time Series, Neural Networks, LSTM, Transformer, Forecasting",
+    "code_blocks": 2,
+    "table_images": [
+      "table_images/11-choosing-a-sequence-model-table-1.png"
+    ],
+    "images": [
+      "table_images/11-choosing-a-sequence-model-table-1.png"
+    ],
+    "local_links_to_replace": 3
+  },
+  {
+    "part": 13,
+    "title": "Comparing Sequence Models on Electricity Prediction",
+    "source": "12-electricity-results-and-interpretation.md",
+    "html": "12-electricity-results-and-interpretation.html",
+    "suggested_tags": "Time Series, Deep Learning, Forecasting, Model Evaluation, Data Science",
+    "code_blocks": 4,
+    "table_images": [
+      "table_images/12-electricity-results-and-interpretation-table-1.png",
+      "table_images/12-electricity-results-and-interpretation-table-2.png",
+      "table_images/12-electricity-results-and-interpretation-table-3.png"
+    ],
+    "images": [
+      "assets/three-weeks-electricity-demand.png",
+      "table_images/12-electricity-results-and-interpretation-table-1.png",
+      "table_images/12-electricity-results-and-interpretation-table-2.png",
+      "assets/electricity-raw-history-model-comparison.png",
+      "table_images/12-electricity-results-and-interpretation-table-3.png"
+    ],
+    "local_links_to_replace": 3
+  },
+  {
+    "part": 14,
+    "title": "Do Calendar and Lagged Features Help Sequence Models?",
+    "source": "13-calendar-and-lagged-features.md",
+    "html": "13-calendar-and-lagged-features.html",
+    "suggested_tags": "Feature Engineering, Time Series, Data Leakage, Forecasting, Python",
+    "code_blocks": 24,
+    "table_images": [
+      "table_images/13-calendar-and-lagged-features-table-1.png"
+    ],
+    "images": [
+      "assets/model-feature-rmse-editorial.png",
+      "table_images/13-calendar-and-lagged-features-table-1.png",
+      "assets/engineered-history-gain-editorial.png",
+      "assets/transformer-rmse-by-horizon.png",
+      "assets/lstm-validation-curves.png"
+    ],
+    "local_links_to_replace": 3
+  },
+  {
+    "part": 15,
+    "title": "How to Design a Time-Series Experiment You Can Trust",
+    "source": "14-designing-a-trustworthy-experiment.md",
+    "html": "14-designing-a-trustworthy-experiment.html",
+    "suggested_tags": "Experimental Design, Time Series, Machine Learning, Forecasting, MLOps",
+    "code_blocks": 8,
+    "table_images": [
+      "table_images/14-designing-a-trustworthy-experiment-table-1.png"
+    ],
+    "images": [
+      "table_images/14-designing-a-trustworthy-experiment-table-1.png"
+    ],
+    "local_links_to_replace": 3
+  }
+]

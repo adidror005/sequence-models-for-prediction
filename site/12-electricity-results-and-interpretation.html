@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comparing Sequence Models on Electricity Prediction — Sequence Models for Prediction</title>
+<meta name="description" content="What happens when nine very different architectures receive exactly the same week of raw demand history?">
+<link rel="canonical" href="https://adidror005.github.io/sequence-models-for-prediction/12-electricity-results-and-interpretation.html">
+<link rel="stylesheet" href="styles.css">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Comparing Sequence Models on Electricity Prediction">
+<meta property="og:description" content="What happens when nine very different architectures receive exactly the same week of raw demand history?">
+<meta property="og:url" content="https://adidror005.github.io/sequence-models-for-prediction/12-electricity-results-and-interpretation.html">
+<meta property="og:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Comparing Sequence Models on Electricity Prediction">
+<meta name="twitter:description" content="What happens when nine very different architectures receive exactly the same week of raw demand history?">
+<meta name="twitter:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="index.html"><span class="brand-mark">S</span><span>Sequence Models<br><small>for Prediction</small></span></a>
+  <nav aria-label="Primary navigation"><a href="index.html#series">All articles</a><a href="index.html#about">About</a><a class="github-link" href="https://github.com/adidror005/sequence-models-for-prediction">View source</a></nav>
+</header>
+<div class="reading-progress" style="--progress: 86.67%"></div>
+<main>
+  <header class="article-hero">
+    <a class="back-link" href="index.html">← Series home</a>
+    <p class="eyebrow">Part 13 of 15 · Case study</p>
+    <h1>Comparing Sequence Models on Electricity Prediction</h1>
+    <p class="dek">What happens when nine very different architectures receive exactly the same week of raw demand history?</p>
+  </header>
+  <div class="reading-layout">
+    <article class="article-content">
+
+<p>The previous articles studied sequence models one at a time. That was deliberate: an architecture is easier to understand when its mechanics are not buried inside a leaderboard.</p>
+<p>Now we can ask the practical question.</p>
+<blockquote>
+<p>If every model sees the same raw sequence, which architecture predicts the next day most accurately?</p>
+</blockquote>
+<p>This first comparison does <strong>not</strong> use calendar variables, explicit lags, rolling statistics, or other engineered features. Each model receives only a week of hourly electricity demand. That restriction lets us compare the algorithms before changing the information presented to them.</p>
+<p>The result is not a dramatic victory for a single modern architecture. It is a much more useful finding: several fundamentally different models produce remarkably similar forecasts, and a well-matched simple model can remain competitive with a sophisticated one.</p>
+<h2 id="the-prediction-task">The prediction task</h2>
+<p>The experiment uses the UCI Individual Household Electric Power Consumption data, aggregated to hourly demand. After resampling and causal filling of missing hours, the usable series contains 34,589 observations from December 2006 through November 2010.</p>
+<p><img alt="Three weeks of hourly household electricity demand" src="assets/three-weeks-electricity-demand.png"/></p>
+<p>At each forecast origin, a model receives the previous 168 hours—exactly one week—and predicts the next 24 hours in one shot:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>input:   demand[t-168], ..., demand[t-1]
+output:  demand[t],     ..., demand[t+23]
+</pre></div>
+</code></pre>
+<p>In tensor form, every model starts from the same input and output contract:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>X: [batch, 168, 1]
+y: [batch, 24]
+</pre></div>
+</code></pre>
+<p>The final historical week is not fed back one hour at a time during inference. Each architecture maps the complete observed window directly to the complete 24-hour future path. This avoids error accumulation from recursive forecasting and keeps the output task identical across model families.</p>
+<h2 id="a-chronological-evaluation">A chronological evaluation</h2>
+<p>Time order is preserved throughout the experiment. The data is divided chronologically into 70% training, 15% validation, and 15% test segments. Scaling statistics are fitted on the training period only.</p>
+<p>After window construction, the split contains:</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Segment</th>
+<th style="text-align:right">Forecast origins</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Training</td>
+<td style="text-align:right">23,853</td>
+</tr>
+<tr>
+<td>Validation</td>
+<td style="text-align:right">5,165</td>
+</tr>
+<tr>
+<td>Test</td>
+<td style="text-align:right">5,166</td>
+</tr>
+</tbody>
+</table></div>
+<p>Every model is evaluated on the same test origins. The principal metric is root mean squared error, or RMSE, measured in kilowatts after predictions are transformed back to the original scale. Lower is better.</p>
+<p>The training configuration is intentionally compact enough to run as a Colab experiment. It uses early stopping and a maximum of 15 epochs, with one random seed for each configuration. That makes the results a useful controlled demonstration, not a definitive benchmark.</p>
+<h2 id="the-raw-history-leaderboard">The raw-history leaderboard</h2>
+<p>Here are the test results when the sole input channel is past demand:</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th style="text-align:right">Rank</th>
+<th>Model</th>
+<th style="text-align:right">Test RMSE</th>
+<th style="text-align:right">Trainable parameters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right">1</td>
+<td>GRU</td>
+<td style="text-align:right"><strong>0.5839</strong></td>
+<td style="text-align:right">14,424</td>
+</tr>
+<tr>
+<td style="text-align:right">2</td>
+<td>N-BEATS-style</td>
+<td style="text-align:right">0.5881</td>
+<td style="text-align:right">672,576</td>
+</tr>
+<tr>
+<td style="text-align:right">3</td>
+<td>MLP</td>
+<td style="text-align:right">0.5882</td>
+<td style="text-align:right">79,256</td>
+</tr>
+<tr>
+<td style="text-align:right">4</td>
+<td>LSTM</td>
+<td style="text-align:right">0.5893</td>
+<td style="text-align:right">18,712</td>
+</tr>
+<tr>
+<td style="text-align:right">5</td>
+<td>Patch Transformer</td>
+<td style="text-align:right">0.5908</td>
+<td style="text-align:right">70,360</td>
+</tr>
+<tr>
+<td style="text-align:right">6</td>
+<td>Linear</td>
+<td style="text-align:right">0.5918</td>
+<td style="text-align:right">4,056</td>
+</tr>
+<tr>
+<td style="text-align:right">7</td>
+<td>Transformer</td>
+<td style="text-align:right">0.5929</td>
+<td style="text-align:right">79,512</td>
+</tr>
+<tr>
+<td style="text-align:right">8</td>
+<td>TCN</td>
+<td style="text-align:right">0.6057</td>
+<td style="text-align:right">38,872</td>
+</tr>
+<tr>
+<td style="text-align:right">9</td>
+<td>CNN1D</td>
+<td style="text-align:right">0.6654</td>
+<td style="text-align:right">22,488</td>
+</tr>
+</tbody>
+</table></div>
+<p><img alt="Raw-history electricity RMSE for nine sequence models and three simple baselines" src="assets/electricity-raw-history-model-comparison.png"/></p>
+<p>Three simple forecasting rules provide context:</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Baseline</th>
+<th style="text-align:right">Test RMSE</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Yesterday</td>
+<td style="text-align:right">0.7496</td>
+</tr>
+<tr>
+<td>Last week</td>
+<td style="text-align:right">0.8025</td>
+</tr>
+<tr>
+<td>Last observed value</td>
+<td style="text-align:right">0.9179</td>
+</tr>
+</tbody>
+</table></div>
+<p>All nine learned models beat all three naïve baselines. That tells us the models learned more than a fixed copy rule. The differences <em>among</em> the learned models, however, need more careful interpretation.</p>
+<h2 id="the-important-benchmark-this-notebook-does-not-include">The important benchmark this notebook does not include</h2>
+<p>The experiment compares nine raw-sequence models, but it does not train CatBoost, LightGBM, XGBoost, or another gradient-boosted tree model. We therefore cannot say that GRU is the best practical solution to this electricity task—only that it is the best observed model in the notebook’s demand-only comparison.</p>
+<p>A strong boosted-tree benchmark would turn each forecast origin into a row containing causal lags, rolling summaries, calendar variables, and possibly one model per forecast horizon. On a dataset of this size, it could plausibly match or beat the neural architectures. That is a test to run, not a result to invent.</p>
+<p>This missing comparison reinforces the article’s main discipline: a leaderboard ranks only the candidates actually entered.</p>
+<h2 id="result-1-gru-wins-but-there-is-no-runaway-winner">Result 1: GRU wins, but there is no runaway winner</h2>
+<p>The GRU produces the lowest test RMSE at 0.5839 kW. Its recurrent state gives it an explicit mechanism for deciding what to retain and what to overwrite while scanning the 168-hour sequence.</p>
+<p>But the size of the lead matters. Seven models—from GRU through the generic Transformer—fall within roughly 0.009 kW of one another. The second-place N-BEATS-style network and third-place MLP are separated by less than 0.0001 kW.</p>
+<p>That is not enough evidence to declare a permanent architectural hierarchy. With one seed, some close rankings could reverse because of initialization, minibatch order, or early stopping. The responsible conclusion is:</p>
+<blockquote>
+<p>On this split and training run, GRU was best, while several recurrent, dense, attention-based, and linear approaches formed a tightly grouped competitive tier.</p>
+</blockquote>
+<p>This is common in forecasting. Architectural differences sound enormous in theory, yet their practical gap can be small when the input window is moderate, the target is smooth, and all models have enough capacity to capture the dominant patterns.</p>
+<h2 id="result-2-recurrence-is-effective-not-automatically-necessary">Result 2: recurrence is effective, not automatically necessary</h2>
+<p>GRU and LSTM both perform well. Their gated state offers a natural fit for sequences: read one hour, update memory, and compress the week into a representation used for prediction.</p>
+<p>If the story ended there, we might conclude that recurrent memory is essential. The MLP complicates that story. It simply flattens the entire week and learns a nonlinear mapping from 168 input values to 24 outputs, yet it slightly outperforms the LSTM in this run.</p>
+<p>The N-BEATS-style network also performs strongly using fully connected residual blocks rather than recurrence. These results remind us that a forecasting window is already a fixed-size supervised-learning example. Once the context length is known, a model does not have to process it recurrently to exploit it.</p>
+<p>Recurrent structure remains useful when we value parameter sharing across time, compact state, or support for variable sequence lengths. It is not a prerequisite for learning temporal relationships.</p>
+<h2 id="result-3-the-linear-model-is-surprisingly-hard-to-beat">Result 3: the linear model is surprisingly hard to beat</h2>
+<p>The direct linear model ranks sixth at 0.5918 kW. It trails the GRU by about 0.008 kW and slightly beats the generic Transformer.</p>
+<p>This is exactly why linear forecasting deserves a place in the main comparison rather than a footnote. The model can assign a separate weight to every combination of input hour and forecast horizon. For example, the prediction for tomorrow at 8 a.m. can rely heavily on yesterday at 8 a.m., last week at 8 a.m., and the most recent few observations.</p>
+<p>It cannot represent arbitrary nonlinear interactions, but household demand has strong autocorrelation and repeating daily structure. A direct linear map can exploit those patterns efficiently.</p>
+<p>Its parameter count also changes the practical interpretation. At 4,056 trainable parameters, it is far smaller than the MLP, Transformer, patch Transformer, or N-BEATS-style model. If latency, memory, retraining cost, or interpretability matter, a tiny increase in error may be a sensible trade.</p>
+<p>The broader lesson is simple:</p>
+<blockquote>
+<p>Complexity should earn its place by beating a strong simple model under the metric and constraints that matter.</p>
+</blockquote>
+<h2 id="result-4-global-access-alone-does-not-guarantee-a-win">Result 4: global access alone does not guarantee a win</h2>
+<p>The Transformer lets every position interact with every other position through self-attention. In principle, that creates short information paths between the start and end of the week. The patch Transformer compresses neighboring hours into tokens before applying attention.</p>
+<p>Neither attention model wins this experiment. The patch variant places fifth, while the generic Transformer places seventh.</p>
+<p>This does not show that attention is unsuitable for time series. It shows that its flexibility is not automatically valuable on every dataset. Transformers often become more compelling with larger datasets, richer covariates, longer contexts, multivariate inputs, or extensive pretraining. Here the task has one input channel, a one-week window, and a modest training set.</p>
+<p>Patching performs slightly better than hourly-token attention in this run. One plausible reason is that local compression reduces sequence length and encourages the model to focus on short temporal blocks. With only one seed, this remains an interpretation rather than a settled causal claim.</p>
+<h2 id="result-5-receptive-field-and-aggregation-choices-matter">Result 5: receptive field and aggregation choices matter</h2>
+<p>The two convolutional results should not be summarized as “convolutions lose.” The tested implementations impose specific information bottlenecks.</p>
+<p>The CNN1D uses local filters and global average pooling. Local filters are good at detecting short motifs such as ramps, spikes, and small cycles. Global averaging then compresses <em>where</em> those motifs occurred. That is potentially costly when the exact position of a demand pattern inside the week matters for the next 24 hours.</p>
+<p>The TCN uses dilated causal convolutions, but its configured receptive field is only 31 hours. Although its input tensor contains 168 hours, the final temporal representation cannot directly depend on the earliest part of that week. The architecture is therefore being asked to model a weekly problem with an effective memory shorter than a day and a half.</p>
+<p>Its 0.6057 RMSE is still respectable, but it is partly a result about this receptive-field choice. A TCN with enough dilation levels to cover all 168 hours would answer a different and fairer question about long-range convolutional memory.</p>
+<p>The CNN also appeared to still be improving when training stopped at epoch 15. Its last-place score may reflect an unfinished optimization schedule as well as architectural fit.</p>
+<h2 id="what-the-parameter-counts-reveal">What the parameter counts reveal</h2>
+<p>The ranking becomes more informative when accuracy and size are considered together:</p>
+<ul>
+<li>GRU achieves the best score with only 14,424 parameters.</li>
+<li>LSTM is similarly compact at 18,712 parameters.</li>
+<li>Linear is the smallest model by a wide margin and remains close to the leading group.</li>
+<li>N-BEATS-style uses more than 46 times as many parameters as GRU for a slightly worse score.</li>
+<li>The two Transformer variants use about five times as many parameters as GRU without improving test RMSE in this run.</li>
+</ul>
+<p>Parameter count is not the same as training cost or inference latency, but it is a useful first signal. A leaderboard that ignores resource requirements can recommend a model whose tiny accuracy advantage—or even disadvantage—is difficult to justify operationally.</p>
+<h2 id="what-we-can-and-cannot-conclude">What we can and cannot conclude</h2>
+<p>This experiment supports several limited conclusions:</p>
+<ol>
+<li>All tested learned models extracted useful predictive structure from one week of raw electricity history.</li>
+<li>GRU delivered the best observed raw-history RMSE and a strong accuracy-to-size tradeoff.</li>
+<li>Dense and linear models were competitive with explicitly sequential architectures.</li>
+<li>Attention did not provide an automatic advantage for this univariate, moderate-context task.</li>
+<li>The convolutional rankings are entangled with receptive-field, pooling, and training-budget choices.</li>
+</ol>
+<p>It does <strong>not</strong> establish that GRU is universally best for electricity, that Transformers are poor forecasters, or that differences smaller than one percent are stable. A stronger benchmark would add boosted trees, multiple seeds, rolling forecast periods, credible tuning budgets, and matched architectural capacity.</p>
+<p>Most importantly, this comparison answers only the raw-history question. Real forecasting systems often know more than the past target values. They know the hour, weekday, holidays, weather forecasts, prices, or operational schedules. Practitioners also add explicit daily and weekly lags or rolling summaries.</p>
+<p>Those additions change the problem. They may provide genuinely new future-known information, re-express information already present, or quietly extend the amount of history a model can access.</p>
+<p>Part 14 asks that separate question: <strong>when do calendar variables and engineered lagged features actually help these sequence models?</strong></p>
+<hr/>
+</article>
+    <aside class="toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#the-prediction-task">The prediction task</a></li><li><a href="#a-chronological-evaluation">A chronological evaluation</a></li><li><a href="#the-raw-history-leaderboard">The raw-history leaderboard</a></li><li><a href="#the-important-benchmark-this-notebook-does-not-include">The important benchmark this notebook does not include</a></li><li><a href="#result-1-gru-wins-but-there-is-no-runaway-winner">Result 1: GRU wins, but there is no runaway winner</a></li><li><a href="#result-2-recurrence-is-effective-not-automatically-necessary">Result 2: recurrence is effective, not automatically necessary</a></li><li><a href="#result-3-the-linear-model-is-surprisingly-hard-to-beat">Result 3: the linear model is surprisingly hard to beat</a></li><li><a href="#result-4-global-access-alone-does-not-guarantee-a-win">Result 4: global access alone does not guarantee a win</a></li><li><a href="#result-5-receptive-field-and-aggregation-choices-matter">Result 5: receptive field and aggregation choices matter</a></li><li><a href="#what-the-parameter-counts-reveal">What the parameter counts reveal</a></li><li><a href="#what-we-can-and-cannot-conclude">What we can and cannot conclude</a></li></ol></aside>
+  </div>
+  <nav class="article-pager" aria-label="Article navigation"><a class="pager-card previous" href="11-choosing-a-sequence-model.html"><span>Previous</span><strong>Which Time-Series Model Should You Use?</strong></a><a class="pager-card next" href="13-calendar-and-lagged-features.html"><span>Next</span><strong>Do Calendar and Lagged Features Help Sequence Models?</strong></a></nav>
+</main>
+<footer class="site-footer"><p>Sequence Models for Prediction · Open code, reproducible experiments, honest baselines.</p><a href="index.html">Series index</a></footer>
+</body>
+</html>

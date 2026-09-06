@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>N-BEATS-Style Forecasting: Explaining the Past to Build the Future — Sequence Models for Prediction</title>
+<meta name="description" content="Backcast residuals, forecast additions, and a fully connected route to multi-horizon prediction">
+<link rel="canonical" href="https://adidror005.github.io/sequence-models-for-prediction/10-nbeats-style-forecaster.html">
+<link rel="stylesheet" href="styles.css">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="N-BEATS-Style Forecasting: Explaining the Past to Build the Future">
+<meta property="og:description" content="Backcast residuals, forecast additions, and a fully connected route to multi-horizon prediction">
+<meta property="og:url" content="https://adidror005.github.io/sequence-models-for-prediction/10-nbeats-style-forecaster.html">
+<meta property="og:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="N-BEATS-Style Forecasting: Explaining the Past to Build the Future">
+<meta name="twitter:description" content="Backcast residuals, forecast additions, and a fully connected route to multi-horizon prediction">
+<meta name="twitter:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="index.html"><span class="brand-mark">S</span><span>Sequence Models<br><small>for Prediction</small></span></a>
+  <nav aria-label="Primary navigation"><a href="index.html#series">All articles</a><a href="index.html#about">About</a><a class="github-link" href="https://github.com/adidror005/sequence-models-for-prediction">View source</a></nav>
+</header>
+<div class="reading-progress" style="--progress: 73.33%"></div>
+<main>
+  <header class="article-hero">
+    <a class="back-link" href="index.html">← Series home</a>
+    <p class="eyebrow">Part 11 of 15 · Models</p>
+    <h1>N-BEATS-Style Forecasting: Explaining the Past to Build the Future</h1>
+    <p class="dek">Backcast residuals, forecast additions, and a fully connected route to multi-horizon prediction</p>
+  </header>
+  <div class="reading-layout">
+    <article class="article-content">
+
+<p>N-BEATS approaches forecasting with an elegant iterative idea:</p>
+<blockquote>
+<p>Let one block explain part of the observed window, remove that explanation, and let later blocks work on what remains. Add every block’s forecast contribution to form the future.</p>
+</blockquote>
+<p>There is no recurrence, convolution, or attention. Deep fully connected blocks operate on a flattened history, connected by backward and forward residual paths.</p>
+<p>The architecture’s structure—not a sequential state transition—creates its forecasting bias.</p>
+<h2 id="backcast-and-forecast">Backcast and forecast</h2>
+<p>Each block receives a residual representation of the input and emits two vectors:</p>
+<ul>
+<li>a <strong>backcast</strong>, which tries to explain the block’s portion of the historical input;</li>
+<li>a <strong>forecast</strong>, which contributes to the predicted horizon.</li>
+</ul>
+<p>The stack updates:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>residual_(k+1) = residual_k - backcast_k
+forecast_total = forecast_total + forecast_k
+</pre></div>
+</code></pre>
+<p>The first block may capture broad level and seasonality. The next receives what the first failed to explain and can focus on another structure. The decomposition is learned jointly to minimize forecast loss.</p>
+<p>This resembles boosting in spirit: later components concentrate on a residual. It is not classical boosting, because all blocks are trained together inside one neural network.</p>
+<h2 id="generic-and-interpretable-variants">Generic and interpretable variants</h2>
+<p>The original N-BEATS paper presents generic blocks with learned basis projections and interpretable configurations whose trend and seasonality stacks use constrained basis functions.</p>
+<p>A compact generic-inspired variant can give each block three 256-unit ReLU layers, followed by one dense backcast head and one dense 24-step forecast head.</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="p">:</span>
+    <span class="n">backcast</span><span class="p">,</span> <span class="n">contribution</span> <span class="o">=</span> <span class="n">block</span><span class="p">(</span><span class="n">residual</span><span class="p">)</span>
+    <span class="n">residual</span> <span class="o">=</span> <span class="n">residual</span> <span class="o">-</span> <span class="n">backcast</span>
+    <span class="n">forecast</span> <span class="o">=</span> <span class="n">forecast</span> <span class="o">+</span> <span class="n">contribution</span>
+</pre></div>
+</code></pre>
+<p>There are three blocks. The code captures the backward/forward residual intuition but does not reproduce every design choice of the published N-BEATS architectures.</p>
+<p>“N-BEATS-style” is therefore the accurate name.</p>
+<h2 id="flattening-gives-global-access">Flattening gives global access</h2>
+<p>Like the linear model and MLP, this architecture flattens all 168 historical steps and all feature channels.</p>
+<p>Every block can access every position directly. It does not have to remember a week-old observation through recurrence or expand a convolutional receptive field.</p>
+<p>The backcast head is as wide as the flattened input. That becomes expensive when features are added.</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Input channels</th>
+<th style="text-align:right">Flattened width</th>
+<th style="text-align:right">Trainable parameters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td style="text-align:right">168</td>
+<td style="text-align:right">672,576</td>
+</tr>
+<tr>
+<td>6</td>
+<td style="text-align:right">1,008</td>
+<td style="text-align:right">1,965,336</td>
+</tr>
+<tr>
+<td>16</td>
+<td style="text-align:right">2,688</td>
+<td style="text-align:right">4,550,856</td>
+</tr>
+</tbody>
+</table></div>
+<p>The full model has nearly seven times as many parameters as the demand-only model.</p>
+<p>This growth makes multivariate extensions much more expensive than the original univariate use case.</p>
+<h2 id="what-the-residual-stack-can-learn">What the residual stack can learn</h2>
+<p>With enough data and regularization, generic blocks can discover useful decompositions without being told which component is trend or seasonality.</p>
+<p>One block might explain slow level, another a repeating daily profile, and another transient deviations. But the blocks are not forced to align with those human concepts.</p>
+<p>If interpretability is required, use constrained basis expansions and inspect stack outputs. Even then, interpretability describes the model’s decomposition—not necessarily the true physical causes of demand.</p>
+<h2 id="how-the-blocks-are-trained">How the blocks are trained</h2>
+<p>The entire stack is optimized end to end against forecast loss. There is usually no separate target telling a block what its backcast should represent. The residual pathway encourages specialization, while the forecast objective decides whether that specialization is useful.</p>
+<p>The number of stacks, blocks, hidden layers, hidden width, and basis size control capacity. Forecast ensembles are common because independently trained N-BEATS models can settle on different useful decompositions.</p>
+<p>For probabilistic forecasting, the output heads and loss must be changed to predict quantiles or distribution parameters rather than a single point estimate.</p>
+<h2 id="complete-pytorch-implementation">Complete PyTorch implementation</h2>
+<p>The full generic-inspired implementation requires both the residual block and the outer forecaster. Every block emits a backcast with the same width as the flattened input and a contribution with the same width as the forecast horizon.</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">NBEATSBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">input_dim</span><span class="p">,</span>
+        <span class="n">horizon</span><span class="p">,</span>
+        <span class="n">hidden</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
+        <span class="n">depth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">width</span> <span class="o">=</span> <span class="n">input_dim</span>
+
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">depth</span><span class="p">):</span>
+            <span class="n">layers</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">hidden</span><span class="p">),</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+            <span class="p">])</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="n">hidden</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">body</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">layers</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backcast_head</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span>
+            <span class="n">hidden</span><span class="p">,</span>
+            <span class="n">input_dim</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">forecast_head</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span>
+            <span class="n">hidden</span><span class="p">,</span>
+            <span class="n">horizon</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">hidden</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">body</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">backcast</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">backcast_head</span><span class="p">(</span><span class="n">hidden</span><span class="p">)</span>
+        <span class="n">forecast</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forecast_head</span><span class="p">(</span><span class="n">hidden</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">backcast</span><span class="p">,</span> <span class="n">forecast</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">NBEATSForecaster</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">lookback</span><span class="p">,</span>
+        <span class="n">n_features</span><span class="p">,</span>
+        <span class="n">horizon</span><span class="p">,</span>
+        <span class="n">n_blocks</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="n">hidden</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
+        <span class="n">depth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span> <span class="o">=</span> <span class="n">lookback</span> <span class="o">*</span> <span class="n">n_features</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">horizon</span> <span class="o">=</span> <span class="n">horizon</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">([</span>
+            <span class="n">NBEATSBlock</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span><span class="p">,</span>
+                <span class="n">horizon</span><span class="p">,</span>
+                <span class="n">hidden</span><span class="o">=</span><span class="n">hidden</span><span class="p">,</span>
+                <span class="n">depth</span><span class="o">=</span><span class="n">depth</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_blocks</span><span class="p">)</span>
+        <span class="p">])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">residual</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">forecast</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">horizon</span><span class="p">,</span>
+            <span class="n">device</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="p">:</span>
+            <span class="n">backcast</span><span class="p">,</span> <span class="n">contribution</span> <span class="o">=</span> <span class="n">block</span><span class="p">(</span>
+                <span class="n">residual</span>
+            <span class="p">)</span>
+            <span class="n">residual</span> <span class="o">=</span> <span class="n">residual</span> <span class="o">-</span> <span class="n">backcast</span>
+            <span class="n">forecast</span> <span class="o">=</span> <span class="n">forecast</span> <span class="o">+</span> <span class="n">contribution</span>
+
+        <span class="k">return</span> <span class="n">forecast</span>
+
+
+<span class="n">LOOKBACK</span> <span class="o">=</span> <span class="mi">168</span>
+<span class="n">N_FEATURES</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">HORIZON</span> <span class="o">=</span> <span class="mi">24</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">NBEATSForecaster</span><span class="p">(</span>
+    <span class="n">lookback</span><span class="o">=</span><span class="n">LOOKBACK</span><span class="p">,</span>
+    <span class="n">n_features</span><span class="o">=</span><span class="n">N_FEATURES</span><span class="p">,</span>
+    <span class="n">horizon</span><span class="o">=</span><span class="n">HORIZON</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">LOOKBACK</span><span class="p">,</span> <span class="n">N_FEATURES</span><span class="p">)</span>
+<span class="n">y_hat</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">y_hat</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">HORIZON</span><span class="p">)</span>
+</pre></div>
+</code></pre>
+<p>This is intentionally labeled N-BEATS-style because it demonstrates generic backcast/forecast residual blocks without reproducing every published basis and stack configuration. The same verified implementation is available in the <a href="code/sequence_models.py">companion model module</a>. The full Dataset, DataLoader, and fit/evaluate workflow is explained in the <a href="pytorch-data-pipeline-and-training-loop.html">shared PyTorch training companion</a>.</p>
+<h2 id="strengths">Strengths</h2>
+<p>The N-BEATS idea offers:</p>
+<ul>
+<li>direct multi-horizon output;</li>
+<li>global access to the input window;</li>
+<li>iterative residual refinement;</li>
+<li>no recurrent training bottleneck;</li>
+<li>optional human-readable trend and seasonality bases;</li>
+<li>a strong fit for univariate forecasting.</li>
+</ul>
+<p>It is especially attractive when the target’s own history carries most of the signal.</p>
+<h2 id="limitations">Limitations</h2>
+<p>Flattened dense layers scale poorly with long context and many channels. The model does not naturally share local detectors across time, and a simple multichannel extension departs from the original univariate emphasis.</p>
+<p>Residual explanations can also be misleading if treated as physical components without validation.</p>
+<h2 id="common-failure-modes">Common failure modes</h2>
+<p>Large dense backcast heads can dominate memory and parameters. Adding variables or lengthening context may require an input bottleneck, channel-independent processing, or another architecture entirely.</p>
+<p>The learned decomposition should not be assumed to correspond to physical trend and seasonality unless the basis is constrained and the components are validated. Even interpretable basis outputs explain the model, not necessarily the data-generating process.</p>
+<p>Overfitting can hide behind a plausible decomposition, so chronological validation and strong naive baselines remain essential.</p>
+<h2 id="when-to-choose-n-beats">When to choose N-BEATS</h2>
+<p>Choose it when direct multi-horizon univariate prediction is central, global window access matters, and residual decomposition is attractive.</p>
+<p>Be cautious when feature count and context length make the dense backcast heads enormous. Report parameter count beside accuracy.</p>
+<p>We now have a direct explanation of every model in the series. Part 12 compares them as architectural choices before any dataset-specific leaderboard enters the discussion.</p>
+<h2 id="further-reading">Further reading</h2>
+<ul>
+<li><a href="https://openreview.net/pdf?id=r1ecqn4YwB" rel="noopener noreferrer">Oreshkin et al., “N-BEATS: Neural Basis Expansion Analysis for Interpretable Time Series Forecasting”</a></li>
+</ul>
+<hr/>
+</article>
+    <aside class="toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#backcast-and-forecast">Backcast and forecast</a></li><li><a href="#generic-and-interpretable-variants">Generic and interpretable variants</a></li><li><a href="#flattening-gives-global-access">Flattening gives global access</a></li><li><a href="#what-the-residual-stack-can-learn">What the residual stack can learn</a></li><li><a href="#how-the-blocks-are-trained">How the blocks are trained</a></li><li><a href="#complete-pytorch-implementation">Complete PyTorch implementation</a></li><li><a href="#strengths">Strengths</a></li><li><a href="#limitations">Limitations</a></li><li><a href="#common-failure-modes">Common failure modes</a></li><li><a href="#when-to-choose-n-beats">When to choose N-BEATS</a></li><li><a href="#further-reading">Further reading</a></li></ol></aside>
+  </div>
+  <nav class="article-pager" aria-label="Article navigation"><a class="pager-card previous" href="09-patch-transformer-forecaster.html"><span>Previous</span><strong>Patch Transformer Forecasting: Turning Time Steps into Temporal Tokens</strong></a><a class="pager-card next" href="11-choosing-a-sequence-model.html"><span>Next</span><strong>Which Time-Series Model Should You Use?</strong></a></nav>
+</main>
+<footer class="site-footer"><p>Sequence Models for Prediction · Open code, reproducible experiments, honest baselines.</p><a href="index.html">Series index</a></footer>
+</body>
+</html>

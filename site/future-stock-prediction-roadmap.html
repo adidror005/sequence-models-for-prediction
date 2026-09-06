@@ -1,0 +1,308 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Future Expansion: Sequence Models for Stock Prediction — Sequence Models for Prediction</title><meta name="description" content="A future experiment plan for applying the sequence-model framework to stock prediction."><link rel="canonical" href="https://adidror005.github.io/sequence-models-for-prediction/future-stock-prediction-roadmap.html"><link rel="stylesheet" href="styles.css">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Future Expansion: Sequence Models for Stock Prediction">
+<meta property="og:description" content="A future experiment plan for applying the sequence-model framework to stock prediction.">
+<meta property="og:url" content="https://adidror005.github.io/sequence-models-for-prediction/future-stock-prediction-roadmap.html">
+<meta property="og:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Future Expansion: Sequence Models for Stock Prediction">
+<meta name="twitter:description" content="A future experiment plan for applying the sequence-model framework to stock prediction.">
+<meta name="twitter:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png"></head><body><header class="site-header"><a class="brand" href="index.html"><span class="brand-mark">S</span><span>Sequence Models<br><small>for Prediction</small></span></a><nav aria-label="Primary navigation"><a href="index.html#series">All articles</a><a href="index.html#about">About</a><a class="github-link" href="https://github.com/adidror005/sequence-models-for-prediction">View source</a></nav></header><main><header class="article-hero"><a class="back-link" href="index.html">← Series home</a><p class="eyebrow">Future application · Research roadmap</p><h1>Future Expansion: Sequence Models for Stock Prediction</h1><p class="dek">A future experiment plan for applying the sequence-model framework to stock prediction.</p></header><div class="reading-layout roadmap-layout"><article class="article-content">
+<p><em>A pre-registered comparison designed to separate price persistence from genuine forecasting signal</em></p>
+<p><strong>Status:</strong> Future experiment roadmap; not part of the current publication sequence
+<strong>Suggested Medium tags:</strong> Stock Market, Time Series, Forecasting, Deep Learning, Quantitative Finance</p>
+<p>Electricity demand is rhythmic. Stock prices are adversarial.</p>
+<p>Household power consumption repeats daily and weekly behaviors that remain visible in a short chart. Markets adapt, regimes shift, and easy patterns attract capital until they weaken. A model that performs well on electricity therefore deserves a second test where predictability is smaller and evaluation traps are larger.</p>
+<p>This article defines that test before looking at results.</p>
+<p>The goal is not to ask which network predicts the highest stock price. It is to ask:</p>
+<blockquote>
+<p>Which architectural advantages survive after we remove the easy persistence of price level and evaluate across assets, time periods, and realistic baselines?</p>
+</blockquote>
+<h2>Why raw price RMSE is dangerous</h2>
+<p>Suppose a stock closes at 100 today and 100.20 tomorrow. A model that predicts 100 has a small price error without forecasting the positive return.</p>
+<p>Because adjacent prices are usually close, the rule:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>tomorrow's price = today's price
+</pre></div>
+</code></pre>
+<p>can look excellent under level RMSE.</p>
+<p>That is the random-walk baseline. Any stock-price study should report it prominently.</p>
+<p>We will evaluate two related tasks.</p>
+<h3>Task A: normalized price path</h3>
+<p>Predict the next five trading-day prices relative to the final observed price:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>relative_price[h] = future_price[h] / last_context_price - 1
+</pre></div>
+</code></pre>
+<p>This removes nominal scale while retaining the path users recognize as a price forecast.</p>
+<h3>Task B: future log returns</h3>
+<p>Predict the next five daily log returns:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>return[t] = log(adjusted_close[t] / adjusted_close[t-1])
+</pre></div>
+</code></pre>
+<p>This directly tests incremental changes. A zero vector is the natural baseline.</p>
+<p>Publishing both prevents a low level error from masquerading as directional signal.</p>
+<h2>Proposed dataset</h2>
+<p>The recommended first pass uses daily, corporate-action-adjusted prices for:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>SPY, QQQ, AAPL, MSFT, AMZN, META, JPM, XOM
+</pre></div>
+</code></pre>
+<p>This is a deliberately selected educational basket, not a survivorship-bias-free equity universe. Results must be described as case studies across liquid assets, not evidence for the whole market.</p>
+<p>For a stronger follow-up, use historical index constituents and preserve point-in-time membership.</p>
+<p>Each model should be trained and evaluated per symbol first. Report the macro-average across symbols so one volatile stock does not dominate the table. A later global-model experiment can share parameters across assets with an explicit symbol identifier.</p>
+<h2>Forecasting contract</h2>
+<p>The stock version uses:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>lookback:         168 trading days
+forecast horizon: 5 trading days
+frequency:        daily
+targets:          normalized price path and log return
+</pre></div>
+</code></pre>
+<p>Keeping a 168-step lookback preserves the architectural comparison from electricity while changing its real-world duration from one week to roughly eight trading months.</p>
+<p>That distinction should be explicit. The sequence length is controlled; elapsed calendar time is not.</p>
+<h2>Feature sets</h2>
+<p>The feature ablation mirrors the electricity experiment without copying its features mechanically.</p>
+<h3>1. Market history only</h3>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>log_return
+</pre></div>
+</code></pre>
+<p>For the price-path task, the historical normalized price path can be included as a separate raw channel. Do not feed the absolute dollar price if models are compared across symbols.</p>
+<h3>2. Market history plus known calendar</h3>
+<ul>
+<li>day-of-week sine and cosine;</li>
+<li>month-of-year sine and cosine;</li>
+<li>month-end indicator.</li>
+</ul>
+<p>Calendar effects in markets are often weak and unstable. That makes them an ablation, not an assumption.</p>
+<h3>3. Market history plus engineered history</h3>
+<ul>
+<li>lagged returns at 1, 5, and 21 trading days;</li>
+<li>cumulative returns over 5, 21, and 63 days;</li>
+<li>rolling realized volatility over 5, 21, and 63 days;</li>
+<li>volume change and standardized volume, if point-in-time volume is available;</li>
+<li>price distance from a 21- and 63-day moving average.</li>
+</ul>
+<p>All rolling and normalization operations must use information available before the forecast origin. Every scaler is fitted inside the training portion of each fold.</p>
+<h2>Keep the raw information budget equal</h2>
+<p>Part 14 showed how a lag channel can secretly extend historical reach. The stock experiment will avoid that ambiguity.</p>
+<p>Every derived feature must be computed from the same permitted 168 raw trading days. If a 63-day statistic is attached to every row, early rows would require data outside the window. We will use one of two clean designs:</p>
+<ol>
+<li>provide 231 raw days to every representation so the earliest 63-day feature has an equal source history; or</li>
+<li>calculate fixed-budget summaries at the forecast origin and pass them through a separate context vector.</li>
+</ol>
+<p>The first design is simpler for the existing model zoo. Whichever design is selected must be shared across all architectures.</p>
+<h2>Time splits</h2>
+<p>Random train/test splitting is not acceptable.</p>
+<p>Use expanding rolling origins with date-based folds. For example:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>fold 1: train ───────── validate ─ test
+fold 2: train ───────────────── validate ─ test
+fold 3: train ───────────────────────── validate ─ test
+</pre></div>
+</code></pre>
+<p>Exact dates will be fixed after choosing the data source and available start date. They should include calm, crisis, recovery, inflationary, and rate-transition periods where possible.</p>
+<p>Overlapping five-day labels require care. Forecast origins near a boundary must not place target days on both sides of that boundary. Hyperparameters are chosen without inspecting the final test fold.</p>
+<h2>Baselines</h2>
+<p>The stock comparison is not credible without:</p>
+<table>
+<thead>
+<tr>
+<th>Target</th>
+<th>Required baseline</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Price path</td>
+<td>Last adjusted close repeated for five days</td>
+</tr>
+<tr>
+<td>Returns</td>
+<td>Zero return</td>
+</tr>
+<tr>
+<td>Returns</td>
+<td>Training-period mean return</td>
+</tr>
+<tr>
+<td>Either</td>
+<td>Regularized direct linear model</td>
+</tr>
+<tr>
+<td>Either</td>
+<td>CatBoost on causal lag, rolling, calendar, and market-context features</td>
+</tr>
+<tr>
+<td>Volatility analysis</td>
+<td>Recent realized volatility carried forward</td>
+</tr>
+</tbody>
+</table>
+<p>A neural network that beats “yesterday” on electricity but loses to zero return—or to a disciplined boosted-tree model—on stocks has taught us something important about domain structure.</p>
+<h2>Models</h2>
+<p>Use the same nine families:</p>
+<ul>
+<li>linear;</li>
+<li>MLP;</li>
+<li>LSTM;</li>
+<li>GRU;</li>
+<li>CNN1D;</li>
+<li>short- and full-receptive-field TCN;</li>
+<li>Transformer;</li>
+<li>simplified patch Transformer;</li>
+<li>N-BEATS-style.</li>
+</ul>
+<p>The TCN receives two variants because the electricity study revealed that receptive field changes the meaning of engineered features. The patch model should test five-day-aligned and overlapping patches.</p>
+<h2>Metrics</h2>
+<p>No single metric is enough.</p>
+<h3>Statistical metrics</h3>
+<ul>
+<li>MAE and RMSE of normalized price path;</li>
+<li>MAE and RMSE of returns;</li>
+<li>directional accuracy with confidence intervals;</li>
+<li>correlation between predicted and realized returns;</li>
+<li>performance by forecast horizon;</li>
+<li>mean and standard deviation across seeds, folds, and symbols.</li>
+</ul>
+<h3>Economic diagnostics</h3>
+<ul>
+<li>turnover;</li>
+<li>gross and net return under a predeclared decision rule;</li>
+<li>transaction-cost sensitivity;</li>
+<li>maximum drawdown;</li>
+<li>exposure and volatility;</li>
+<li>performance by market regime.</li>
+</ul>
+<p>The trading rule must be specified before viewing test results. Otherwise the strategy layer becomes another tuning surface.</p>
+<h2>Results table to populate</h2>
+<p>Do not publish this section until the experiment has run.</p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Best feature set</th>
+<th style="text-align:right">Price-path RMSE vs. random walk</th>
+<th style="text-align:right">Return MAE vs. zero</th>
+<th style="text-align:right">Directional accuracy</th>
+<th style="text-align:right">Net result after costs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Linear</td>
+<td>Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+</tr>
+<tr>
+<td>MLP</td>
+<td>Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+</tr>
+<tr>
+<td>LSTM</td>
+<td>Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+</tr>
+<tr>
+<td>GRU</td>
+<td>Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+</tr>
+<tr>
+<td>CNN1D</td>
+<td>Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+</tr>
+<tr>
+<td>TCN</td>
+<td>Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+</tr>
+<tr>
+<td>Transformer</td>
+<td>Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+</tr>
+<tr>
+<td>Patch Transformer</td>
+<td>Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+</tr>
+<tr>
+<td>N-BEATS-style</td>
+<td>Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+<td style="text-align:right">Pending</td>
+</tr>
+</tbody>
+</table>
+<h2>The comparison we want to make</h2>
+<p>Once results exist, the electricity and stock articles should share one summary table:</p>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Electricity</th>
+<th>Stocks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dominant predictable structure</td>
+<td>Daily and weekly seasonality</td>
+<td>To be measured; likely weak and regime-dependent</td>
+</tr>
+<tr>
+<td>Strong naive baseline</td>
+<td>Repeat yesterday</td>
+<td>Random walk / zero return</td>
+</tr>
+<tr>
+<td>Value of calendar</td>
+<td>Helped 7 of 9 model families in one run</td>
+<td>Pending</td>
+</tr>
+<tr>
+<td>Value of engineered history</td>
+<td>−2.82% to +2.05% by architecture</td>
+<td>Pending</td>
+</tr>
+<tr>
+<td>Best architecture</td>
+<td>31-hour TCN with engineered features, preliminary</td>
+<td>Pending</td>
+</tr>
+<tr>
+<td>Main evaluation risk</td>
+<td>Unequal history and receptive field</td>
+<td>Persistence, selection bias, and costs</td>
+</tr>
+</tbody>
+</table>
+<p>The most interesting outcome may be that rankings reverse. A model whose inductive bias matches stable electricity cycles may overfit market noise, while a disciplined linear or recurrent baseline may hold up better.</p>
+<p>That is why the stock article is specified before the data are scored. We are not searching for a market story. We are testing whether the architectural lessons transfer.</p>
+<p>This becomes a later article or follow-up series after the market-data experiment has been implemented and run.</p>
+</article></div><nav class="article-pager"><a class="pager-card previous" href="14-designing-a-trustworthy-experiment.html"><span>Previous</span><strong>Designing a trustworthy experiment</strong></a><a class="pager-card next" href="index.html"><span>Series</span><strong>Return to all articles</strong></a></nav></main><footer class="site-footer"><p>Sequence Models for Prediction · Open code, reproducible experiments, honest baselines.</p><a href="index.html">Series index</a></footer></body></html>

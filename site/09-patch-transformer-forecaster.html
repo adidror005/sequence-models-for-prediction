@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Patch Transformer Forecasting: Turning Time Steps into Temporal Tokens — Sequence Models for Prediction</title>
+<meta name="description" content="Why grouping nearby observations can make attention cheaper—and exact lags harder to recover">
+<link rel="canonical" href="https://adidror005.github.io/sequence-models-for-prediction/09-patch-transformer-forecaster.html">
+<link rel="stylesheet" href="styles.css">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Patch Transformer Forecasting: Turning Time Steps into Temporal Tokens">
+<meta property="og:description" content="Why grouping nearby observations can make attention cheaper—and exact lags harder to recover">
+<meta property="og:url" content="https://adidror005.github.io/sequence-models-for-prediction/09-patch-transformer-forecaster.html">
+<meta property="og:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Patch Transformer Forecasting: Turning Time Steps into Temporal Tokens">
+<meta name="twitter:description" content="Why grouping nearby observations can make attention cheaper—and exact lags harder to recover">
+<meta name="twitter:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="index.html"><span class="brand-mark">S</span><span>Sequence Models<br><small>for Prediction</small></span></a>
+  <nav aria-label="Primary navigation"><a href="index.html#series">All articles</a><a href="index.html#about">About</a><a class="github-link" href="https://github.com/adidror005/sequence-models-for-prediction">View source</a></nav>
+</header>
+<div class="reading-progress" style="--progress: 66.67%"></div>
+<main>
+  <header class="article-hero">
+    <a class="back-link" href="index.html">← Series home</a>
+    <p class="eyebrow">Part 10 of 15 · Models</p>
+    <h1>Patch Transformer Forecasting: Turning Time Steps into Temporal Tokens</h1>
+    <p class="dek">Why grouping nearby observations can make attention cheaper—and exact lags harder to recover</p>
+  </header>
+  <div class="reading-layout">
+    <article class="article-content">
+
+<p>A language Transformer receives words or subwords. What should count as a token in a time series?</p>
+<p>One answer is an individual timestamp. Another is a short contiguous segment—a patch.</p>
+<p>Patching changes the representation before attention begins. Instead of asking the Transformer to relate 168 individual tokens, a model can group them into fourteen 12-step tokens. Each token contains a local segment shape.</p>
+<p>The idea trades temporal resolution for shorter attention and richer local units.</p>
+<h2 id="from-points-to-patches">From points to patches</h2>
+<p>For one feature channel, a 12-step patch is a vector of 12 values. With 16 channels, it contains 192 values.</p>
+<p>A concrete example uses:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>lookback:   168 hours
+patch size: 12 hours
+stride:     12 hours
+patches:    14
+</pre></div>
+</code></pre>
+<p>The patches do not overlap. PyTorch creates them with <code>unfold</code>, rearranges their dimensions, and flattens each patch across time and features:</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="n">patches</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">unfold</span><span class="p">(</span><span class="n">dimension</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="n">patches</span> <span class="o">=</span> <span class="n">patches</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</code></pre>
+<p>A learned linear projection maps every flattened patch to a 64-dimensional token.</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>[batch, 168, F]
+      ↓ patch
+[batch, 14, 12 × F]
+      ↓ project
+[batch, 14, 64]
+</pre></div>
+</code></pre>
+<p>The Transformer encoder now attends over 14 tokens rather than 168.</p>
+<h2 id="why-patches-can-help">Why patches can help</h2>
+<p>Individual scalar timestamps have little semantic content. A local segment can express a shape: rising morning use, an evening peak, or a quiet overnight period.</p>
+<p>Patches offer three practical advantages:</p>
+<ol>
+<li><strong>Shorter attention.</strong> Pairwise attention positions fall from <code>168² = 28,224</code> to <code>14² = 196</code> per head.</li>
+<li><strong>Local pattern packaging.</strong> The projection can learn a compact representation of each 12-hour shape.</li>
+<li><strong>Longer feasible context.</strong> Because token count is smaller, the same attention budget can cover more raw history.</li>
+</ol>
+<p>The cost is compression. The model must preserve useful within-patch timing through a single projected token.</p>
+<h2 id="exact-offsets-become-awkward">Exact offsets become awkward</h2>
+<p>A daily lag is 24 hours—exactly two patches in this setup. A weekly lag spans all fourteen.</p>
+<p>That sounds convenient, but a 7 p.m. observation is not necessarily aligned to the same coordinate in every 12-hour patch unless forecast origins and patch boundaries share a stable phase. The projection must preserve within-patch position before attention can compare corresponding hours.</p>
+<p>Overlapping patches can reduce boundary sensitivity. So can patch lengths aligned with known cycles in the domain.</p>
+<p>Patch size is not merely a performance knob. It encodes a belief about the temporal unit that deserves a token.</p>
+<h2 id="a-simple-patch-architecture">A simple patch architecture</h2>
+<p>After patch projection, the model adds learned positional embeddings and applies two encoder layers with four attention heads. It normalizes and averages all patch tokens, then maps the pooled representation to 24 future values.</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_proj</span><span class="p">(</span><span class="n">patches</span><span class="p">)</span>
+<span class="n">z</span> <span class="o">=</span> <span class="n">z</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">[:,</span> <span class="p">:</span><span class="n">z</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span>
+<span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+<span class="n">forecast</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">z</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)))</span>
+</pre></div>
+</code></pre>
+<p>Mean pooling treats every patch symmetrically after positional encoding. It is efficient, but it may dilute recency. A learned forecast token or horizon-specific query could let the model retrieve different patches for different future hours.</p>
+<h2 id="why-this-is-not-a-patchtst-benchmark">Why this is not a PatchTST benchmark</h2>
+<p>The influential PatchTST architecture combines patching with channel independence: each variable is treated as a separate univariate sequence while projection and Transformer weights are shared across channels.</p>
+<p>A simpler implementation may flatten all feature channels together inside each patch. That is a reasonable educational patch Transformer, but it is structurally different.</p>
+<p>This distinction matters. PatchTST can motivate the design without making every patched encoder a reproduction of the published architecture.</p>
+<h2 id="choosing-patch-length-and-stride">Choosing patch length and stride</h2>
+<p>Short patches preserve detail but produce more tokens. Long patches reduce attention cost but demand more compression from the projection layer.</p>
+<p>Stride controls overlap. A stride equal to patch length is cheap and simple. A smaller stride lets patterns cross patch boundaries and increases token count.</p>
+<p>Treat patch length and stride as model hyperparameters. Test whether performance changes when forecast origins shift relative to patch boundaries; a good design should not succeed only under one lucky alignment.</p>
+<h2 id="complete-pytorch-implementation">Complete PyTorch implementation</h2>
+<p>The complete implementation shows the dimension change that is easy to get wrong. PyTorch’s <code>unfold</code> places the feature dimension before the patch dimension, so the tensor is permuted before time and features are flattened into one patch vector.</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PatchTransformerForecaster</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">lookback</span><span class="p">,</span>
+        <span class="n">n_features</span><span class="p">,</span>
+        <span class="n">horizon</span><span class="p">,</span>
+        <span class="n">patch_len</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span>
+        <span class="n">stride</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span>
+        <span class="n">d_model</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+        <span class="n">nhead</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+        <span class="n">layers</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="n">dropout</span><span class="o">=</span><span class="mf">0.10</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">lookback</span> <span class="o">&lt;</span> <span class="n">patch_len</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"lookback must be at least patch_len"</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">d_model</span> <span class="o">%</span> <span class="n">nhead</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"d_model must be divisible by nhead"</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">patch_len</span> <span class="o">=</span> <span class="n">patch_len</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stride</span> <span class="o">=</span> <span class="n">stride</span>
+        <span class="n">n_patches</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="p">(</span>
+            <span class="n">lookback</span> <span class="o">-</span> <span class="n">patch_len</span>
+        <span class="p">)</span> <span class="o">//</span> <span class="n">stride</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">patch_projection</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span>
+            <span class="n">patch_len</span> <span class="o">*</span> <span class="n">n_features</span><span class="p">,</span>
+            <span class="n">d_model</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_patches</span><span class="p">,</span> <span class="n">d_model</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">encoder_layer</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">TransformerEncoderLayer</span><span class="p">(</span>
+            <span class="n">d_model</span><span class="o">=</span><span class="n">d_model</span><span class="p">,</span>
+            <span class="n">nhead</span><span class="o">=</span><span class="n">nhead</span><span class="p">,</span>
+            <span class="n">dim_feedforward</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+            <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">,</span>
+            <span class="n">batch_first</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">norm_first</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">TransformerEncoder</span><span class="p">(</span>
+            <span class="n">encoder_layer</span><span class="p">,</span>
+            <span class="n">num_layers</span><span class="o">=</span><span class="n">layers</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">norm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">horizon</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">patches</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">unfold</span><span class="p">(</span>
+            <span class="n">dimension</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">patch_len</span><span class="p">,</span>
+            <span class="n">step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stride</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">patches</span> <span class="o">=</span> <span class="n">patches</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span>
+            <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">patches</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"input creates too many patches"</span>
+            <span class="p">)</span>
+
+        <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_projection</span><span class="p">(</span><span class="n">patches</span><span class="p">)</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">z</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">[:,</span> <span class="p">:</span><span class="n">z</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="p">:]</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+        <span class="n">pooled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">z</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">pooled</span><span class="p">)</span>
+
+
+<span class="n">LOOKBACK</span> <span class="o">=</span> <span class="mi">168</span>
+<span class="n">N_FEATURES</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">HORIZON</span> <span class="o">=</span> <span class="mi">24</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">PatchTransformerForecaster</span><span class="p">(</span>
+    <span class="n">lookback</span><span class="o">=</span><span class="n">LOOKBACK</span><span class="p">,</span>
+    <span class="n">n_features</span><span class="o">=</span><span class="n">N_FEATURES</span><span class="p">,</span>
+    <span class="n">horizon</span><span class="o">=</span><span class="n">HORIZON</span><span class="p">,</span>
+    <span class="n">patch_len</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span>
+    <span class="n">stride</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">LOOKBACK</span><span class="p">,</span> <span class="n">N_FEATURES</span><span class="p">)</span>
+<span class="n">y_hat</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">y_hat</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">HORIZON</span><span class="p">)</span>
+</pre></div>
+</code></pre>
+<p>This is the simplified multichannel patch Transformer used in the notebook, not a complete PatchTST reproduction. The same verified implementation is available in the <a href="code/sequence_models.py">companion model module</a>. The full Dataset, DataLoader, and fit/evaluate workflow is explained in the <a href="pytorch-data-pipeline-and-training-loop.html">shared PyTorch training companion</a>.</p>
+<h2 id="common-failure-modes">Common failure modes</h2>
+<p>Patches can hide sharp events, blur exact offsets, and make recency harder to preserve under mean pooling. Wide multichannel patches can also make the projection layer large.</p>
+<p>The model may appear efficient because attention is shorter while silently moving most parameters into the patch projection. Report both token count and total parameter count.</p>
+<h2 id="when-to-choose-patching">When to choose patching</h2>
+<p>Patching is attractive when context is long, local segments form meaningful units, and full point-wise attention is expensive.</p>
+<p>Always test:</p>
+<ul>
+<li>patch length;</li>
+<li>stride and overlap;</li>
+<li>boundary alignment;</li>
+<li>channel mixing;</li>
+<li>pooling or decoder strategy;</li>
+<li>performance by forecast horizon.</li>
+</ul>
+<p>The best patch is a property of the data and forecasting interface, not a universal constant.</p>
+<p>Part 11 turns away from attention and returns to dense layers, arranged as iterative backcast and forecast residual blocks: N-BEATS-style forecasting.</p>
+<h2 id="further-reading">Further reading</h2>
+<ul>
+<li><a href="https://openreview.net/pdf?id=Jbdc0vTOcol" rel="noopener noreferrer">Nie et al., “A Time Series Is Worth 64 Words: Long-Term Forecasting with Transformers”</a></li>
+</ul>
+<hr/>
+</article>
+    <aside class="toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#from-points-to-patches">From points to patches</a></li><li><a href="#why-patches-can-help">Why patches can help</a></li><li><a href="#exact-offsets-become-awkward">Exact offsets become awkward</a></li><li><a href="#a-simple-patch-architecture">A simple patch architecture</a></li><li><a href="#why-this-is-not-a-patchtst-benchmark">Why this is not a PatchTST benchmark</a></li><li><a href="#choosing-patch-length-and-stride">Choosing patch length and stride</a></li><li><a href="#complete-pytorch-implementation">Complete PyTorch implementation</a></li><li><a href="#common-failure-modes">Common failure modes</a></li><li><a href="#when-to-choose-patching">When to choose patching</a></li><li><a href="#further-reading">Further reading</a></li></ol></aside>
+  </div>
+  <nav class="article-pager" aria-label="Article navigation"><a class="pager-card previous" href="08-transformer-forecaster.html"><span>Previous</span><strong>Transformer Forecasting: Let Every Time Step Look at Every Other Step</strong></a><a class="pager-card next" href="10-nbeats-style-forecaster.html"><span>Next</span><strong>N-BEATS-Style Forecasting: Explaining the Past to Build the Future</strong></a></nav>
+</main>
+<footer class="site-footer"><p>Sequence Models for Prediction · Open code, reproducible experiments, honest baselines.</p><a href="index.html">Series index</a></footer>
+</body>
+</html>

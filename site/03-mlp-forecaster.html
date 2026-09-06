@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MLP Forecasting: A Nonlinear Map from Past Window to Future Path — Sequence Models for Prediction</title>
+<meta name="description" content="How a multilayer perceptron models time without recurrence, convolution, or attention">
+<link rel="canonical" href="https://adidror005.github.io/sequence-models-for-prediction/03-mlp-forecaster.html">
+<link rel="stylesheet" href="styles.css">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="MLP Forecasting: A Nonlinear Map from Past Window to Future Path">
+<meta property="og:description" content="How a multilayer perceptron models time without recurrence, convolution, or attention">
+<meta property="og:url" content="https://adidror005.github.io/sequence-models-for-prediction/03-mlp-forecaster.html">
+<meta property="og:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="MLP Forecasting: A Nonlinear Map from Past Window to Future Path">
+<meta name="twitter:description" content="How a multilayer perceptron models time without recurrence, convolution, or attention">
+<meta name="twitter:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="index.html"><span class="brand-mark">S</span><span>Sequence Models<br><small>for Prediction</small></span></a>
+  <nav aria-label="Primary navigation"><a href="index.html#series">All articles</a><a href="index.html#about">About</a><a class="github-link" href="https://github.com/adidror005/sequence-models-for-prediction">View source</a></nav>
+</header>
+<div class="reading-progress" style="--progress: 26.67%"></div>
+<main>
+  <header class="article-hero">
+    <a class="back-link" href="index.html">← Series home</a>
+    <p class="eyebrow">Part 4 of 15 · Models</p>
+    <h1>MLP Forecasting: A Nonlinear Map from Past Window to Future Path</h1>
+    <p class="dek">How a multilayer perceptron models time without recurrence, convolution, or attention</p>
+  </header>
+  <div class="reading-layout">
+    <article class="article-content">
+
+<p>The multilayer perceptron asks a blunt but surprisingly powerful question:</p>
+<blockquote>
+<p>What if we give a nonlinear function the entire historical window at once?</p>
+</blockquote>
+<p>No hidden state moves through time. No filter slides across hours. No attention head searches the past. The sequence is flattened into one long vector, and dense layers learn a direct mapping to the next 24 values.</p>
+<p>This sacrifices elegant temporal structure in exchange for global access and flexible interactions.</p>
+<h2 id="from-a-window-to-a-vector">From a window to a vector</h2>
+<p>For one input channel, the 168-step history becomes a vector of length 168. With 16 channels, it becomes a vector of length 2,688.</p>
+<p>A compact forecasting network might be:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>168 × F inputs
+      ↓
+256 hidden units + ReLU + dropout
+      ↓
+128 hidden units + ReLU + dropout
+      ↓
+24 forecast values
+</pre></div>
+</code></pre>
+<p>In compact PyTorch:</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">net</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+    <span class="n">nn</span><span class="o">.</span><span class="n">Flatten</span><span class="p">(),</span>
+    <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">168</span> <span class="o">*</span> <span class="n">n_features</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
+    <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+    <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="mf">0.10</span><span class="p">),</span>
+    <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">128</span><span class="p">),</span>
+    <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+    <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="mf">0.10</span><span class="p">),</span>
+    <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">24</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</code></pre>
+<p>The first hidden layer can combine any historical positions. A unit might activate when demand was high this morning, low overnight, and more volatile than usual during the prior day. The second layer can combine those learned conditions into a forecast trajectory.</p>
+<h2 id="intuition-templates-for-regimes">Intuition: templates for regimes</h2>
+<p>A linear model uses one fixed weighted relationship. ReLU layers divide the input space into many regions, allowing different effective linear rules in different regimes.</p>
+<p>Imagine three recurring household patterns:</p>
+<ul>
+<li>an ordinary weekday;</li>
+<li>a quiet weekend;</li>
+<li>an unusually volatile day.</li>
+</ul>
+<p>Different hidden units can respond to each pattern. The output layer then blends their contributions for every future horizon.</p>
+<p>That does not mean the network discovers named regimes. It means its piecewise-linear mapping can behave as if different rules apply to different parts of the input space.</p>
+<h2 id="what-the-mlp-does-not-know">What the MLP does not know</h2>
+<p>Flattening erases architectural knowledge of adjacency.</p>
+<p>The model receives separate coordinates for “three hours ago” and “four hours ago,” but nothing in the dense layer says those positions are neighbors. If the same short pattern shifts by one hour, the MLP must learn another set of weights.</p>
+<p>This contrasts with a convolution, which applies the same local detector across the window, and with recurrence, which reuses the same transition at every time step.</p>
+<p>The MLP can still learn temporal patterns. It simply receives no built-in incentive to learn them efficiently.</p>
+<h2 id="input-width-becomes-model-width">Input width becomes model width</h2>
+<p>Parameter count changes dramatically as channels are added:</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Input channels</th>
+<th style="text-align:right">Flattened values</th>
+<th style="text-align:right">Trainable parameters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td style="text-align:right">168</td>
+<td style="text-align:right">79,256</td>
+</tr>
+<tr>
+<td>6</td>
+<td style="text-align:right">1,008</td>
+<td style="text-align:right">294,296</td>
+</tr>
+<tr>
+<td>16</td>
+<td style="text-align:right">2,688</td>
+<td style="text-align:right">724,376</td>
+</tr>
+</tbody>
+</table></div>
+<p>Most of the growth occurs in the first dense layer. The richer representation creates a model with more than nine times as many parameters as the demand-only version.</p>
+<p>This matters whenever versions of a model have different input widths. A parameter-matched design could insert a shared per-timestep projection before flattening or reduce hidden width as the channel count grows.</p>
+<h2 id="how-the-mlp-learns">How the MLP learns</h2>
+<p>Training repeatedly compares the 24 predicted values with the 24 targets, differentiates the loss, and adjusts every dense-layer weight through backpropagation.</p>
+<p>ReLU is responsible for the nonlinear behavior. Without an activation between dense layers, the entire stack would collapse into one linear transformation, regardless of its depth.</p>
+<p>Dropout randomly suppresses hidden activations during training. This discourages the network from relying on one fragile combination of inputs. Weight decay penalizes large parameters, and early stopping limits how long the network can fit the training set after validation performance stops improving.</p>
+<p>Input scaling is especially important. A large-magnitude feature can dominate early gradients even when it contains little useful information.</p>
+<h2 id="why-direct-multi-horizon-output-fits-an-mlp">Why direct multi-horizon output fits an MLP</h2>
+<p>The network produces all 24 future hours together. Each output has its own final-layer weights but shares the hidden representation.</p>
+<p>This lets the model learn relationships across horizons indirectly. A hidden unit associated with “weekday morning ramp” can influence several future hours with different strengths.</p>
+<p>The alternative would train 24 separate networks or recursively feed one prediction back at a time. Shared direct output is simpler and avoids error accumulation.</p>
+<p>It does not explicitly enforce a smooth forecast path. If that matters, the loss can include a penalty on unrealistic hour-to-hour changes, or the output can be parameterized as a level plus cumulative increments.</p>
+<h2 id="complete-pytorch-implementation">Complete PyTorch implementation</h2>
+<p>The complete model below matches the experiment: two nonlinear hidden layers, dropout after each, and one direct output for every forecast horizon.</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MLPForecaster</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">lookback</span><span class="p">,</span>
+        <span class="n">n_features</span><span class="p">,</span>
+        <span class="n">horizon</span><span class="p">,</span>
+        <span class="n">hidden</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
+        <span class="n">dropout</span><span class="o">=</span><span class="mf">0.10</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">net</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Flatten</span><span class="p">(),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span>
+                <span class="n">lookback</span> <span class="o">*</span> <span class="n">n_features</span><span class="p">,</span>
+                <span class="n">hidden</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden</span><span class="p">,</span> <span class="mi">128</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="n">horizon</span><span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="c1"># x: [batch, lookback, features]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">net</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+
+<span class="n">LOOKBACK</span> <span class="o">=</span> <span class="mi">168</span>
+<span class="n">N_FEATURES</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">HORIZON</span> <span class="o">=</span> <span class="mi">24</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">MLPForecaster</span><span class="p">(</span>
+    <span class="n">lookback</span><span class="o">=</span><span class="n">LOOKBACK</span><span class="p">,</span>
+    <span class="n">n_features</span><span class="o">=</span><span class="n">N_FEATURES</span><span class="p">,</span>
+    <span class="n">horizon</span><span class="o">=</span><span class="n">HORIZON</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">LOOKBACK</span><span class="p">,</span> <span class="n">N_FEATURES</span><span class="p">)</span>
+<span class="n">y_hat</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">y_hat</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">HORIZON</span><span class="p">)</span>
+</pre></div>
+</code></pre>
+<p>The same verified implementation is available in the <a href="code/sequence_models.py">companion model module</a>. The complete Dataset, DataLoader, and fit/evaluate workflow is explained in the <a href="pytorch-data-pipeline-and-training-loop.html">shared PyTorch training companion</a>.</p>
+<h2 id="common-failure-modes">Common failure modes</h2>
+<p>The MLP’s capacity makes memorization easy. Overlapping windows create many training examples that look different in a table but share most of their raw observations. A random split can then produce spectacularly misleading validation results.</p>
+<p>Dense models also tie every learned weight to an exact input position. If a recurring pattern shifts by one step, the network has no built-in translation invariance.</p>
+<p>Watch for a widening gap between training and validation loss, sensitivity to window length, unstable results across seeds, and large parameter jumps when features are added.</p>
+<h2 id="when-an-mlp-is-the-right-choice">When an MLP is the right choice</h2>
+<p>An MLP is attractive when:</p>
+<ul>
+<li>the input window has fixed length;</li>
+<li>any historical position may interact with any other;</li>
+<li>training speed and implementation simplicity matter;</li>
+<li>the dataset is large enough for dense parameters;</li>
+<li>you want a strong nonlinear baseline before specialized sequence machinery.</li>
+</ul>
+<p>It is less attractive when local patterns should be reusable across time, context length is very large, or parameter efficiency matters.</p>
+<p>Part 5 introduces an architecture that processes the window in order and carries a learned state forward: the LSTM.</p>
+<hr/>
+</article>
+    <aside class="toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#from-a-window-to-a-vector">From a window to a vector</a></li><li><a href="#intuition-templates-for-regimes">Intuition: templates for regimes</a></li><li><a href="#what-the-mlp-does-not-know">What the MLP does not know</a></li><li><a href="#input-width-becomes-model-width">Input width becomes model width</a></li><li><a href="#how-the-mlp-learns">How the MLP learns</a></li><li><a href="#why-direct-multi-horizon-output-fits-an-mlp">Why direct multi-horizon output fits an MLP</a></li><li><a href="#complete-pytorch-implementation">Complete PyTorch implementation</a></li><li><a href="#common-failure-modes">Common failure modes</a></li><li><a href="#when-an-mlp-is-the-right-choice">When an MLP is the right choice</a></li></ol></aside>
+  </div>
+  <nav class="article-pager" aria-label="Article navigation"><a class="pager-card previous" href="02-linear-forecaster.html"><span>Previous</span><strong>Linear Forecasting: The Baseline That Sees the Whole Window</strong></a><a class="pager-card next" href="04-lstm-forecaster.html"><span>Next</span><strong>LSTM Forecasting: Learning What to Remember</strong></a></nav>
+</main>
+<footer class="site-footer"><p>Sequence Models for Prediction · Open code, reproducible experiments, honest baselines.</p><a href="index.html">Series index</a></footer>
+</body>
+</html>

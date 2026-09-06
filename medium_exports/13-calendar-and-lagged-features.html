@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Do Calendar and Lagged Features Help Sequence Models? — Medium export</title>
+<style>
+:root { color-scheme: light; }
+body { margin: 0; color: #242424; background: #f5f5f2; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.toolbar { position: sticky; top: 0; z-index: 5; padding: 14px 20px; color: #fff; background: #17324d; box-shadow: 0 2px 8px #0002; }
+.toolbar-inner { max-width: 1080px; margin: auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.toolbar strong { margin-right: auto; }
+button, .toolbar a { border: 1px solid #ffffff77; border-radius: 999px; padding: 8px 14px; color: white; background: transparent; font-weight: 600; text-decoration: none; cursor: pointer; }
+button.primary { color: #17324d; background: white; }
+.copy-status { width: 100%; color: #d9e6f2; font-size: 13px; }
+.instructions { max-width: 920px; margin: 28px auto 0; padding: 18px 24px; border-radius: 12px; background: #fff7d6; line-height: 1.5; }
+.instructions h2 { margin-top: 0; font-size: 20px; }
+.instructions code { background: #ffffff99; padding: 2px 5px; }
+.article-shell { max-width: 820px; margin: 28px auto 80px; padding: 56px 64px; background: white; box-shadow: 0 1px 8px #00000012; }
+.article-content { font-family: Georgia, Cambria, "Times New Roman", serif; font-size: 21px; line-height: 1.62; }
+.article-content h1 { margin: 0 0 12px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 46px; line-height: 1.12; letter-spacing: -0.025em; }
+.article-content h2 { margin: 50px 0 14px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 30px; line-height: 1.22; }
+.article-content h3 { margin: 34px 0 10px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 24px; line-height: 1.3; }
+.article-content p { margin: 0 0 24px; }
+.article-content ul, .article-content ol { margin: 0 0 24px; padding-left: 30px; }
+.article-content li { margin: 7px 0; }
+.article-content blockquote { margin: 32px 0; padding: 4px 0 4px 24px; border-left: 4px solid #242424; font-size: 25px; font-style: italic; }
+.article-content a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.article-content a.needs-live-url { text-decoration-color: #d93025; text-decoration-style: wavy; }
+.article-content img { display: block; max-width: 100%; height: auto; margin: 36px auto 10px; }
+.article-content figure { margin: 38px 0; }
+.article-content figcaption { color: #6b6b6b; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; text-align: center; }
+.article-content pre, .highlight { overflow-x: auto; margin: 28px 0; padding: 20px; border-radius: 6px; background: #f5f5f5; font-size: 15px; line-height: 1.5; }
+.article-content code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+.article-content :not(pre) > code { padding: 2px 5px; border-radius: 3px; background: #f2f2f2; font-size: 0.82em; }
+.article-content hr { margin: 48px 0; border: 0; text-align: center; }
+.article-content hr::after { content: "···"; letter-spacing: 14px; }
+pre { line-height: 125%; }
+td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+.highlight .hll { background-color: #ffffcc }
+.highlight { background: #f8f8f8; }
+.highlight .c { color: #3D7B7B; font-style: italic } /* Comment */
+.highlight .err { border: 1px solid #F00 } /* Error */
+.highlight .k { color: #008000; font-weight: bold } /* Keyword */
+.highlight .o { color: #666 } /* Operator */
+.highlight .ch { color: #3D7B7B; font-style: italic } /* Comment.Hashbang */
+.highlight .cm { color: #3D7B7B; font-style: italic } /* Comment.Multiline */
+.highlight .cp { color: #9C6500 } /* Comment.Preproc */
+.highlight .cpf { color: #3D7B7B; font-style: italic } /* Comment.PreprocFile */
+.highlight .c1 { color: #3D7B7B; font-style: italic } /* Comment.Single */
+.highlight .cs { color: #3D7B7B; font-style: italic } /* Comment.Special */
+.highlight .gd { color: #A00000 } /* Generic.Deleted */
+.highlight .ge { font-style: italic } /* Generic.Emph */
+.highlight .ges { font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.highlight .gr { color: #E40000 } /* Generic.Error */
+.highlight .gh { color: #000080; font-weight: bold } /* Generic.Heading */
+.highlight .gi { color: #008400 } /* Generic.Inserted */
+.highlight .go { color: #717171 } /* Generic.Output */
+.highlight .gp { color: #000080; font-weight: bold } /* Generic.Prompt */
+.highlight .gs { font-weight: bold } /* Generic.Strong */
+.highlight .gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+.highlight .gt { color: #04D } /* Generic.Traceback */
+.highlight .kc { color: #008000; font-weight: bold } /* Keyword.Constant */
+.highlight .kd { color: #008000; font-weight: bold } /* Keyword.Declaration */
+.highlight .kn { color: #008000; font-weight: bold } /* Keyword.Namespace */
+.highlight .kp { color: #008000 } /* Keyword.Pseudo */
+.highlight .kr { color: #008000; font-weight: bold } /* Keyword.Reserved */
+.highlight .kt { color: #B00040 } /* Keyword.Type */
+.highlight .m { color: #666 } /* Literal.Number */
+.highlight .s { color: #BA2121 } /* Literal.String */
+.highlight .na { color: #687822 } /* Name.Attribute */
+.highlight .nb { color: #008000 } /* Name.Builtin */
+.highlight .nc { color: #00F; font-weight: bold } /* Name.Class */
+.highlight .no { color: #800 } /* Name.Constant */
+.highlight .nd { color: #A2F } /* Name.Decorator */
+.highlight .ni { color: #717171; font-weight: bold } /* Name.Entity */
+.highlight .ne { color: #CB3F38; font-weight: bold } /* Name.Exception */
+.highlight .nf { color: #00F } /* Name.Function */
+.highlight .nl { color: #767600 } /* Name.Label */
+.highlight .nn { color: #00F; font-weight: bold } /* Name.Namespace */
+.highlight .nt { color: #008000; font-weight: bold } /* Name.Tag */
+.highlight .nv { color: #19177C } /* Name.Variable */
+.highlight .ow { color: #A2F; font-weight: bold } /* Operator.Word */
+.highlight .w { color: #BBB } /* Text.Whitespace */
+.highlight .mb { color: #666 } /* Literal.Number.Bin */
+.highlight .mf { color: #666 } /* Literal.Number.Float */
+.highlight .mh { color: #666 } /* Literal.Number.Hex */
+.highlight .mi { color: #666 } /* Literal.Number.Integer */
+.highlight .mo { color: #666 } /* Literal.Number.Oct */
+.highlight .sa { color: #BA2121 } /* Literal.String.Affix */
+.highlight .sb { color: #BA2121 } /* Literal.String.Backtick */
+.highlight .sc { color: #BA2121 } /* Literal.String.Char */
+.highlight .dl { color: #BA2121 } /* Literal.String.Delimiter */
+.highlight .sd { color: #BA2121; font-style: italic } /* Literal.String.Doc */
+.highlight .s2 { color: #BA2121 } /* Literal.String.Double */
+.highlight .se { color: #AA5D1F; font-weight: bold } /* Literal.String.Escape */
+.highlight .sh { color: #BA2121 } /* Literal.String.Heredoc */
+.highlight .si { color: #A45A77; font-weight: bold } /* Literal.String.Interpol */
+.highlight .sx { color: #008000 } /* Literal.String.Other */
+.highlight .sr { color: #A45A77 } /* Literal.String.Regex */
+.highlight .s1 { color: #BA2121 } /* Literal.String.Single */
+.highlight .ss { color: #19177C } /* Literal.String.Symbol */
+.highlight .bp { color: #008000 } /* Name.Builtin.Pseudo */
+.highlight .fm { color: #00F } /* Name.Function.Magic */
+.highlight .vc { color: #19177C } /* Name.Variable.Class */
+.highlight .vg { color: #19177C } /* Name.Variable.Global */
+.highlight .vi { color: #19177C } /* Name.Variable.Instance */
+.highlight .vm { color: #19177C } /* Name.Variable.Magic */
+.highlight .il { color: #666 } /* Literal.Number.Integer.Long */
+@media (max-width: 760px) {
+  .article-shell { margin: 0; padding: 36px 22px 60px; box-shadow: none; }
+  .article-content { font-size: 19px; }
+  .article-content h1 { font-size: 36px; }
+  .instructions { margin: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <strong>Medium export · 13-calendar-and-lagged-features.md</strong>
+    <button class="primary" onclick="copyRichArticle()">Copy rich article</button>
+    <button onclick="selectArticle()">Select article</button>
+    <a href="index.html">Export index</a>
+    <span id="copy-status" class="copy-status" aria-live="polite"></span>
+  </div>
+</div>
+<aside class="instructions">
+  <h2>Transfer notes</h2>
+  <p><strong>Replace 3 local series link(s) with live Medium URLs before publishing.</strong></p>
+  <p><strong>Suggested Medium tags:</strong> Feature Engineering, Time Series, Data Leakage, Forecasting, Python</p>
+  <p>This preview contains 24 code block(s) and 1 rendered table image(s). After pasting, recreate code using Medium’s native code-block control and upload every image from the export package.</p>
+  <details><summary>Images required by this article</summary><ul><li><a href="assets/model-feature-rmse-editorial.png" target="_blank">assets/model-feature-rmse-editorial.png</a></li><li><a href="table_images/13-calendar-and-lagged-features-table-1.png" target="_blank">table_images/13-calendar-and-lagged-features-table-1.png</a></li><li><a href="assets/engineered-history-gain-editorial.png" target="_blank">assets/engineered-history-gain-editorial.png</a></li><li><a href="assets/transformer-rmse-by-horizon.png" target="_blank">assets/transformer-rmse-by-horizon.png</a></li><li><a href="assets/lstm-validation-curves.png" target="_blank">assets/lstm-validation-curves.png</a></li></ul></details>
+</aside>
+<main class="article-shell">
+  <article class="article-content"><h1>Do Calendar and Lagged Features Help Sequence Models?</h1>
+<p><em>When extra inputs add signal, supply a shortcut, or merely duplicate what the model already sees</em></p>
+<p><strong>Series:</strong> Sequence Models for Prediction, Part 14 of 15</p>
+<p>Part 13 compared nine architectures using the same single input: one week of raw electricity demand. That isolated the model question.</p>
+<p>Now we can change the representation.</p>
+<p>A feature list looks harmless.</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="n">FEATURE_SETS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"demand_only"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"demand_z"</span><span class="p">],</span>
+    <span class="s2">"demand_calendar"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"demand_z"</span><span class="p">,</span> <span class="o">*</span><span class="n">CALENDAR_COLS</span><span class="p">],</span>
+    <span class="s2">"demand_calendar_engineered"</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"demand_z"</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">ENGINEERED_HISTORY_COLS</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">CALENDAR_COLS</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">}</span>
+</pre></div>
+</code></pre>
+<p>But in time-series work, every column is also a statement about information: what was known, when it was known, and how far into the past the model can reach.</p>
+<p>This experiment contains three useful classes of feature.</p>
+<h2>1. The raw target history</h2>
+<p><code>demand_z</code> is hourly electricity demand standardized with statistics from the training period:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>demand_z = (demand_kw - training_mean) / training_std
+</pre></div>
+</code></pre>
+<p>Computing the scaler on the training segment is essential. A mean or standard deviation calculated on the full dataset would let validation and test values influence preprocessing.</p>
+<p>At a forecast origin <code>t</code>, the demand-only model receives:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>demand[t-168], ..., demand[t-1]
+</pre></div>
+</code></pre>
+<p>and predicts:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>demand[t], ..., demand[t+23]
+</pre></div>
+</code></pre>
+<p>That is the baseline information budget: 168 observed target values.</p>
+<h2>2. Calendar identity</h2>
+<p>Hour and weekday are circular variables. Treating hour as an integer creates an artificial cliff between 23 and 0, even though those hours are adjacent.</p>
+<p>The usual encoding places each hour on a circle:</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="n">hour_sin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">hour</span> <span class="o">/</span> <span class="mi">24</span><span class="p">)</span>
+<span class="n">hour_cos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">hour</span> <span class="o">/</span> <span class="mi">24</span><span class="p">)</span>
+</pre></div>
+</code></pre>
+<p>Day of week receives the same treatment with a period of seven. A weekend flag adds a coarser behavioral distinction.</p>
+<p>These features expose periodic position rather than a transformation of demand. They are also known in advance. In the notebook they accompany historical input steps, which helps anchor the sequence in the weekly cycle. A more complete multi-horizon model could additionally pass the 24 future timestamps as known future covariates.</p>
+<p>That would be a separate experimental condition. Adding it silently would change the forecasting interface.</p>
+<h2>3. Engineered demand history</h2>
+<p>The engineered group contains ten channels:</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="n">ENGINEERED_HISTORY_COLS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">"lag_24_z"</span><span class="p">,</span>
+    <span class="s2">"lag_168_z"</span><span class="p">,</span>
+    <span class="s2">"diff_1_z"</span><span class="p">,</span>
+    <span class="s2">"diff_24_z"</span><span class="p">,</span>
+    <span class="s2">"mean_24_z"</span><span class="p">,</span>
+    <span class="s2">"std_24_z"</span><span class="p">,</span>
+    <span class="s2">"mean_168_z"</span><span class="p">,</span>
+    <span class="s2">"std_168_z"</span><span class="p">,</span>
+    <span class="s2">"level_z_24"</span><span class="p">,</span>
+    <span class="s2">"level_z_168"</span><span class="p">,</span>
+<span class="p">]</span>
+</pre></div>
+</code></pre>
+<p>Each family encodes a different inductive hint.</p>
+<h3>Lags: “compare this moment with a meaningful offset”</h3>
+<p><code>lag_24_z</code> exposes the same hour yesterday. <code>lag_168_z</code> exposes the same hour one week ago.</p>
+<p>Lags turn a potentially difficult memory problem into a local channel comparison. A model at input step <code>u</code> no longer has to travel 168 positions to compare <code>demand[u]</code> and <code>demand[u-168]</code>; both values sit in the feature vector at step <code>u</code>.</p>
+<h3>Differences: “focus on movement, not just level”</h3>
+<p><code>diff_1_z</code> measures the latest hourly movement. <code>diff_24_z</code> measures the change relative to yesterday at the same time.</p>
+<p>Differences can make turning points easier to recognize, although they are algebraically redundant when both component values are available.</p>
+<h3>Rolling moments: “summarize the local regime”</h3>
+<p>Daily and weekly rolling means describe level. Rolling standard deviations describe recent variability.</p>
+<p>These summaries can be useful when a compact architecture struggles to aggregate many observations. They can also smooth away structure or create correlated input channels.</p>
+<h3>Relative level: “how unusual is now?”</h3>
+<p>The final two fields compare current standardized demand with its rolling distribution:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>level_z_24  = (demand_z - mean_24_z)  / (std_24_z  + epsilon)
+level_z_168 = (demand_z - mean_168_z) / (std_168_z + epsilon)
+</pre></div>
+</code></pre>
+<p>They provide a local anomaly score: not simply whether demand is high, but whether it is high relative to the recent day or week.</p>
+<h2>Causal does not mean equal information</h2>
+<p>All of these features are constructed with backward-looking shifts and rolling windows. Nothing after the forecast origin is used. That makes them causal.</p>
+<p>It does <strong>not</strong> mean that all three feature sets contain the same raw history.</p>
+<p>Consider the <code>lag_168_z</code> channel. The engineered model still receives 168 feature rows, covering timestamps <code>t-168</code> through <code>t-1</code>. But the lag value attached to the first row is:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>lag_168 at t-168 = demand[t-336]
+</pre></div>
+</code></pre>
+<p>The final lag value is:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>lag_168 at t-1 = demand[t-169]
+</pre></div>
+</code></pre>
+<p>So that one channel exposes a second week of raw observations:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>demand-only raw reach:  t-168 ... t-1
+engineered raw reach:   t-336 ... t-1
+</pre></div>
+</code></pre>
+<p>Weekly rolling statistics have a similar effect. The engineered model has a wider historical information budget, even though <code>X.shape[1]</code> remains 168.</p>
+<p>This is not future leakage. Every value was available at prediction time. It is an ablation-design confound: the experiment changes both representation and historical reach.</p>
+<h2>Three fair questions, not one</h2>
+<p>Once we see the distinction, the original question separates into three better experiments.</p>
+<h3>Experiment A: Does more raw history help?</h3>
+<p>Give every model 336 raw hourly demand values, then compare it with a 168-row engineered representation that can reach the same oldest timestamp.</p>
+<p>This measures whether manual compression is a useful way to package a larger context.</p>
+<h3>Experiment B: Does engineering help under a fixed history budget?</h3>
+<p>Restrict every derived feature to the same 168 raw observations available to the demand-only model. Unavailable lag values near the beginning of the window must be masked, omitted, or summarized only at the forecast origin.</p>
+<p>This is the cleanest test of representation engineering.</p>
+<h3>Experiment C: Do known future timestamps help?</h3>
+<p>Pass the calendar fields for <code>t</code> through <code>t+23</code> through an explicit future-covariate path. Compare that with historical calendar fields only.</p>
+<p>This measures the value of future-known information, not just a label attached to the past.</p>
+<h2>Identical origins still matter</h2>
+<p>The notebook does something important correctly: it creates the richest feature frame first, waits for all lag and rolling columns to become valid, and then uses the same forecast origins for all variants.</p>
+<p>Without that rule, a demand-only model could train on earlier dates that the engineered model cannot use. Seasonal coverage and sample counts would differ.</p>
+<p>Fair time-series comparisons require more than an identical train/test percentage. They require identical prediction timestamps.</p>
+<h2>A practical feature audit</h2>
+<p>Before adding any column to a forecasting model, ask:</p>
+<ol>
+<li>Was this value observable before the forecast was issued?</li>
+<li>Does its calculation use a statistic fitted outside the training data?</li>
+<li>How far back does it reach in raw observations?</li>
+<li>Does it add new information, re-express existing information, or both?</li>
+<li>Will the feature be available in exactly the same way in production?</li>
+<li>If it is known in the future, is the model actually given its future values?</li>
+</ol>
+<p>That audit is more valuable than arguing abstractly about whether deep learning “needs” feature engineering.</p>
+<h2>What happened in the electricity experiment?</h2>
+<p>The experiment evaluates three representations for every architecture:</p>
+<ol>
+<li><strong>Demand only:</strong> one raw-history channel.</li>
+<li><strong>Demand plus calendar:</strong> demand, cyclical hour, cyclical weekday, and a weekend flag—six channels in total.</li>
+<li><strong>Demand plus calendar and engineered history:</strong> the six previous channels plus ten lag, difference, rolling, and relative-level features—16 channels in total.</li>
+</ol>
+<p>The forecast origins, target values, chronological split, and 24-hour objective remain identical. Only the model inputs change. Lower RMSE is better.</p>
+<p><img alt="Test RMSE for each model and feature representation" src="assets/model-feature-rmse-editorial.png"/></p>
+<figure><img alt="Table with columns: Model, Demand only, + calendar, + calendar and engineered history, Change from engineering" src="table_images/13-calendar-and-lagged-features-table-1.png"/><figcaption>Table 1. Model · Demand only · + calendar · + calendar and engineered history · Change from engineering</figcaption></figure>
+<p>Bold identifies the best representation within each model family. The final column compares the full 16-channel representation with demand plus calendar. A positive percentage means the engineered demand-history features reduced error.</p>
+<p>These are preliminary single-seed results. Small differences should be treated as hypotheses to reproduce, not fixed rankings.</p>
+<h2>Calendar information helped most models</h2>
+<p>Adding historical calendar channels improved seven of the nine architectures. The largest absolute improvement belonged to the TCN, whose RMSE fell from 0.6057 to 0.5800 kW. The generic Transformer improved from 0.5929 to 0.5844, and the MLP improved from 0.5882 to 0.5831.</p>
+<p>This makes intuitive sense. Raw demand contains daily and weekly repetition, but the model must infer the phase of those cycles from the values and their positions. Calendar encodings label that phase explicitly: this observation occurred at a particular hour and weekday.</p>
+<p>The result is not universal. The linear model and simplified patch Transformer did slightly better with demand alone. One reason may be that a 168-hour window already spans exactly one week. Position inside the window therefore acts as a relative clock. Historical calendar variables add an absolute phase, but that phase is not guaranteed to improve generalization.</p>
+<p>There is also an important limitation: the notebook supplies calendar fields for the <strong>historical</strong> 168 steps, not the 24 future targets. In production, the future hour and weekday are known. Passing them through an explicit future-covariate branch could be more valuable, but it would be a new experiment rather than a reinterpretation of this one.</p>
+<h2>Engineered history helped four models—and hurt four</h2>
+<p>The richer feature set did not produce a general upgrade.</p>
+<p>Compared with demand plus calendar:</p>
+<ul>
+<li>CNN1D improved by 2.05%;</li>
+<li>TCN improved by 1.37%;</li>
+<li>the simplified patch Transformer improved by 0.43%;</li>
+<li>LSTM improved by 0.34%;</li>
+<li>N-BEATS-style was effectively unchanged;</li>
+<li>GRU, MLP, Transformer, and linear forecasting became worse.</li>
+</ul>
+<p><img alt="Percent RMSE change from adding engineered history to demand and calendar" src="assets/engineered-history-gain-editorial.png"/></p>
+<p>The largest positive changes occurred in the convolutional models. That pattern is more revealing than the overall best score.</p>
+<p>The CNN1D sees local nine-hour patterns before global average pooling. Exact daily and weekly positions are difficult to retain through that bottleneck. Direct lag and rolling channels give it summaries that its original path handles awkwardly.</p>
+<p>The tested TCN has a final receptive field of only 31 hours. Its raw-demand path cannot derive a weekly relationship from the beginning of a 168-hour input. A <code>lag_168</code> channel places week-old demand next to each recent input row, allowing a short-context convolution to use it immediately.</p>
+<p>The full-feature TCN achieves the lowest score in the entire table: 0.5721 kW. But the right interpretation is precise:</p>
+<blockquote>
+<p>Explicit lag features helped this particular short-receptive-field TCN access long seasonal information.</p>
+</blockquote>
+<p>The result does not show that a TCN designed with a receptive field covering the full week would need those lags.</p>
+<h2>Why did flexible global models fail to benefit?</h2>
+<p>The GRU, MLP, linear model, and Transformer all became worse when the engineered history was added. N-BEATS-style was essentially unchanged.</p>
+<p>Those architectures already have plausible direct routes to the complete raw week:</p>
+<ul>
+<li>the MLP and linear model flatten every input position;</li>
+<li>self-attention connects each token to all historical tokens;</li>
+<li>recurrent gates can carry information through the sequence;</li>
+<li>N-BEATS-style dense blocks operate on the complete flattened window.</li>
+</ul>
+<p>Explicit differences and rolling statistics may therefore be redundant. Redundancy is not always harmless. It increases dimensionality, introduces strongly correlated columns, changes parameter counts, and can lead optimization toward patterns that fit the training period but transfer poorly.</p>
+<p>The generic Transformer is a clear example. Calendar fields improved it by about 1.4%, but the engineered group erased that gain and pushed RMSE to 0.5944—slightly worse than demand alone.</p>
+<p><img alt="Transformer error at each of the 24 forecast horizons" src="assets/transformer-rmse-by-horizon.png"/></p>
+<p>The horizon curve matters because the aggregate score does not reveal <em>where</em> a representation helps. A model might improve the first few hours and lose accuracy around the following morning peak. A multi-step prediction should be evaluated as a path as well as a single number.</p>
+<h2>Extra features also change model capacity</h2>
+<p>Moving from one input channel to 16 does not affect all architectures equally.</p>
+<p>For a recurrent or convolutional model, most parameters live in hidden-to-hidden transformations or later layers, so the input expansion is relatively modest. For a model that flattens its input, the first dense layer becomes much larger.</p>
+<p>In this notebook:</p>
+<ul>
+<li>the MLP grows from roughly 79,000 to 724,000 parameters;</li>
+<li>the N-BEATS-style network grows from roughly 673,000 to 4.55 million;</li>
+<li>the direct linear model grows from roughly 4,000 to 65,000.</li>
+</ul>
+<p>The feature comparison is therefore operationally realistic—this is what happens if we add columns without redesigning the architecture—but it is not a parameter-matched scientific isolation of representation alone.</p>
+<h2>These features are exactly where CatBoost may shine</h2>
+<p>Calendar fields, explicit lags, rolling moments, differences, and relative-level measures turn a temporal problem into a structured table. That is the native territory of gradient-boosted trees.</p>
+<p>CatBoost can learn rules such as “weekday morning, demand above its weekly mean, and rising relative to yesterday” without first discovering all three concepts from a raw sequence. On small and medium datasets, that explicit representation plus reliable boosting optimization often competes with or beats much more complicated sequence architectures.</p>
+<p>The notebook did not run that model, so this article makes no claim about what CatBoost’s electricity RMSE would be. The correct follow-up is to train it on the same forecast origins, use only causally available features, give it a comparable tuning budget, and report either one direct model per horizon or a clearly defined multi-output strategy.</p>
+<p>If the boosted-tree benchmark wins, that is not bad news. It means the engineered representation captured the useful structure more efficiently than the tested end-to-end sequence learners.</p>
+<h2>Training curves can change the story</h2>
+<p>The models share a maximum of 15 epochs and use early stopping. That creates a consistent procedure, but not necessarily an equal opportunity to converge.</p>
+<p><img alt="LSTM validation loss under the three feature sets" src="assets/lstm-validation-curves.png"/></p>
+<p>Learning curves help distinguish several possibilities:</p>
+<ul>
+<li>richer inputs improve both optimization and generalization;</li>
+<li>richer inputs fit faster but overfit validation;</li>
+<li>the model simply needs a different learning rate or longer schedule;</li>
+<li>the apparent gain is small enough to be ordinary seed variation.</li>
+</ul>
+<p>The CNN validation loss was still improving when it reached the epoch limit. Its feature gain may be meaningful, but the architecture should also be retrained with a credible convergence budget before comparing it confidently with the rest of the table.</p>
+<h2>The useful conclusion is conditional</h2>
+<p>This electricity experiment does not support either extreme claim:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>deep models learn everything, so engineered features are useless
+</pre></div>
+</code></pre>
+<p>or:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>time-series models always need explicit lags and rolling statistics
+</pre></div>
+</code></pre>
+<p>It supports a more practical rule:</p>
+<blockquote>
+<p>Engineered features are most promising when they expose information that an architecture cannot reach easily, compress a context it handles poorly, or introduce genuinely future-known inputs. When a model already has a short path to the same evidence, extra transformations may be neutral or harmful.</p>
+</blockquote>
+<p>Calendar features and lagged features should also remain conceptually separate. Calendar variables describe temporal identity and may be known into the future. Lags, differences, and rolling moments transform observed target history. They answer different questions and should be tested in different steps.</p>
+<p>Part 15 closes the series with a protocol for separating model capacity, receptive field, raw-history budget, representation, and training variance in a trustworthy prediction experiment.</p>
+<hr/>
+<p><strong>Series navigation:</strong> <a class="needs-live-url" href="index.html">Series index</a> · <a class="needs-live-url" href="12-electricity-results-and-interpretation.html">Previous: Electricity model comparison</a> · <a class="needs-live-url" href="14-designing-a-trustworthy-experiment.html">Next: Trustworthy experiments</a></p>
+</article>
+</main>
+<script>
+async function copyRichArticle() {
+  const source = document.querySelector('.article-content');
+  const clone = source.cloneNode(true);
+  const status = document.getElementById('copy-status');
+  clone.querySelectorAll('img').forEach((img) => img.src = new URL(img.getAttribute('src'), location.href).href);
+  clone.querySelectorAll('a').forEach((a) => a.href = new URL(a.getAttribute('href'), location.href).href);
+  const rich = new Blob([clone.innerHTML], {type: 'text/html'});
+  const plain = new Blob([source.innerText], {type: 'text/plain'});
+  try {
+    await navigator.clipboard.write([new ClipboardItem({'text/html': rich, 'text/plain': plain})]);
+    status.textContent = 'Copied as rich text. Paste it into a new Medium draft.';
+  } catch (error) {
+    selectArticle();
+    const copied = document.execCommand('copy');
+    status.textContent = copied
+      ? 'Copied using the compatibility fallback. Paste it into Medium.'
+      : 'Clipboard access was blocked. The article is selected; press Command/Ctrl+C.';
+  }
+}
+function selectArticle() {
+  const range = document.createRange();
+  range.selectNodeContents(document.querySelector('.article-content'));
+  const selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+  document.getElementById('copy-status').textContent = 'Article selected. Press Command/Ctrl+C to copy it.';
+}
+</script>
+</body>
+</html>

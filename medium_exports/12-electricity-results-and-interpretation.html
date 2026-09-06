@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comparing Sequence Models on Electricity Prediction — Medium export</title>
+<style>
+:root { color-scheme: light; }
+body { margin: 0; color: #242424; background: #f5f5f2; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.toolbar { position: sticky; top: 0; z-index: 5; padding: 14px 20px; color: #fff; background: #17324d; box-shadow: 0 2px 8px #0002; }
+.toolbar-inner { max-width: 1080px; margin: auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.toolbar strong { margin-right: auto; }
+button, .toolbar a { border: 1px solid #ffffff77; border-radius: 999px; padding: 8px 14px; color: white; background: transparent; font-weight: 600; text-decoration: none; cursor: pointer; }
+button.primary { color: #17324d; background: white; }
+.copy-status { width: 100%; color: #d9e6f2; font-size: 13px; }
+.instructions { max-width: 920px; margin: 28px auto 0; padding: 18px 24px; border-radius: 12px; background: #fff7d6; line-height: 1.5; }
+.instructions h2 { margin-top: 0; font-size: 20px; }
+.instructions code { background: #ffffff99; padding: 2px 5px; }
+.article-shell { max-width: 820px; margin: 28px auto 80px; padding: 56px 64px; background: white; box-shadow: 0 1px 8px #00000012; }
+.article-content { font-family: Georgia, Cambria, "Times New Roman", serif; font-size: 21px; line-height: 1.62; }
+.article-content h1 { margin: 0 0 12px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 46px; line-height: 1.12; letter-spacing: -0.025em; }
+.article-content h2 { margin: 50px 0 14px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 30px; line-height: 1.22; }
+.article-content h3 { margin: 34px 0 10px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 24px; line-height: 1.3; }
+.article-content p { margin: 0 0 24px; }
+.article-content ul, .article-content ol { margin: 0 0 24px; padding-left: 30px; }
+.article-content li { margin: 7px 0; }
+.article-content blockquote { margin: 32px 0; padding: 4px 0 4px 24px; border-left: 4px solid #242424; font-size: 25px; font-style: italic; }
+.article-content a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.article-content a.needs-live-url { text-decoration-color: #d93025; text-decoration-style: wavy; }
+.article-content img { display: block; max-width: 100%; height: auto; margin: 36px auto 10px; }
+.article-content figure { margin: 38px 0; }
+.article-content figcaption { color: #6b6b6b; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; text-align: center; }
+.article-content pre, .highlight { overflow-x: auto; margin: 28px 0; padding: 20px; border-radius: 6px; background: #f5f5f5; font-size: 15px; line-height: 1.5; }
+.article-content code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+.article-content :not(pre) > code { padding: 2px 5px; border-radius: 3px; background: #f2f2f2; font-size: 0.82em; }
+.article-content hr { margin: 48px 0; border: 0; text-align: center; }
+.article-content hr::after { content: "···"; letter-spacing: 14px; }
+pre { line-height: 125%; }
+td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+.highlight .hll { background-color: #ffffcc }
+.highlight { background: #f8f8f8; }
+.highlight .c { color: #3D7B7B; font-style: italic } /* Comment */
+.highlight .err { border: 1px solid #F00 } /* Error */
+.highlight .k { color: #008000; font-weight: bold } /* Keyword */
+.highlight .o { color: #666 } /* Operator */
+.highlight .ch { color: #3D7B7B; font-style: italic } /* Comment.Hashbang */
+.highlight .cm { color: #3D7B7B; font-style: italic } /* Comment.Multiline */
+.highlight .cp { color: #9C6500 } /* Comment.Preproc */
+.highlight .cpf { color: #3D7B7B; font-style: italic } /* Comment.PreprocFile */
+.highlight .c1 { color: #3D7B7B; font-style: italic } /* Comment.Single */
+.highlight .cs { color: #3D7B7B; font-style: italic } /* Comment.Special */
+.highlight .gd { color: #A00000 } /* Generic.Deleted */
+.highlight .ge { font-style: italic } /* Generic.Emph */
+.highlight .ges { font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.highlight .gr { color: #E40000 } /* Generic.Error */
+.highlight .gh { color: #000080; font-weight: bold } /* Generic.Heading */
+.highlight .gi { color: #008400 } /* Generic.Inserted */
+.highlight .go { color: #717171 } /* Generic.Output */
+.highlight .gp { color: #000080; font-weight: bold } /* Generic.Prompt */
+.highlight .gs { font-weight: bold } /* Generic.Strong */
+.highlight .gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+.highlight .gt { color: #04D } /* Generic.Traceback */
+.highlight .kc { color: #008000; font-weight: bold } /* Keyword.Constant */
+.highlight .kd { color: #008000; font-weight: bold } /* Keyword.Declaration */
+.highlight .kn { color: #008000; font-weight: bold } /* Keyword.Namespace */
+.highlight .kp { color: #008000 } /* Keyword.Pseudo */
+.highlight .kr { color: #008000; font-weight: bold } /* Keyword.Reserved */
+.highlight .kt { color: #B00040 } /* Keyword.Type */
+.highlight .m { color: #666 } /* Literal.Number */
+.highlight .s { color: #BA2121 } /* Literal.String */
+.highlight .na { color: #687822 } /* Name.Attribute */
+.highlight .nb { color: #008000 } /* Name.Builtin */
+.highlight .nc { color: #00F; font-weight: bold } /* Name.Class */
+.highlight .no { color: #800 } /* Name.Constant */
+.highlight .nd { color: #A2F } /* Name.Decorator */
+.highlight .ni { color: #717171; font-weight: bold } /* Name.Entity */
+.highlight .ne { color: #CB3F38; font-weight: bold } /* Name.Exception */
+.highlight .nf { color: #00F } /* Name.Function */
+.highlight .nl { color: #767600 } /* Name.Label */
+.highlight .nn { color: #00F; font-weight: bold } /* Name.Namespace */
+.highlight .nt { color: #008000; font-weight: bold } /* Name.Tag */
+.highlight .nv { color: #19177C } /* Name.Variable */
+.highlight .ow { color: #A2F; font-weight: bold } /* Operator.Word */
+.highlight .w { color: #BBB } /* Text.Whitespace */
+.highlight .mb { color: #666 } /* Literal.Number.Bin */
+.highlight .mf { color: #666 } /* Literal.Number.Float */
+.highlight .mh { color: #666 } /* Literal.Number.Hex */
+.highlight .mi { color: #666 } /* Literal.Number.Integer */
+.highlight .mo { color: #666 } /* Literal.Number.Oct */
+.highlight .sa { color: #BA2121 } /* Literal.String.Affix */
+.highlight .sb { color: #BA2121 } /* Literal.String.Backtick */
+.highlight .sc { color: #BA2121 } /* Literal.String.Char */
+.highlight .dl { color: #BA2121 } /* Literal.String.Delimiter */
+.highlight .sd { color: #BA2121; font-style: italic } /* Literal.String.Doc */
+.highlight .s2 { color: #BA2121 } /* Literal.String.Double */
+.highlight .se { color: #AA5D1F; font-weight: bold } /* Literal.String.Escape */
+.highlight .sh { color: #BA2121 } /* Literal.String.Heredoc */
+.highlight .si { color: #A45A77; font-weight: bold } /* Literal.String.Interpol */
+.highlight .sx { color: #008000 } /* Literal.String.Other */
+.highlight .sr { color: #A45A77 } /* Literal.String.Regex */
+.highlight .s1 { color: #BA2121 } /* Literal.String.Single */
+.highlight .ss { color: #19177C } /* Literal.String.Symbol */
+.highlight .bp { color: #008000 } /* Name.Builtin.Pseudo */
+.highlight .fm { color: #00F } /* Name.Function.Magic */
+.highlight .vc { color: #19177C } /* Name.Variable.Class */
+.highlight .vg { color: #19177C } /* Name.Variable.Global */
+.highlight .vi { color: #19177C } /* Name.Variable.Instance */
+.highlight .vm { color: #19177C } /* Name.Variable.Magic */
+.highlight .il { color: #666 } /* Literal.Number.Integer.Long */
+@media (max-width: 760px) {
+  .article-shell { margin: 0; padding: 36px 22px 60px; box-shadow: none; }
+  .article-content { font-size: 19px; }
+  .article-content h1 { font-size: 36px; }
+  .instructions { margin: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <strong>Medium export · 12-electricity-results-and-interpretation.md</strong>
+    <button class="primary" onclick="copyRichArticle()">Copy rich article</button>
+    <button onclick="selectArticle()">Select article</button>
+    <a href="index.html">Export index</a>
+    <span id="copy-status" class="copy-status" aria-live="polite"></span>
+  </div>
+</div>
+<aside class="instructions">
+  <h2>Transfer notes</h2>
+  <p><strong>Replace 3 local series link(s) with live Medium URLs before publishing.</strong></p>
+  <p><strong>Suggested Medium tags:</strong> Time Series, Deep Learning, Forecasting, Model Evaluation, Data Science</p>
+  <p>This preview contains 4 code block(s) and 3 rendered table image(s). After pasting, recreate code using Medium’s native code-block control and upload every image from the export package.</p>
+  <details><summary>Images required by this article</summary><ul><li><a href="assets/three-weeks-electricity-demand.png" target="_blank">assets/three-weeks-electricity-demand.png</a></li><li><a href="table_images/12-electricity-results-and-interpretation-table-1.png" target="_blank">table_images/12-electricity-results-and-interpretation-table-1.png</a></li><li><a href="table_images/12-electricity-results-and-interpretation-table-2.png" target="_blank">table_images/12-electricity-results-and-interpretation-table-2.png</a></li><li><a href="assets/electricity-raw-history-model-comparison.png" target="_blank">assets/electricity-raw-history-model-comparison.png</a></li><li><a href="table_images/12-electricity-results-and-interpretation-table-3.png" target="_blank">table_images/12-electricity-results-and-interpretation-table-3.png</a></li></ul></details>
+</aside>
+<main class="article-shell">
+  <article class="article-content"><h1>Comparing Sequence Models on Electricity Prediction</h1>
+<p><em>What happens when nine very different architectures receive exactly the same week of raw demand history?</em></p>
+<p><strong>Series:</strong> Sequence Models for Prediction, Part 13 of 15</p>
+<p>The previous articles studied sequence models one at a time. That was deliberate: an architecture is easier to understand when its mechanics are not buried inside a leaderboard.</p>
+<p>Now we can ask the practical question.</p>
+<blockquote>
+<p>If every model sees the same raw sequence, which architecture predicts the next day most accurately?</p>
+</blockquote>
+<p>This first comparison does <strong>not</strong> use calendar variables, explicit lags, rolling statistics, or other engineered features. Each model receives only a week of hourly electricity demand. That restriction lets us compare the algorithms before changing the information presented to them.</p>
+<p>The result is not a dramatic victory for a single modern architecture. It is a much more useful finding: several fundamentally different models produce remarkably similar forecasts, and a well-matched simple model can remain competitive with a sophisticated one.</p>
+<h2>The prediction task</h2>
+<p>The experiment uses the UCI Individual Household Electric Power Consumption data, aggregated to hourly demand. After resampling and causal filling of missing hours, the usable series contains 34,589 observations from December 2006 through November 2010.</p>
+<p><img alt="Three weeks of hourly household electricity demand" src="assets/three-weeks-electricity-demand.png"/></p>
+<p>At each forecast origin, a model receives the previous 168 hours—exactly one week—and predicts the next 24 hours in one shot:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>input:   demand[t-168], ..., demand[t-1]
+output:  demand[t],     ..., demand[t+23]
+</pre></div>
+</code></pre>
+<p>In tensor form, every model starts from the same input and output contract:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>X: [batch, 168, 1]
+y: [batch, 24]
+</pre></div>
+</code></pre>
+<p>The final historical week is not fed back one hour at a time during inference. Each architecture maps the complete observed window directly to the complete 24-hour future path. This avoids error accumulation from recursive forecasting and keeps the output task identical across model families.</p>
+<h2>A chronological evaluation</h2>
+<p>Time order is preserved throughout the experiment. The data is divided chronologically into 70% training, 15% validation, and 15% test segments. Scaling statistics are fitted on the training period only.</p>
+<p>After window construction, the split contains:</p>
+<figure><img alt="Table with columns: Segment, Forecast origins" src="table_images/12-electricity-results-and-interpretation-table-1.png"/><figcaption>Table 1. Segment · Forecast origins</figcaption></figure>
+<p>Every model is evaluated on the same test origins. The principal metric is root mean squared error, or RMSE, measured in kilowatts after predictions are transformed back to the original scale. Lower is better.</p>
+<p>The training configuration is intentionally compact enough to run as a Colab experiment. It uses early stopping and a maximum of 15 epochs, with one random seed for each configuration. That makes the results a useful controlled demonstration, not a definitive benchmark.</p>
+<h2>The raw-history leaderboard</h2>
+<p>Here are the test results when the sole input channel is past demand:</p>
+<figure><img alt="Table with columns: Rank, Model, Test RMSE, Trainable parameters" src="table_images/12-electricity-results-and-interpretation-table-2.png"/><figcaption>Table 2. Rank · Model · Test RMSE · Trainable parameters</figcaption></figure>
+<p><img alt="Raw-history electricity RMSE for nine sequence models and three simple baselines" src="assets/electricity-raw-history-model-comparison.png"/></p>
+<p>Three simple forecasting rules provide context:</p>
+<figure><img alt="Table with columns: Baseline, Test RMSE" src="table_images/12-electricity-results-and-interpretation-table-3.png"/><figcaption>Table 3. Baseline · Test RMSE</figcaption></figure>
+<p>All nine learned models beat all three naïve baselines. That tells us the models learned more than a fixed copy rule. The differences <em>among</em> the learned models, however, need more careful interpretation.</p>
+<h2>The important benchmark this notebook does not include</h2>
+<p>The experiment compares nine raw-sequence models, but it does not train CatBoost, LightGBM, XGBoost, or another gradient-boosted tree model. We therefore cannot say that GRU is the best practical solution to this electricity task—only that it is the best observed model in the notebook’s demand-only comparison.</p>
+<p>A strong boosted-tree benchmark would turn each forecast origin into a row containing causal lags, rolling summaries, calendar variables, and possibly one model per forecast horizon. On a dataset of this size, it could plausibly match or beat the neural architectures. That is a test to run, not a result to invent.</p>
+<p>This missing comparison reinforces the article’s main discipline: a leaderboard ranks only the candidates actually entered.</p>
+<h2>Result 1: GRU wins, but there is no runaway winner</h2>
+<p>The GRU produces the lowest test RMSE at 0.5839 kW. Its recurrent state gives it an explicit mechanism for deciding what to retain and what to overwrite while scanning the 168-hour sequence.</p>
+<p>But the size of the lead matters. Seven models—from GRU through the generic Transformer—fall within roughly 0.009 kW of one another. The second-place N-BEATS-style network and third-place MLP are separated by less than 0.0001 kW.</p>
+<p>That is not enough evidence to declare a permanent architectural hierarchy. With one seed, some close rankings could reverse because of initialization, minibatch order, or early stopping. The responsible conclusion is:</p>
+<blockquote>
+<p>On this split and training run, GRU was best, while several recurrent, dense, attention-based, and linear approaches formed a tightly grouped competitive tier.</p>
+</blockquote>
+<p>This is common in forecasting. Architectural differences sound enormous in theory, yet their practical gap can be small when the input window is moderate, the target is smooth, and all models have enough capacity to capture the dominant patterns.</p>
+<h2>Result 2: recurrence is effective, not automatically necessary</h2>
+<p>GRU and LSTM both perform well. Their gated state offers a natural fit for sequences: read one hour, update memory, and compress the week into a representation used for prediction.</p>
+<p>If the story ended there, we might conclude that recurrent memory is essential. The MLP complicates that story. It simply flattens the entire week and learns a nonlinear mapping from 168 input values to 24 outputs, yet it slightly outperforms the LSTM in this run.</p>
+<p>The N-BEATS-style network also performs strongly using fully connected residual blocks rather than recurrence. These results remind us that a forecasting window is already a fixed-size supervised-learning example. Once the context length is known, a model does not have to process it recurrently to exploit it.</p>
+<p>Recurrent structure remains useful when we value parameter sharing across time, compact state, or support for variable sequence lengths. It is not a prerequisite for learning temporal relationships.</p>
+<h2>Result 3: the linear model is surprisingly hard to beat</h2>
+<p>The direct linear model ranks sixth at 0.5918 kW. It trails the GRU by about 0.008 kW and slightly beats the generic Transformer.</p>
+<p>This is exactly why linear forecasting deserves a place in the main comparison rather than a footnote. The model can assign a separate weight to every combination of input hour and forecast horizon. For example, the prediction for tomorrow at 8 a.m. can rely heavily on yesterday at 8 a.m., last week at 8 a.m., and the most recent few observations.</p>
+<p>It cannot represent arbitrary nonlinear interactions, but household demand has strong autocorrelation and repeating daily structure. A direct linear map can exploit those patterns efficiently.</p>
+<p>Its parameter count also changes the practical interpretation. At 4,056 trainable parameters, it is far smaller than the MLP, Transformer, patch Transformer, or N-BEATS-style model. If latency, memory, retraining cost, or interpretability matter, a tiny increase in error may be a sensible trade.</p>
+<p>The broader lesson is simple:</p>
+<blockquote>
+<p>Complexity should earn its place by beating a strong simple model under the metric and constraints that matter.</p>
+</blockquote>
+<h2>Result 4: global access alone does not guarantee a win</h2>
+<p>The Transformer lets every position interact with every other position through self-attention. In principle, that creates short information paths between the start and end of the week. The patch Transformer compresses neighboring hours into tokens before applying attention.</p>
+<p>Neither attention model wins this experiment. The patch variant places fifth, while the generic Transformer places seventh.</p>
+<p>This does not show that attention is unsuitable for time series. It shows that its flexibility is not automatically valuable on every dataset. Transformers often become more compelling with larger datasets, richer covariates, longer contexts, multivariate inputs, or extensive pretraining. Here the task has one input channel, a one-week window, and a modest training set.</p>
+<p>Patching performs slightly better than hourly-token attention in this run. One plausible reason is that local compression reduces sequence length and encourages the model to focus on short temporal blocks. With only one seed, this remains an interpretation rather than a settled causal claim.</p>
+<h2>Result 5: receptive field and aggregation choices matter</h2>
+<p>The two convolutional results should not be summarized as “convolutions lose.” The tested implementations impose specific information bottlenecks.</p>
+<p>The CNN1D uses local filters and global average pooling. Local filters are good at detecting short motifs such as ramps, spikes, and small cycles. Global averaging then compresses <em>where</em> those motifs occurred. That is potentially costly when the exact position of a demand pattern inside the week matters for the next 24 hours.</p>
+<p>The TCN uses dilated causal convolutions, but its configured receptive field is only 31 hours. Although its input tensor contains 168 hours, the final temporal representation cannot directly depend on the earliest part of that week. The architecture is therefore being asked to model a weekly problem with an effective memory shorter than a day and a half.</p>
+<p>Its 0.6057 RMSE is still respectable, but it is partly a result about this receptive-field choice. A TCN with enough dilation levels to cover all 168 hours would answer a different and fairer question about long-range convolutional memory.</p>
+<p>The CNN also appeared to still be improving when training stopped at epoch 15. Its last-place score may reflect an unfinished optimization schedule as well as architectural fit.</p>
+<h2>What the parameter counts reveal</h2>
+<p>The ranking becomes more informative when accuracy and size are considered together:</p>
+<ul>
+<li>GRU achieves the best score with only 14,424 parameters.</li>
+<li>LSTM is similarly compact at 18,712 parameters.</li>
+<li>Linear is the smallest model by a wide margin and remains close to the leading group.</li>
+<li>N-BEATS-style uses more than 46 times as many parameters as GRU for a slightly worse score.</li>
+<li>The two Transformer variants use about five times as many parameters as GRU without improving test RMSE in this run.</li>
+</ul>
+<p>Parameter count is not the same as training cost or inference latency, but it is a useful first signal. A leaderboard that ignores resource requirements can recommend a model whose tiny accuracy advantage—or even disadvantage—is difficult to justify operationally.</p>
+<h2>What we can and cannot conclude</h2>
+<p>This experiment supports several limited conclusions:</p>
+<ol>
+<li>All tested learned models extracted useful predictive structure from one week of raw electricity history.</li>
+<li>GRU delivered the best observed raw-history RMSE and a strong accuracy-to-size tradeoff.</li>
+<li>Dense and linear models were competitive with explicitly sequential architectures.</li>
+<li>Attention did not provide an automatic advantage for this univariate, moderate-context task.</li>
+<li>The convolutional rankings are entangled with receptive-field, pooling, and training-budget choices.</li>
+</ol>
+<p>It does <strong>not</strong> establish that GRU is universally best for electricity, that Transformers are poor forecasters, or that differences smaller than one percent are stable. A stronger benchmark would add boosted trees, multiple seeds, rolling forecast periods, credible tuning budgets, and matched architectural capacity.</p>
+<p>Most importantly, this comparison answers only the raw-history question. Real forecasting systems often know more than the past target values. They know the hour, weekday, holidays, weather forecasts, prices, or operational schedules. Practitioners also add explicit daily and weekly lags or rolling summaries.</p>
+<p>Those additions change the problem. They may provide genuinely new future-known information, re-express information already present, or quietly extend the amount of history a model can access.</p>
+<p>Part 14 asks that separate question: <strong>when do calendar variables and engineered lagged features actually help these sequence models?</strong></p>
+<hr/>
+<p><strong>Series navigation:</strong> <a class="needs-live-url" href="index.html">Series index</a> · <a class="needs-live-url" href="11-choosing-a-sequence-model.html">Previous: Choosing a model</a> · <a class="needs-live-url" href="13-calendar-and-lagged-features.html">Next: Calendar and lagged features</a></p>
+</article>
+</main>
+<script>
+async function copyRichArticle() {
+  const source = document.querySelector('.article-content');
+  const clone = source.cloneNode(true);
+  const status = document.getElementById('copy-status');
+  clone.querySelectorAll('img').forEach((img) => img.src = new URL(img.getAttribute('src'), location.href).href);
+  clone.querySelectorAll('a').forEach((a) => a.href = new URL(a.getAttribute('href'), location.href).href);
+  const rich = new Blob([clone.innerHTML], {type: 'text/html'});
+  const plain = new Blob([source.innerText], {type: 'text/plain'});
+  try {
+    await navigator.clipboard.write([new ClipboardItem({'text/html': rich, 'text/plain': plain})]);
+    status.textContent = 'Copied as rich text. Paste it into a new Medium draft.';
+  } catch (error) {
+    selectArticle();
+    const copied = document.execCommand('copy');
+    status.textContent = copied
+      ? 'Copied using the compatibility fallback. Paste it into Medium.'
+      : 'Clipboard access was blocked. The article is selected; press Command/Ctrl+C.';
+  }
+}
+function selectArticle() {
+  const range = document.createRange();
+  range.selectNodeContents(document.querySelector('.article-content'));
+  const selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+  document.getElementById('copy-status').textContent = 'Article selected. Press Command/Ctrl+C to copy it.';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LSTM Forecasting: Learning What to Remember — Sequence Models for Prediction</title>
+<meta name="description" content="An intuitive guide to gates, cell state, and direct multi-horizon prediction">
+<link rel="canonical" href="https://adidror005.github.io/sequence-models-for-prediction/04-lstm-forecaster.html">
+<link rel="stylesheet" href="styles.css">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="LSTM Forecasting: Learning What to Remember">
+<meta property="og:description" content="An intuitive guide to gates, cell state, and direct multi-horizon prediction">
+<meta property="og:url" content="https://adidror005.github.io/sequence-models-for-prediction/04-lstm-forecaster.html">
+<meta property="og:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="LSTM Forecasting: Learning What to Remember">
+<meta name="twitter:description" content="An intuitive guide to gates, cell state, and direct multi-horizon prediction">
+<meta name="twitter:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="index.html"><span class="brand-mark">S</span><span>Sequence Models<br><small>for Prediction</small></span></a>
+  <nav aria-label="Primary navigation"><a href="index.html#series">All articles</a><a href="index.html#about">About</a><a class="github-link" href="https://github.com/adidror005/sequence-models-for-prediction">View source</a></nav>
+</header>
+<div class="reading-progress" style="--progress: 33.33%"></div>
+<main>
+  <header class="article-hero">
+    <a class="back-link" href="index.html">← Series home</a>
+    <p class="eyebrow">Part 5 of 15 · Models</p>
+    <h1>LSTM Forecasting: Learning What to Remember</h1>
+    <p class="dek">An intuitive guide to gates, cell state, and direct multi-horizon prediction</p>
+  </header>
+  <div class="reading-layout">
+    <article class="article-content">
+
+<p>An LSTM reads a time series the way we often describe ourselves reading a story: one step at a time, carrying forward a changing memory of what mattered.</p>
+<p>The metaphor is useful, but incomplete. An LSTM does not store selected observations in a neat archive. It continually transforms a fixed-size state. Its gates learn how much of the previous state to retain, how much new information to write, and how much memory to expose as the current output.</p>
+<p>That mechanism was designed to address the difficulty ordinary recurrent networks have learning long-range dependencies.</p>
+<h2 id="the-two-state-intuition">The two-state intuition</h2>
+<p>At time <code>t</code>, an LSTM maintains:</p>
+<ul>
+<li>a <strong>cell state</strong> <code>c_t</code>, the longer-lived memory stream;</li>
+<li>a <strong>hidden state</strong> <code>h_t</code>, the exposed representation used by the next step and downstream layers.</li>
+</ul>
+<p>Four learned calculations update them:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>forget gate:    f_t = sigmoid(...)
+input gate:     i_t = sigmoid(...)
+candidate:      g_t = tanh(...)
+output gate:    o_t = sigmoid(...)
+
+cell:           c_t = f_t ⊙ c_(t-1) + i_t ⊙ g_t
+hidden:         h_t = o_t ⊙ tanh(c_t)
+</pre></div>
+</code></pre>
+<p>The sigmoid gates produce values between zero and one. Element by element, the forget gate scales old memory, the input gate controls new content, and the output gate controls what becomes visible.</p>
+<p>This additive cell update gives gradients a more stable route through time than repeatedly multiplying through a plain recurrent transition.</p>
+<h2 id="compressing-a-window-into-a-final-state">Compressing a window into a final state</h2>
+<p>A simple forecaster can use one LSTM layer with 64 hidden units:</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">rnn</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LSTM</span><span class="p">(</span>
+    <span class="n">input_size</span><span class="o">=</span><span class="n">n_features</span><span class="p">,</span>
+    <span class="n">hidden_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+    <span class="n">batch_first</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</code></pre>
+<p>The LSTM emits a hidden state at every historical hour. The model keeps only the final one, applies dropout, and maps it to 24 predictions:</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">forecast</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">out</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+</pre></div>
+</code></pre>
+<p>The entire week is therefore compressed into one 64-dimensional vector.</p>
+<p>This is efficient, but it creates an information bottleneck. The network must preserve everything useful for all 24 future horizons in its final state: level, daily rhythm, weekday identity, recent direction, volatility, and unusual events.</p>
+<p>Attention-based decoders or pooling over all recurrent states can reduce that bottleneck. The final-state design is simply the smallest useful version.</p>
+<h2 id="sequence-length-and-practical-memory">Sequence length and practical memory</h2>
+<p>The LSTM has a theoretical path from the first input to the final state, but that does not mean it preserves every early value accurately.</p>
+<p>At each step, the forget gate scales the existing cell state and new content competes to enter it. A useful signal can gradually decay or be overwritten. Longer sequences also make optimization slower because recurrent steps must be evaluated in order.</p>
+<p>Hidden width determines how much state the network can carry. More units increase capacity and cost; additional stacked LSTM layers create a deeper transformation at every time step. Bidirectional LSTMs can read a fully observed historical window from both directions, but they are not appropriate when outputs at each step must remain strictly online.</p>
+<h2 id="forecast-head-choices">Forecast-head choices</h2>
+<p>The final state can feed:</p>
+<ul>
+<li>one next-step prediction;</li>
+<li>a vector containing every future horizon;</li>
+<li>a decoder that generates the future sequentially;</li>
+<li>separate horizon-specific attention queries over all hidden states.</li>
+</ul>
+<p>Direct vector output is fast and avoids feeding predictions back into the model. An autoregressive decoder can model relationships among future steps more explicitly but accumulates error and complicates training.</p>
+<h2 id="lstm-strengths">LSTM strengths</h2>
+<p>LSTMs remain useful because they combine several practical properties:</p>
+<ul>
+<li>parameter sharing across time;</li>
+<li>variable-length sequence support;</li>
+<li>a state that naturally supports online updates;</li>
+<li>better long-range gradient flow than a plain RNN;</li>
+<li>modest parameter growth as input features are added.</li>
+</ul>
+<p>Input features affect the gate matrices, so parameter count grows with channel width, but much less dramatically than in a flattened MLP.</p>
+<h2 id="lstm-limitations">LSTM limitations</h2>
+<p>Recurrent processing is sequential. Training cannot parallelize across time as freely as a convolution or Transformer.</p>
+<p>Theoretical memory is not the same as reliable recall. A 64-dimensional state can forget precise old observations, especially when many signals compete for representation.</p>
+<p>The final-state forecast head creates another bottleneck. It does not revisit particular historical hours for different future horizons.</p>
+<p>And an LSTM does not solve nonstationarity. It can learn a stable historical dependency beautifully and fail when behavior changes.</p>
+<h2 id="complete-pytorch-implementation">Complete PyTorch implementation</h2>
+<p>This complete version keeps the state sequence returned by PyTorch, selects the final historical state, applies dropout, and emits the whole forecast horizon directly.</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">LSTMForecaster</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">n_features</span><span class="p">,</span>
+        <span class="n">horizon</span><span class="p">,</span>
+        <span class="n">hidden</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+        <span class="n">dropout</span><span class="o">=</span><span class="mf">0.10</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LSTM</span><span class="p">(</span>
+            <span class="n">input_size</span><span class="o">=</span><span class="n">n_features</span><span class="p">,</span>
+            <span class="n">hidden_size</span><span class="o">=</span><span class="n">hidden</span><span class="p">,</span>
+            <span class="n">batch_first</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden</span><span class="p">,</span> <span class="n">horizon</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="c1"># states: [batch, lookback, hidden]</span>
+        <span class="n">states</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">final_state</span> <span class="o">=</span> <span class="n">states</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">head</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">final_state</span><span class="p">)</span>
+        <span class="p">)</span>
+
+
+<span class="n">LOOKBACK</span> <span class="o">=</span> <span class="mi">168</span>
+<span class="n">N_FEATURES</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">HORIZON</span> <span class="o">=</span> <span class="mi">24</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">LSTMForecaster</span><span class="p">(</span>
+    <span class="n">n_features</span><span class="o">=</span><span class="n">N_FEATURES</span><span class="p">,</span>
+    <span class="n">horizon</span><span class="o">=</span><span class="n">HORIZON</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">LOOKBACK</span><span class="p">,</span> <span class="n">N_FEATURES</span><span class="p">)</span>
+<span class="n">y_hat</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">y_hat</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">HORIZON</span><span class="p">)</span>
+</pre></div>
+</code></pre>
+<p>The same verified implementation is available in the <a href="code/sequence_models.py">companion model module</a>. The complete Dataset, DataLoader, and fit/evaluate workflow is explained in the <a href="pytorch-data-pipeline-and-training-loop.html">shared PyTorch training companion</a>.</p>
+<h2 id="training-considerations">Training considerations</h2>
+<p>Standardize inputs using training-only statistics. Shuffle training windows if each window is an independent supervised example, while preserving chronological validation and test periods.</p>
+<p>Gradient clipping can stabilize recurrent training when gradients become unusually large. Validation curves should determine early stopping, and hidden width, layer count, dropout, learning rate, and lookback length should be treated as real hyperparameters.</p>
+<p>Stateful online inference is possible, but it changes the training and serving contract. A model trained on independent windows should not silently be deployed with hidden state carried forever between requests.</p>
+<h2 id="when-to-choose-an-lstm">When to choose an LSTM</h2>
+<p>Choose an LSTM when ordered state evolution is a natural inductive bias, latency permits sequential processing, and the dataset is large enough to learn gate behavior.</p>
+<p>Do not choose it merely because the data have timestamps. Always compare it with seasonal, linear, and simpler nonlinear baselines.</p>
+<p>The LSTM’s core idea is controlled memory. Part 6 examines the GRU, which pursues a similar goal with fewer gates and a smaller state machine.</p>
+<h2 id="further-reading">Further reading</h2>
+<ul>
+<li><a href="https://doi.org/10.1162/neco.1997.9.8.1735" rel="noopener noreferrer">Hochreiter and Schmidhuber, “Long Short-Term Memory”</a></li>
+</ul>
+<hr/>
+</article>
+    <aside class="toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#the-two-state-intuition">The two-state intuition</a></li><li><a href="#compressing-a-window-into-a-final-state">Compressing a window into a final state</a></li><li><a href="#sequence-length-and-practical-memory">Sequence length and practical memory</a></li><li><a href="#forecast-head-choices">Forecast-head choices</a></li><li><a href="#lstm-strengths">LSTM strengths</a></li><li><a href="#lstm-limitations">LSTM limitations</a></li><li><a href="#complete-pytorch-implementation">Complete PyTorch implementation</a></li><li><a href="#training-considerations">Training considerations</a></li><li><a href="#when-to-choose-an-lstm">When to choose an LSTM</a></li><li><a href="#further-reading">Further reading</a></li></ol></aside>
+  </div>
+  <nav class="article-pager" aria-label="Article navigation"><a class="pager-card previous" href="03-mlp-forecaster.html"><span>Previous</span><strong>MLP Forecasting: A Nonlinear Map from Past Window to Future Path</strong></a><a class="pager-card next" href="05-gru-forecaster.html"><span>Next</span><strong>GRU Forecasting: A Leaner Gated Memory</strong></a></nav>
+</main>
+<footer class="site-footer"><p>Sequence Models for Prediction · Open code, reproducible experiments, honest baselines.</p><a href="index.html">Series index</a></footer>
+</body>
+</html>

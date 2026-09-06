@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1D CNN Forecasting: Learning Local Shapes in Parallel — Sequence Models for Prediction</title>
+<meta name="description" content="How temporal filters detect motifs—and why pooling can erase the positions a forecast needs">
+<link rel="canonical" href="https://adidror005.github.io/sequence-models-for-prediction/06-cnn1d-forecaster.html">
+<link rel="stylesheet" href="styles.css">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="1D CNN Forecasting: Learning Local Shapes in Parallel">
+<meta property="og:description" content="How temporal filters detect motifs—and why pooling can erase the positions a forecast needs">
+<meta property="og:url" content="https://adidror005.github.io/sequence-models-for-prediction/06-cnn1d-forecaster.html">
+<meta property="og:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="1D CNN Forecasting: Learning Local Shapes in Parallel">
+<meta name="twitter:description" content="How temporal filters detect motifs—and why pooling can erase the positions a forecast needs">
+<meta name="twitter:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="index.html"><span class="brand-mark">S</span><span>Sequence Models<br><small>for Prediction</small></span></a>
+  <nav aria-label="Primary navigation"><a href="index.html#series">All articles</a><a href="index.html#about">About</a><a class="github-link" href="https://github.com/adidror005/sequence-models-for-prediction">View source</a></nav>
+</header>
+<div class="reading-progress" style="--progress: 46.67%"></div>
+<main>
+  <header class="article-hero">
+    <a class="back-link" href="index.html">← Series home</a>
+    <p class="eyebrow">Part 7 of 15 · Models</p>
+    <h1>1D CNN Forecasting: Learning Local Shapes in Parallel</h1>
+    <p class="dek">How temporal filters detect motifs—and why pooling can erase the positions a forecast needs</p>
+  </header>
+  <div class="reading-layout">
+    <article class="article-content">
+
+<p>A one-dimensional convolution does not remember a sequence. It scans it.</p>
+<p>A small filter moves across time and asks the same question at every position. One filter might activate on a sharp evening ramp. Another might detect a peak followed by a decline. A deeper layer combines those local motifs into more abstract shapes.</p>
+<p>This weight sharing gives a temporal CNN an attractive property: a useful pattern can be recognized wherever it appears in the input window.</p>
+<h2 id="the-filter-intuition">The filter intuition</h2>
+<p>Take a kernel covering five hours. For one input channel, it contains five learned weights. At each position, the convolution computes a weighted combination of those neighboring values.</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>historical sequence:  ─────────────────────────────
+five-hour filter:             [ w1 w2 w3 w4 w5 ]
+                                      ↓ slide
+feature map:         ─────────────────────────────
+</pre></div>
+</code></pre>
+<p>With multiple input channels, each filter combines time and feature dimensions. A detector can respond jointly to demand, hour-of-day phase, and recent volatility.</p>
+<p>The same weights are reused at every time position. This is the convolutional inductive bias: local patterns matter, and their detector should not have to be relearned separately for every hour in the window.</p>
+<h2 id="a-simple-forecasting-architecture">A simple forecasting architecture</h2>
+<p>A compact model can apply two five-step convolutions with 64 channels:</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">net</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+    <span class="n">nn</span><span class="o">.</span><span class="n">Conv1d</span><span class="p">(</span><span class="n">n_features</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
+    <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+    <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="mf">0.10</span><span class="p">),</span>
+    <span class="n">nn</span><span class="o">.</span><span class="n">Conv1d</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
+    <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+    <span class="n">nn</span><span class="o">.</span><span class="n">AdaptiveAvgPool1d</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</code></pre>
+<p>PyTorch convolutions expect channels before time, so the input changes from:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>[batch, time, features]
+</pre></div>
+</code></pre>
+<p>to:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>[batch, features, time]
+</pre></div>
+</code></pre>
+<p>After the convolutional stack, adaptive average pooling reduces every 168-step feature map to one number. A linear layer maps the resulting 64 values to the 24-hour forecast.</p>
+<h2 id="receptive-field-only-nine-hours-per-local-activation">Receptive field: only nine hours per local activation</h2>
+<p>One five-step convolution sees five adjacent hours. Stacking a second stride-one five-step convolution expands the receptive field to nine:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>R = 1 + (5 - 1) + (5 - 1) = 9 hours
+</pre></div>
+</code></pre>
+<p>The global average pool aggregates activations from the full week, so the final vector reflects motifs found anywhere in the window. But each motif detector is built from only nine-hour neighborhoods.</p>
+<p>This is very different from globally comparing the current hour with the same hour yesterday or last week.</p>
+<h2 id="the-pooling-trade-off">The pooling trade-off</h2>
+<p>Average pooling answers:</p>
+<blockquote>
+<p>How strongly did this pattern occur across the window?</p>
+</blockquote>
+<p>It is less suited to:</p>
+<blockquote>
+<p>Did this pattern occur specifically during the most recent evening?</p>
+</blockquote>
+<p>Exact position matters in forecasting. An evening spike six days ago and one occurring an hour ago should not necessarily influence the next hour equally.</p>
+<p>Calendar channels can partly restore position because the local activation can include hour and weekday identity. A lag feature can bring a meaningful remote comparison into the local nine-hour neighborhood.</p>
+<p>Alternative CNN heads could preserve more timing information:</p>
+<ul>
+<li>take the final activation instead of the global average;</li>
+<li>use attention pooling;</li>
+<li>pool separately over recent and older segments;</li>
+<li>flatten the final map, accepting a larger parameter count;</li>
+<li>add causal dilation to grow the receptive field.</li>
+</ul>
+<p>The last option leads directly to the TCN in Part 8.</p>
+<h2 id="is-symmetric-padding-a-forecasting-leak">Is symmetric padding a forecasting leak?</h2>
+<p>A symmetric five-step convolution can use <code>padding=2</code>, so each intermediate activation can inspect neighbors on both sides of a historical position.</p>
+<p>That is not target leakage here. The complete 168-hour window is observed before the 24-hour forecast is issued. A feature at an earlier input position may use a later value inside that same historical window without seeing any target value.</p>
+<p>For streaming, step-by-step representations, or sequence labeling, causal padding would matter. Forecasting causality depends on the boundary between observed context and future target, not on a blanket rule that every internal layer must be causal.</p>
+<h2 id="the-main-design-choices">The main design choices</h2>
+<p>Kernel size controls the width of each local pattern. Depth and dilation control how local patterns combine across a longer range. Channel count controls how many detectors the model can learn.</p>
+<p>The forecast head is just as important as the convolutional body. Global average pooling emphasizes whether a motif occurred, final-position pooling emphasizes recent causal context, and attention pooling learns which positions to retrieve.</p>
+<p>Normalization, residual connections, and dropout become increasingly important as the stack deepens. The receptive field should always be calculated explicitly rather than inferred from the input length.</p>
+<h2 id="complete-pytorch-implementation">Complete PyTorch implementation</h2>
+<p>The complete implementation includes the required time-to-channel transpose, both convolutional layers, global average pooling, and the direct forecast head.</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">CNN1DForecaster</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">n_features</span><span class="p">,</span>
+        <span class="n">horizon</span><span class="p">,</span>
+        <span class="n">channels</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+        <span class="n">dropout</span><span class="o">=</span><span class="mf">0.10</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Conv1d</span><span class="p">(</span>
+                <span class="n">n_features</span><span class="p">,</span>
+                <span class="n">channels</span><span class="p">,</span>
+                <span class="n">kernel_size</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                <span class="n">padding</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Conv1d</span><span class="p">(</span>
+                <span class="n">channels</span><span class="p">,</span>
+                <span class="n">channels</span><span class="p">,</span>
+                <span class="n">kernel_size</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                <span class="n">padding</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">AdaptiveAvgPool1d</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">channels</span><span class="p">,</span> <span class="n">horizon</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="c1"># Conv1d expects [batch, channels, time].</span>
+        <span class="n">channel_first</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">summary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">(</span>
+            <span class="n">channel_first</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">summary</span><span class="p">)</span>
+
+
+<span class="n">LOOKBACK</span> <span class="o">=</span> <span class="mi">168</span>
+<span class="n">N_FEATURES</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">HORIZON</span> <span class="o">=</span> <span class="mi">24</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">CNN1DForecaster</span><span class="p">(</span>
+    <span class="n">n_features</span><span class="o">=</span><span class="n">N_FEATURES</span><span class="p">,</span>
+    <span class="n">horizon</span><span class="o">=</span><span class="n">HORIZON</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">LOOKBACK</span><span class="p">,</span> <span class="n">N_FEATURES</span><span class="p">)</span>
+<span class="n">y_hat</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">y_hat</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">HORIZON</span><span class="p">)</span>
+</pre></div>
+</code></pre>
+<p>The same verified implementation is available in the <a href="code/sequence_models.py">companion model module</a>. The complete Dataset, DataLoader, and fit/evaluate workflow is explained in the <a href="pytorch-data-pipeline-and-training-loop.html">shared PyTorch training companion</a>.</p>
+<h2 id="common-failure-modes">Common failure modes</h2>
+<p>A shallow CNN can receive a long sequence while each activation sees only a tiny neighborhood. Aggressive global pooling may erase recency and exact position. Boundary padding can create artificial patterns near the beginning and end of the window.</p>
+<p>Filters can also learn motifs that look meaningful but are unstable out of sample. Test different window alignments and chronological periods before treating a learned shape as reusable.</p>
+<h2 id="when-to-choose-a-shallow-1d-cnn">When to choose a shallow 1D CNN</h2>
+<p>Choose it when local motifs are important, parallel training matters, and you want a compact model with shared temporal filters.</p>
+<p>Be deliberate about three choices:</p>
+<ol>
+<li>receptive field;</li>
+<li>causal versus full-context convolution;</li>
+<li>the pooling mechanism that turns a feature map into a forecast.</li>
+</ol>
+<p>Those choices determine what the model can know far more than the label “CNN.”</p>
+<p>Part 8 expands the receptive field with dilation and keeps the final representation tied to the end of the observed sequence: the temporal convolutional network.</p>
+<hr/>
+</article>
+    <aside class="toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#the-filter-intuition">The filter intuition</a></li><li><a href="#a-simple-forecasting-architecture">A simple forecasting architecture</a></li><li><a href="#receptive-field-only-nine-hours-per-local-activation">Receptive field: only nine hours per local activation</a></li><li><a href="#the-pooling-trade-off">The pooling trade-off</a></li><li><a href="#is-symmetric-padding-a-forecasting-leak">Is symmetric padding a forecasting leak?</a></li><li><a href="#the-main-design-choices">The main design choices</a></li><li><a href="#complete-pytorch-implementation">Complete PyTorch implementation</a></li><li><a href="#common-failure-modes">Common failure modes</a></li><li><a href="#when-to-choose-a-shallow-1d-cnn">When to choose a shallow 1D CNN</a></li></ol></aside>
+  </div>
+  <nav class="article-pager" aria-label="Article navigation"><a class="pager-card previous" href="05-gru-forecaster.html"><span>Previous</span><strong>GRU Forecasting: A Leaner Gated Memory</strong></a><a class="pager-card next" href="07-tcn-forecaster.html"><span>Next</span><strong>TCN Forecasting: Long Memory Through Dilated Convolutions</strong></a></nav>
+</main>
+<footer class="site-footer"><p>Sequence Models for Prediction · Open code, reproducible experiments, honest baselines.</p><a href="index.html">Series index</a></footer>
+</body>
+</html>

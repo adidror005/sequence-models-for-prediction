@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>N-BEATS-Style Forecasting: Explaining the Past to Build the Future — Medium export</title>
+<style>
+:root { color-scheme: light; }
+body { margin: 0; color: #242424; background: #f5f5f2; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.toolbar { position: sticky; top: 0; z-index: 5; padding: 14px 20px; color: #fff; background: #17324d; box-shadow: 0 2px 8px #0002; }
+.toolbar-inner { max-width: 1080px; margin: auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.toolbar strong { margin-right: auto; }
+button, .toolbar a { border: 1px solid #ffffff77; border-radius: 999px; padding: 8px 14px; color: white; background: transparent; font-weight: 600; text-decoration: none; cursor: pointer; }
+button.primary { color: #17324d; background: white; }
+.copy-status { width: 100%; color: #d9e6f2; font-size: 13px; }
+.instructions { max-width: 920px; margin: 28px auto 0; padding: 18px 24px; border-radius: 12px; background: #fff7d6; line-height: 1.5; }
+.instructions h2 { margin-top: 0; font-size: 20px; }
+.instructions code { background: #ffffff99; padding: 2px 5px; }
+.article-shell { max-width: 820px; margin: 28px auto 80px; padding: 56px 64px; background: white; box-shadow: 0 1px 8px #00000012; }
+.article-content { font-family: Georgia, Cambria, "Times New Roman", serif; font-size: 21px; line-height: 1.62; }
+.article-content h1 { margin: 0 0 12px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 46px; line-height: 1.12; letter-spacing: -0.025em; }
+.article-content h2 { margin: 50px 0 14px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 30px; line-height: 1.22; }
+.article-content h3 { margin: 34px 0 10px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 24px; line-height: 1.3; }
+.article-content p { margin: 0 0 24px; }
+.article-content ul, .article-content ol { margin: 0 0 24px; padding-left: 30px; }
+.article-content li { margin: 7px 0; }
+.article-content blockquote { margin: 32px 0; padding: 4px 0 4px 24px; border-left: 4px solid #242424; font-size: 25px; font-style: italic; }
+.article-content a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.article-content a.needs-live-url { text-decoration-color: #d93025; text-decoration-style: wavy; }
+.article-content img { display: block; max-width: 100%; height: auto; margin: 36px auto 10px; }
+.article-content figure { margin: 38px 0; }
+.article-content figcaption { color: #6b6b6b; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; text-align: center; }
+.article-content pre, .highlight { overflow-x: auto; margin: 28px 0; padding: 20px; border-radius: 6px; background: #f5f5f5; font-size: 15px; line-height: 1.5; }
+.article-content code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+.article-content :not(pre) > code { padding: 2px 5px; border-radius: 3px; background: #f2f2f2; font-size: 0.82em; }
+.article-content hr { margin: 48px 0; border: 0; text-align: center; }
+.article-content hr::after { content: "···"; letter-spacing: 14px; }
+pre { line-height: 125%; }
+td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+.highlight .hll { background-color: #ffffcc }
+.highlight { background: #f8f8f8; }
+.highlight .c { color: #3D7B7B; font-style: italic } /* Comment */
+.highlight .err { border: 1px solid #F00 } /* Error */
+.highlight .k { color: #008000; font-weight: bold } /* Keyword */
+.highlight .o { color: #666 } /* Operator */
+.highlight .ch { color: #3D7B7B; font-style: italic } /* Comment.Hashbang */
+.highlight .cm { color: #3D7B7B; font-style: italic } /* Comment.Multiline */
+.highlight .cp { color: #9C6500 } /* Comment.Preproc */
+.highlight .cpf { color: #3D7B7B; font-style: italic } /* Comment.PreprocFile */
+.highlight .c1 { color: #3D7B7B; font-style: italic } /* Comment.Single */
+.highlight .cs { color: #3D7B7B; font-style: italic } /* Comment.Special */
+.highlight .gd { color: #A00000 } /* Generic.Deleted */
+.highlight .ge { font-style: italic } /* Generic.Emph */
+.highlight .ges { font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.highlight .gr { color: #E40000 } /* Generic.Error */
+.highlight .gh { color: #000080; font-weight: bold } /* Generic.Heading */
+.highlight .gi { color: #008400 } /* Generic.Inserted */
+.highlight .go { color: #717171 } /* Generic.Output */
+.highlight .gp { color: #000080; font-weight: bold } /* Generic.Prompt */
+.highlight .gs { font-weight: bold } /* Generic.Strong */
+.highlight .gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+.highlight .gt { color: #04D } /* Generic.Traceback */
+.highlight .kc { color: #008000; font-weight: bold } /* Keyword.Constant */
+.highlight .kd { color: #008000; font-weight: bold } /* Keyword.Declaration */
+.highlight .kn { color: #008000; font-weight: bold } /* Keyword.Namespace */
+.highlight .kp { color: #008000 } /* Keyword.Pseudo */
+.highlight .kr { color: #008000; font-weight: bold } /* Keyword.Reserved */
+.highlight .kt { color: #B00040 } /* Keyword.Type */
+.highlight .m { color: #666 } /* Literal.Number */
+.highlight .s { color: #BA2121 } /* Literal.String */
+.highlight .na { color: #687822 } /* Name.Attribute */
+.highlight .nb { color: #008000 } /* Name.Builtin */
+.highlight .nc { color: #00F; font-weight: bold } /* Name.Class */
+.highlight .no { color: #800 } /* Name.Constant */
+.highlight .nd { color: #A2F } /* Name.Decorator */
+.highlight .ni { color: #717171; font-weight: bold } /* Name.Entity */
+.highlight .ne { color: #CB3F38; font-weight: bold } /* Name.Exception */
+.highlight .nf { color: #00F } /* Name.Function */
+.highlight .nl { color: #767600 } /* Name.Label */
+.highlight .nn { color: #00F; font-weight: bold } /* Name.Namespace */
+.highlight .nt { color: #008000; font-weight: bold } /* Name.Tag */
+.highlight .nv { color: #19177C } /* Name.Variable */
+.highlight .ow { color: #A2F; font-weight: bold } /* Operator.Word */
+.highlight .w { color: #BBB } /* Text.Whitespace */
+.highlight .mb { color: #666 } /* Literal.Number.Bin */
+.highlight .mf { color: #666 } /* Literal.Number.Float */
+.highlight .mh { color: #666 } /* Literal.Number.Hex */
+.highlight .mi { color: #666 } /* Literal.Number.Integer */
+.highlight .mo { color: #666 } /* Literal.Number.Oct */
+.highlight .sa { color: #BA2121 } /* Literal.String.Affix */
+.highlight .sb { color: #BA2121 } /* Literal.String.Backtick */
+.highlight .sc { color: #BA2121 } /* Literal.String.Char */
+.highlight .dl { color: #BA2121 } /* Literal.String.Delimiter */
+.highlight .sd { color: #BA2121; font-style: italic } /* Literal.String.Doc */
+.highlight .s2 { color: #BA2121 } /* Literal.String.Double */
+.highlight .se { color: #AA5D1F; font-weight: bold } /* Literal.String.Escape */
+.highlight .sh { color: #BA2121 } /* Literal.String.Heredoc */
+.highlight .si { color: #A45A77; font-weight: bold } /* Literal.String.Interpol */
+.highlight .sx { color: #008000 } /* Literal.String.Other */
+.highlight .sr { color: #A45A77 } /* Literal.String.Regex */
+.highlight .s1 { color: #BA2121 } /* Literal.String.Single */
+.highlight .ss { color: #19177C } /* Literal.String.Symbol */
+.highlight .bp { color: #008000 } /* Name.Builtin.Pseudo */
+.highlight .fm { color: #00F } /* Name.Function.Magic */
+.highlight .vc { color: #19177C } /* Name.Variable.Class */
+.highlight .vg { color: #19177C } /* Name.Variable.Global */
+.highlight .vi { color: #19177C } /* Name.Variable.Instance */
+.highlight .vm { color: #19177C } /* Name.Variable.Magic */
+.highlight .il { color: #666 } /* Literal.Number.Integer.Long */
+@media (max-width: 760px) {
+  .article-shell { margin: 0; padding: 36px 22px 60px; box-shadow: none; }
+  .article-content { font-size: 19px; }
+  .article-content h1 { font-size: 36px; }
+  .instructions { margin: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <strong>Medium export · 10-nbeats-style-forecaster.md</strong>
+    <button class="primary" onclick="copyRichArticle()">Copy rich article</button>
+    <button onclick="selectArticle()">Select article</button>
+    <a href="index.html">Export index</a>
+    <span id="copy-status" class="copy-status" aria-live="polite"></span>
+  </div>
+</div>
+<aside class="instructions">
+  <h2>Transfer notes</h2>
+  <p><strong>Replace 4 local series link(s) with live Medium URLs before publishing.</strong></p>
+  <p><strong>Suggested Medium tags:</strong> N-BEATS, Time Series, Forecasting, Neural Networks, Deep Learning</p>
+  <p>This preview contains 6 code block(s) and 1 rendered table image(s). After pasting, recreate code using Medium’s native code-block control and upload every image from the export package.</p>
+  <details><summary>Images required by this article</summary><ul><li><a href="table_images/10-nbeats-style-forecaster-table-1.png" target="_blank">table_images/10-nbeats-style-forecaster-table-1.png</a></li></ul></details>
+</aside>
+<main class="article-shell">
+  <article class="article-content"><h1>N-BEATS-Style Forecasting: Explaining the Past to Build the Future</h1>
+<p><em>Backcast residuals, forecast additions, and a fully connected route to multi-horizon prediction</em></p>
+<p><strong>Series:</strong> Sequence Models for Prediction, Part 11 of 15</p>
+<p>N-BEATS approaches forecasting with an elegant iterative idea:</p>
+<blockquote>
+<p>Let one block explain part of the observed window, remove that explanation, and let later blocks work on what remains. Add every block’s forecast contribution to form the future.</p>
+</blockquote>
+<p>There is no recurrence, convolution, or attention. Deep fully connected blocks operate on a flattened history, connected by backward and forward residual paths.</p>
+<p>The architecture’s structure—not a sequential state transition—creates its forecasting bias.</p>
+<h2>Backcast and forecast</h2>
+<p>Each block receives a residual representation of the input and emits two vectors:</p>
+<ul>
+<li>a <strong>backcast</strong>, which tries to explain the block’s portion of the historical input;</li>
+<li>a <strong>forecast</strong>, which contributes to the predicted horizon.</li>
+</ul>
+<p>The stack updates:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>residual_(k+1) = residual_k - backcast_k
+forecast_total = forecast_total + forecast_k
+</pre></div>
+</code></pre>
+<p>The first block may capture broad level and seasonality. The next receives what the first failed to explain and can focus on another structure. The decomposition is learned jointly to minimize forecast loss.</p>
+<p>This resembles boosting in spirit: later components concentrate on a residual. It is not classical boosting, because all blocks are trained together inside one neural network.</p>
+<h2>Generic and interpretable variants</h2>
+<p>The original N-BEATS paper presents generic blocks with learned basis projections and interpretable configurations whose trend and seasonality stacks use constrained basis functions.</p>
+<p>A compact generic-inspired variant can give each block three 256-unit ReLU layers, followed by one dense backcast head and one dense 24-step forecast head.</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="p">:</span>
+    <span class="n">backcast</span><span class="p">,</span> <span class="n">contribution</span> <span class="o">=</span> <span class="n">block</span><span class="p">(</span><span class="n">residual</span><span class="p">)</span>
+    <span class="n">residual</span> <span class="o">=</span> <span class="n">residual</span> <span class="o">-</span> <span class="n">backcast</span>
+    <span class="n">forecast</span> <span class="o">=</span> <span class="n">forecast</span> <span class="o">+</span> <span class="n">contribution</span>
+</pre></div>
+</code></pre>
+<p>There are three blocks. The code captures the backward/forward residual intuition but does not reproduce every design choice of the published N-BEATS architectures.</p>
+<p>“N-BEATS-style” is therefore the accurate name.</p>
+<h2>Flattening gives global access</h2>
+<p>Like the linear model and MLP, this architecture flattens all 168 historical steps and all feature channels.</p>
+<p>Every block can access every position directly. It does not have to remember a week-old observation through recurrence or expand a convolutional receptive field.</p>
+<p>The backcast head is as wide as the flattened input. That becomes expensive when features are added.</p>
+<figure><img alt="Table with columns: Input channels, Flattened width, Trainable parameters" src="table_images/10-nbeats-style-forecaster-table-1.png"/><figcaption>Table 1. Input channels · Flattened width · Trainable parameters</figcaption></figure>
+<p>The full model has nearly seven times as many parameters as the demand-only model.</p>
+<p>This growth makes multivariate extensions much more expensive than the original univariate use case.</p>
+<h2>What the residual stack can learn</h2>
+<p>With enough data and regularization, generic blocks can discover useful decompositions without being told which component is trend or seasonality.</p>
+<p>One block might explain slow level, another a repeating daily profile, and another transient deviations. But the blocks are not forced to align with those human concepts.</p>
+<p>If interpretability is required, use constrained basis expansions and inspect stack outputs. Even then, interpretability describes the model’s decomposition—not necessarily the true physical causes of demand.</p>
+<h2>How the blocks are trained</h2>
+<p>The entire stack is optimized end to end against forecast loss. There is usually no separate target telling a block what its backcast should represent. The residual pathway encourages specialization, while the forecast objective decides whether that specialization is useful.</p>
+<p>The number of stacks, blocks, hidden layers, hidden width, and basis size control capacity. Forecast ensembles are common because independently trained N-BEATS models can settle on different useful decompositions.</p>
+<p>For probabilistic forecasting, the output heads and loss must be changed to predict quantiles or distribution parameters rather than a single point estimate.</p>
+<h2>Complete PyTorch implementation</h2>
+<p>The full generic-inspired implementation requires both the residual block and the outer forecaster. Every block emits a backcast with the same width as the flattened input and a contribution with the same width as the forecast horizon.</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">NBEATSBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">input_dim</span><span class="p">,</span>
+        <span class="n">horizon</span><span class="p">,</span>
+        <span class="n">hidden</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
+        <span class="n">depth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">width</span> <span class="o">=</span> <span class="n">input_dim</span>
+
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">depth</span><span class="p">):</span>
+            <span class="n">layers</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">hidden</span><span class="p">),</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+            <span class="p">])</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="n">hidden</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">body</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">layers</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backcast_head</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span>
+            <span class="n">hidden</span><span class="p">,</span>
+            <span class="n">input_dim</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">forecast_head</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span>
+            <span class="n">hidden</span><span class="p">,</span>
+            <span class="n">horizon</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">hidden</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">body</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">backcast</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">backcast_head</span><span class="p">(</span><span class="n">hidden</span><span class="p">)</span>
+        <span class="n">forecast</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forecast_head</span><span class="p">(</span><span class="n">hidden</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">backcast</span><span class="p">,</span> <span class="n">forecast</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">NBEATSForecaster</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">lookback</span><span class="p">,</span>
+        <span class="n">n_features</span><span class="p">,</span>
+        <span class="n">horizon</span><span class="p">,</span>
+        <span class="n">n_blocks</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="n">hidden</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
+        <span class="n">depth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span> <span class="o">=</span> <span class="n">lookback</span> <span class="o">*</span> <span class="n">n_features</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">horizon</span> <span class="o">=</span> <span class="n">horizon</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">([</span>
+            <span class="n">NBEATSBlock</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span><span class="p">,</span>
+                <span class="n">horizon</span><span class="p">,</span>
+                <span class="n">hidden</span><span class="o">=</span><span class="n">hidden</span><span class="p">,</span>
+                <span class="n">depth</span><span class="o">=</span><span class="n">depth</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_blocks</span><span class="p">)</span>
+        <span class="p">])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">residual</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">forecast</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">horizon</span><span class="p">,</span>
+            <span class="n">device</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="p">:</span>
+            <span class="n">backcast</span><span class="p">,</span> <span class="n">contribution</span> <span class="o">=</span> <span class="n">block</span><span class="p">(</span>
+                <span class="n">residual</span>
+            <span class="p">)</span>
+            <span class="n">residual</span> <span class="o">=</span> <span class="n">residual</span> <span class="o">-</span> <span class="n">backcast</span>
+            <span class="n">forecast</span> <span class="o">=</span> <span class="n">forecast</span> <span class="o">+</span> <span class="n">contribution</span>
+
+        <span class="k">return</span> <span class="n">forecast</span>
+
+
+<span class="n">LOOKBACK</span> <span class="o">=</span> <span class="mi">168</span>
+<span class="n">N_FEATURES</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">HORIZON</span> <span class="o">=</span> <span class="mi">24</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">NBEATSForecaster</span><span class="p">(</span>
+    <span class="n">lookback</span><span class="o">=</span><span class="n">LOOKBACK</span><span class="p">,</span>
+    <span class="n">n_features</span><span class="o">=</span><span class="n">N_FEATURES</span><span class="p">,</span>
+    <span class="n">horizon</span><span class="o">=</span><span class="n">HORIZON</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">LOOKBACK</span><span class="p">,</span> <span class="n">N_FEATURES</span><span class="p">)</span>
+<span class="n">y_hat</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">y_hat</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">HORIZON</span><span class="p">)</span>
+</pre></div>
+</code></pre>
+<p>This is intentionally labeled N-BEATS-style because it demonstrates generic backcast/forecast residual blocks without reproducing every published basis and stack configuration. The same verified implementation is available in the <a href="code/sequence_models.py">companion model module</a>. The full Dataset, DataLoader, and fit/evaluate workflow is explained in the <a class="needs-live-url" href="pytorch-data-pipeline-and-training-loop.html">shared PyTorch training companion</a>.</p>
+<h2>Strengths</h2>
+<p>The N-BEATS idea offers:</p>
+<ul>
+<li>direct multi-horizon output;</li>
+<li>global access to the input window;</li>
+<li>iterative residual refinement;</li>
+<li>no recurrent training bottleneck;</li>
+<li>optional human-readable trend and seasonality bases;</li>
+<li>a strong fit for univariate forecasting.</li>
+</ul>
+<p>It is especially attractive when the target’s own history carries most of the signal.</p>
+<h2>Limitations</h2>
+<p>Flattened dense layers scale poorly with long context and many channels. The model does not naturally share local detectors across time, and a simple multichannel extension departs from the original univariate emphasis.</p>
+<p>Residual explanations can also be misleading if treated as physical components without validation.</p>
+<h2>Common failure modes</h2>
+<p>Large dense backcast heads can dominate memory and parameters. Adding variables or lengthening context may require an input bottleneck, channel-independent processing, or another architecture entirely.</p>
+<p>The learned decomposition should not be assumed to correspond to physical trend and seasonality unless the basis is constrained and the components are validated. Even interpretable basis outputs explain the model, not necessarily the data-generating process.</p>
+<p>Overfitting can hide behind a plausible decomposition, so chronological validation and strong naive baselines remain essential.</p>
+<h2>When to choose N-BEATS</h2>
+<p>Choose it when direct multi-horizon univariate prediction is central, global window access matters, and residual decomposition is attractive.</p>
+<p>Be cautious when feature count and context length make the dense backcast heads enormous. Report parameter count beside accuracy.</p>
+<p>We now have a direct explanation of every model in the series. Part 12 compares them as architectural choices before any dataset-specific leaderboard enters the discussion.</p>
+<h2>Further reading</h2>
+<ul>
+<li><a href="https://openreview.net/pdf?id=r1ecqn4YwB">Oreshkin et al., “N-BEATS: Neural Basis Expansion Analysis for Interpretable Time Series Forecasting”</a></li>
+</ul>
+<hr/>
+<p><strong>Series navigation:</strong> <a class="needs-live-url" href="index.html">Series index</a> · <a class="needs-live-url" href="09-patch-transformer-forecaster.html">Previous: Patch Transformer forecasting</a> · <a class="needs-live-url" href="11-choosing-a-sequence-model.html">Next: Choosing a model</a></p>
+</article>
+</main>
+<script>
+async function copyRichArticle() {
+  const source = document.querySelector('.article-content');
+  const clone = source.cloneNode(true);
+  const status = document.getElementById('copy-status');
+  clone.querySelectorAll('img').forEach((img) => img.src = new URL(img.getAttribute('src'), location.href).href);
+  clone.querySelectorAll('a').forEach((a) => a.href = new URL(a.getAttribute('href'), location.href).href);
+  const rich = new Blob([clone.innerHTML], {type: 'text/html'});
+  const plain = new Blob([source.innerText], {type: 'text/plain'});
+  try {
+    await navigator.clipboard.write([new ClipboardItem({'text/html': rich, 'text/plain': plain})]);
+    status.textContent = 'Copied as rich text. Paste it into a new Medium draft.';
+  } catch (error) {
+    selectArticle();
+    const copied = document.execCommand('copy');
+    status.textContent = copied
+      ? 'Copied using the compatibility fallback. Paste it into Medium.'
+      : 'Clipboard access was blocked. The article is selected; press Command/Ctrl+C.';
+  }
+}
+function selectArticle() {
+  const range = document.createRange();
+  range.selectNodeContents(document.querySelector('.article-content'));
+  const selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+  document.getElementById('copy-status').textContent = 'Article selected. Press Command/Ctrl+C to copy it.';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Linear Forecasting: The Baseline That Sees the Whole Window — Medium export</title>
+<style>
+:root { color-scheme: light; }
+body { margin: 0; color: #242424; background: #f5f5f2; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.toolbar { position: sticky; top: 0; z-index: 5; padding: 14px 20px; color: #fff; background: #17324d; box-shadow: 0 2px 8px #0002; }
+.toolbar-inner { max-width: 1080px; margin: auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.toolbar strong { margin-right: auto; }
+button, .toolbar a { border: 1px solid #ffffff77; border-radius: 999px; padding: 8px 14px; color: white; background: transparent; font-weight: 600; text-decoration: none; cursor: pointer; }
+button.primary { color: #17324d; background: white; }
+.copy-status { width: 100%; color: #d9e6f2; font-size: 13px; }
+.instructions { max-width: 920px; margin: 28px auto 0; padding: 18px 24px; border-radius: 12px; background: #fff7d6; line-height: 1.5; }
+.instructions h2 { margin-top: 0; font-size: 20px; }
+.instructions code { background: #ffffff99; padding: 2px 5px; }
+.article-shell { max-width: 820px; margin: 28px auto 80px; padding: 56px 64px; background: white; box-shadow: 0 1px 8px #00000012; }
+.article-content { font-family: Georgia, Cambria, "Times New Roman", serif; font-size: 21px; line-height: 1.62; }
+.article-content h1 { margin: 0 0 12px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 46px; line-height: 1.12; letter-spacing: -0.025em; }
+.article-content h2 { margin: 50px 0 14px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 30px; line-height: 1.22; }
+.article-content h3 { margin: 34px 0 10px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 24px; line-height: 1.3; }
+.article-content p { margin: 0 0 24px; }
+.article-content ul, .article-content ol { margin: 0 0 24px; padding-left: 30px; }
+.article-content li { margin: 7px 0; }
+.article-content blockquote { margin: 32px 0; padding: 4px 0 4px 24px; border-left: 4px solid #242424; font-size: 25px; font-style: italic; }
+.article-content a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.article-content a.needs-live-url { text-decoration-color: #d93025; text-decoration-style: wavy; }
+.article-content img { display: block; max-width: 100%; height: auto; margin: 36px auto 10px; }
+.article-content figure { margin: 38px 0; }
+.article-content figcaption { color: #6b6b6b; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; text-align: center; }
+.article-content pre, .highlight { overflow-x: auto; margin: 28px 0; padding: 20px; border-radius: 6px; background: #f5f5f5; font-size: 15px; line-height: 1.5; }
+.article-content code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+.article-content :not(pre) > code { padding: 2px 5px; border-radius: 3px; background: #f2f2f2; font-size: 0.82em; }
+.article-content hr { margin: 48px 0; border: 0; text-align: center; }
+.article-content hr::after { content: "···"; letter-spacing: 14px; }
+pre { line-height: 125%; }
+td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+.highlight .hll { background-color: #ffffcc }
+.highlight { background: #f8f8f8; }
+.highlight .c { color: #3D7B7B; font-style: italic } /* Comment */
+.highlight .err { border: 1px solid #F00 } /* Error */
+.highlight .k { color: #008000; font-weight: bold } /* Keyword */
+.highlight .o { color: #666 } /* Operator */
+.highlight .ch { color: #3D7B7B; font-style: italic } /* Comment.Hashbang */
+.highlight .cm { color: #3D7B7B; font-style: italic } /* Comment.Multiline */
+.highlight .cp { color: #9C6500 } /* Comment.Preproc */
+.highlight .cpf { color: #3D7B7B; font-style: italic } /* Comment.PreprocFile */
+.highlight .c1 { color: #3D7B7B; font-style: italic } /* Comment.Single */
+.highlight .cs { color: #3D7B7B; font-style: italic } /* Comment.Special */
+.highlight .gd { color: #A00000 } /* Generic.Deleted */
+.highlight .ge { font-style: italic } /* Generic.Emph */
+.highlight .ges { font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.highlight .gr { color: #E40000 } /* Generic.Error */
+.highlight .gh { color: #000080; font-weight: bold } /* Generic.Heading */
+.highlight .gi { color: #008400 } /* Generic.Inserted */
+.highlight .go { color: #717171 } /* Generic.Output */
+.highlight .gp { color: #000080; font-weight: bold } /* Generic.Prompt */
+.highlight .gs { font-weight: bold } /* Generic.Strong */
+.highlight .gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+.highlight .gt { color: #04D } /* Generic.Traceback */
+.highlight .kc { color: #008000; font-weight: bold } /* Keyword.Constant */
+.highlight .kd { color: #008000; font-weight: bold } /* Keyword.Declaration */
+.highlight .kn { color: #008000; font-weight: bold } /* Keyword.Namespace */
+.highlight .kp { color: #008000 } /* Keyword.Pseudo */
+.highlight .kr { color: #008000; font-weight: bold } /* Keyword.Reserved */
+.highlight .kt { color: #B00040 } /* Keyword.Type */
+.highlight .m { color: #666 } /* Literal.Number */
+.highlight .s { color: #BA2121 } /* Literal.String */
+.highlight .na { color: #687822 } /* Name.Attribute */
+.highlight .nb { color: #008000 } /* Name.Builtin */
+.highlight .nc { color: #00F; font-weight: bold } /* Name.Class */
+.highlight .no { color: #800 } /* Name.Constant */
+.highlight .nd { color: #A2F } /* Name.Decorator */
+.highlight .ni { color: #717171; font-weight: bold } /* Name.Entity */
+.highlight .ne { color: #CB3F38; font-weight: bold } /* Name.Exception */
+.highlight .nf { color: #00F } /* Name.Function */
+.highlight .nl { color: #767600 } /* Name.Label */
+.highlight .nn { color: #00F; font-weight: bold } /* Name.Namespace */
+.highlight .nt { color: #008000; font-weight: bold } /* Name.Tag */
+.highlight .nv { color: #19177C } /* Name.Variable */
+.highlight .ow { color: #A2F; font-weight: bold } /* Operator.Word */
+.highlight .w { color: #BBB } /* Text.Whitespace */
+.highlight .mb { color: #666 } /* Literal.Number.Bin */
+.highlight .mf { color: #666 } /* Literal.Number.Float */
+.highlight .mh { color: #666 } /* Literal.Number.Hex */
+.highlight .mi { color: #666 } /* Literal.Number.Integer */
+.highlight .mo { color: #666 } /* Literal.Number.Oct */
+.highlight .sa { color: #BA2121 } /* Literal.String.Affix */
+.highlight .sb { color: #BA2121 } /* Literal.String.Backtick */
+.highlight .sc { color: #BA2121 } /* Literal.String.Char */
+.highlight .dl { color: #BA2121 } /* Literal.String.Delimiter */
+.highlight .sd { color: #BA2121; font-style: italic } /* Literal.String.Doc */
+.highlight .s2 { color: #BA2121 } /* Literal.String.Double */
+.highlight .se { color: #AA5D1F; font-weight: bold } /* Literal.String.Escape */
+.highlight .sh { color: #BA2121 } /* Literal.String.Heredoc */
+.highlight .si { color: #A45A77; font-weight: bold } /* Literal.String.Interpol */
+.highlight .sx { color: #008000 } /* Literal.String.Other */
+.highlight .sr { color: #A45A77 } /* Literal.String.Regex */
+.highlight .s1 { color: #BA2121 } /* Literal.String.Single */
+.highlight .ss { color: #19177C } /* Literal.String.Symbol */
+.highlight .bp { color: #008000 } /* Name.Builtin.Pseudo */
+.highlight .fm { color: #00F } /* Name.Function.Magic */
+.highlight .vc { color: #19177C } /* Name.Variable.Class */
+.highlight .vg { color: #19177C } /* Name.Variable.Global */
+.highlight .vi { color: #19177C } /* Name.Variable.Instance */
+.highlight .vm { color: #19177C } /* Name.Variable.Magic */
+.highlight .il { color: #666 } /* Literal.Number.Integer.Long */
+@media (max-width: 760px) {
+  .article-shell { margin: 0; padding: 36px 22px 60px; box-shadow: none; }
+  .article-content { font-size: 19px; }
+  .article-content h1 { font-size: 36px; }
+  .instructions { margin: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <strong>Medium export · 02-linear-forecaster.md</strong>
+    <button class="primary" onclick="copyRichArticle()">Copy rich article</button>
+    <button onclick="selectArticle()">Select article</button>
+    <a href="index.html">Export index</a>
+    <span id="copy-status" class="copy-status" aria-live="polite"></span>
+  </div>
+</div>
+<aside class="instructions">
+  <h2>Transfer notes</h2>
+  <p><strong>Replace 4 local series link(s) with live Medium URLs before publishing.</strong></p>
+  <p><strong>Suggested Medium tags:</strong> Linear Regression, Time Series, Forecasting, Machine Learning, Baselines</p>
+  <p>This preview contains 12 code block(s) and 0 rendered table image(s). After pasting, recreate code using Medium’s native code-block control and upload every image from the export package.</p>
+  <details><summary>Images required by this article</summary><ul><li>No images in this article.</li></ul></details>
+</aside>
+<main class="article-shell">
+  <article class="article-content"><h1>Linear Forecasting: The Baseline That Sees the Whole Window</h1>
+<p><em>Why a single dense layer is often the most revealing model in a time-series experiment</em></p>
+<p><strong>Series:</strong> Sequence Models for Prediction, Part 3 of 15</p>
+<p>A linear forecaster is easy to underestimate.</p>
+<p>It has no recurrent state, convolution, attention, or learned notion of memory. Yet after we flatten a time window, a linear model can connect every historical value directly to every future horizon.</p>
+<p>That makes it more than a weak baseline. It is a diagnostic instrument.</p>
+<p>If a large neural model cannot beat a well-constructed linear forecast, either the relationship is mostly linear, the dataset is too small for the complex model, or the experiment is rewarding the wrong behavior.</p>
+<h2>The mental model: one weighted forecast per horizon</h2>
+<p>Suppose the input contains 168 hours and <code>F</code> features per hour. Flattening produces a vector with <code>168 × F</code> values.</p>
+<p>For forecast horizon <code>h</code>, the linear model learns:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>prediction[h] = bias[h]
+              + Σ weight[h, time, feature] × input[time, feature]
+</pre></div>
+</code></pre>
+<p>A direct 24-step implementation is only a few lines:</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">LinearForecaster</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_features</span><span class="p">,</span> <span class="n">horizon</span><span class="o">=</span><span class="mi">24</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">168</span> <span class="o">*</span> <span class="n">n_features</span><span class="p">,</span> <span class="n">horizon</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+</pre></div>
+</code></pre>
+<p>Each output hour receives its own set of weights. The model can learn that hour one depends heavily on the most recent demand, while tomorrow evening depends more on the same time yesterday.</p>
+<p>There is no requirement that adjacent timestamps receive similar weights. Time order matters only because each flattened position has a fixed column index.</p>
+<h2>Why this counts as a sequence baseline</h2>
+<p>The architecture is not sequential, but the input is. Position 167 always means “most recent hour,” position 144 means “24 hours ago,” and position 0 means “168 hours ago.”</p>
+<p>A direct path connects each position to every forecast horizon. The linear model does not have to transport the oldest observation through 168 recurrent updates or a stack of local convolutions.</p>
+<p>Its memory is global but rigid.</p>
+<p>That rigidity is both its strength and weakness:</p>
+<ul>
+<li>it can learn stable lag relationships efficiently;</li>
+<li>it cannot make the importance of a lag depend nonlinearly on the current regime;</li>
+<li>it assumes the positional relationship learned during training continues into validation and test;</li>
+<li>it cannot share a learned local pattern across different positions unless the data force similar weights.</li>
+</ul>
+<h2>Input width and regularization</h2>
+<p>With one input channel, the input width is 168 and the layer contains 4,056 trainable parameters:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>168 inputs × 24 outputs + 24 biases
+</pre></div>
+</code></pre>
+<p>With six channels, the width becomes 1,008 and the model grows to 24,216 parameters. With 16 features, it reaches 64,536 parameters.</p>
+<p>This is a crucial caveat. Adding features changes three things at once:</p>
+<ol>
+<li>the values available to the model;</li>
+<li>the number of coefficients it must estimate;</li>
+<li>the amount of regularization needed to control those coefficients.</li>
+</ol>
+<p>Time-series inputs are often strongly correlated: adjacent values resemble one another, and derived variables may overlap. Multicollinearity does not necessarily prevent prediction, but it can make coefficients unstable and optimization more sensitive.</p>
+<p>A regularized linear model—ridge regression, for example—is often a stronger default than an unpenalized fit. L1 regularization can produce sparse weights, while elastic net combines sparsity with stability among correlated inputs.</p>
+<h2>How the model learns</h2>
+<p>For point forecasting, the usual objective is mean squared error or mean absolute error across samples and forecast horizons.</p>
+<p>Classical linear regression can be solved directly with linear algebra. In a neural-network pipeline, it is often trained with the same mini-batch optimizer as the larger models. That keeps the surrounding code consistent, although optimizer settings and regularization still need tuning.</p>
+<p>There are two common multi-horizon designs:</p>
+<ul>
+<li>one model produces all future horizons jointly;</li>
+<li>a separate linear model is trained for each horizon.</li>
+</ul>
+<p>A single 24-output layer is mathematically close to fitting 24 linear regressions that share an input matrix. It does not model dependencies among its output errors, but it is simple, fast, and easy to inspect.</p>
+<h2>The hidden advantage: interpretability by horizon</h2>
+<p>Reshape the learned weight matrix from:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>[24, 168 × F]
+</pre></div>
+</code></pre>
+<p>into:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>[forecast horizon, historical time, feature]
+</pre></div>
+</code></pre>
+<p>Now we can visualize which past hours influence each future hour.</p>
+<p>For seasonal demand, we might expect diagonal bands: a future evening hour placing weight near recent evening observations.</p>
+<p>Coefficient plots are not automatically causal explanations. Correlated inputs can divide weight arbitrarily. But they are an excellent debugging tool. If a supposedly causal model places surprising weight on a padding artifact or a missingness pattern, we learn that before deploying it.</p>
+<h2>Complete PyTorch implementation</h2>
+<p>This is the complete direct linear model used in the experiment. It accepts any feature count while keeping the lookback and horizon explicit. The final assertion is a useful shape test before training.</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">LinearForecaster</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lookback</span><span class="p">,</span> <span class="n">n_features</span><span class="p">,</span> <span class="n">horizon</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span>
+            <span class="n">lookback</span> <span class="o">*</span> <span class="n">n_features</span><span class="p">,</span>
+            <span class="n">horizon</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="c1"># x: [batch, lookback, features]</span>
+        <span class="n">flat_history</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc</span><span class="p">(</span><span class="n">flat_history</span><span class="p">)</span>
+
+
+<span class="n">LOOKBACK</span> <span class="o">=</span> <span class="mi">168</span>
+<span class="n">N_FEATURES</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">HORIZON</span> <span class="o">=</span> <span class="mi">24</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">LinearForecaster</span><span class="p">(</span>
+    <span class="n">lookback</span><span class="o">=</span><span class="n">LOOKBACK</span><span class="p">,</span>
+    <span class="n">n_features</span><span class="o">=</span><span class="n">N_FEATURES</span><span class="p">,</span>
+    <span class="n">horizon</span><span class="o">=</span><span class="n">HORIZON</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">LOOKBACK</span><span class="p">,</span> <span class="n">N_FEATURES</span><span class="p">)</span>
+<span class="n">y_hat</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">y_hat</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">HORIZON</span><span class="p">)</span>
+</pre></div>
+</code></pre>
+<p>The same verified implementation is available in the <a href="code/sequence_models.py">companion model module</a>. The complete Dataset, DataLoader, and fit/evaluate workflow is explained in the <a class="needs-live-url" href="pytorch-data-pipeline-and-training-loop.html">shared PyTorch training companion</a>.</p>
+<h2>Common failure modes</h2>
+<p>A linear forecaster fails when the relationship changes with context. It cannot express rules such as “use yesterday’s pattern on weekdays but a different pattern on weekends” unless interaction terms are supplied explicitly.</p>
+<p>It can also look better than it is when the target is persistent. Always compare it with a domain-specific naive forecast, use chronological evaluation, and inspect each forecast horizon separately.</p>
+<p>Finally, coefficients should not be mistaken for causal effects. Correlation among historical positions means several weight patterns can make nearly identical predictions.</p>
+<h2>When to choose the linear forecaster</h2>
+<p>Use it when:</p>
+<ul>
+<li>you need a fast, transparent benchmark;</li>
+<li>the dataset is modest;</li>
+<li>stable seasonal lags dominate;</li>
+<li>you want a coefficient map by forecast horizon;</li>
+<li>you need to detect whether complexity is earning its cost.</li>
+</ul>
+<p>Move beyond it when interactions and regimes are repeatable enough to justify nonlinear capacity.</p>
+<p>The linear forecaster has no glamour, which is precisely why it is valuable. It gives the rest of the model zoo nowhere to hide.</p>
+<p>Part 4 adds nonlinear interactions while preserving global access to the window: the multilayer perceptron.</p>
+<hr/>
+<p><strong>Series navigation:</strong> <a class="needs-live-url" href="index.html">Series index</a> · <a class="needs-live-url" href="pytorch-data-pipeline-and-training-loop.html">Previous: PyTorch data pipeline</a> · <a class="needs-live-url" href="03-mlp-forecaster.html">Next: MLP forecasting</a></p>
+</article>
+</main>
+<script>
+async function copyRichArticle() {
+  const source = document.querySelector('.article-content');
+  const clone = source.cloneNode(true);
+  const status = document.getElementById('copy-status');
+  clone.querySelectorAll('img').forEach((img) => img.src = new URL(img.getAttribute('src'), location.href).href);
+  clone.querySelectorAll('a').forEach((a) => a.href = new URL(a.getAttribute('href'), location.href).href);
+  const rich = new Blob([clone.innerHTML], {type: 'text/html'});
+  const plain = new Blob([source.innerText], {type: 'text/plain'});
+  try {
+    await navigator.clipboard.write([new ClipboardItem({'text/html': rich, 'text/plain': plain})]);
+    status.textContent = 'Copied as rich text. Paste it into a new Medium draft.';
+  } catch (error) {
+    selectArticle();
+    const copied = document.execCommand('copy');
+    status.textContent = copied
+      ? 'Copied using the compatibility fallback. Paste it into Medium.'
+      : 'Clipboard access was blocked. The article is selected; press Command/Ctrl+C.';
+  }
+}
+function selectArticle() {
+  const range = document.createRange();
+  range.selectNodeContents(document.querySelector('.article-content'));
+  const selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+  document.getElementById('copy-status').textContent = 'Article selected. Press Command/Ctrl+C to copy it.';
+}
+</script>
+</body>
+</html>

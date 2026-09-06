@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sequence Models for Prediction</title>
+<meta name="description" content="A practical, code-complete series about how modern sequence models learn from ordered data—and when simpler baselines still win.">
+<link rel="canonical" href="https://adidror005.github.io/sequence-models-for-prediction/">
+<link rel="stylesheet" href="styles.css">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Sequence Models for Prediction">
+<meta property="og:description" content="A practical, code-complete series about how modern sequence models learn from ordered data—and when simpler baselines still win.">
+<meta property="og:url" content="https://adidror005.github.io/sequence-models-for-prediction/">
+<meta property="og:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Sequence Models for Prediction">
+<meta name="twitter:description" content="A practical, code-complete series about how modern sequence models learn from ordered data—and when simpler baselines still win.">
+<meta name="twitter:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
+</head>
+<body class="home">
+<header class="site-header home-header">
+  <a class="brand" href="index.html"><span class="brand-mark">S</span><span>Sequence Models<br><small>for Prediction</small></span></a>
+  <nav aria-label="Primary navigation"><a href="#series">The series</a><a href="#about">About</a><a class="github-link" href="https://github.com/adidror005/sequence-models-for-prediction">View source</a></nav>
+</header>
+<main>
+  <section class="home-hero">
+    <div class="hero-copy">
+      <p class="eyebrow">A practical forecasting series</p>
+      <h1>Sequence models,<br><em>without the mystique.</em></h1>
+      <p class="hero-dek">From linear windows and recurrent memory to convolutions, Transformers, and N-BEATS—built in PyTorch, tested on electricity demand, and judged against strong simple baselines.</p>
+      <div class="hero-actions"><a class="button primary-button" href="01-sequence-models-for-prediction.html">Start with Part 1</a><a class="button text-button" href="#series">Browse the series ↓</a></div>
+    </div>
+    <div class="sequence-visual" aria-hidden="true">
+      <div class="visual-label">past window</div>
+      <div class="signal signal-past"></div>
+      <div class="model-node"><span>f</span><small>model</small></div>
+      <div class="signal signal-future"></div>
+      <div class="visual-label future-label">forecast</div>
+    </div>
+  </section>
+  <section class="proof-strip" aria-label="Series highlights"><div><strong>15</strong><span>focused parts</span></div><div><strong>9</strong><span>model families</span></div><div><strong>100%</strong><span>complete PyTorch code</span></div><div><strong>1</strong><span>honest CatBoost check</span></div></section>
+  <section id="about" class="about-section">
+    <p class="eyebrow">The central question</p>
+    <h2>What should a forecasting model learn—and what should we hand it?</h2>
+    <div class="about-grid"><p>This series first holds the input fixed and compares how different architectures process the same history. Only then does it ask whether calendar variables, explicit lags, differences, and rolling statistics add useful information.</p><p>The uncomfortable benchmark stays visible throughout: sophisticated neural networks often lose to gradient boosting on a carefully designed time-series table. Complexity has to earn its place.</p></div>
+  </section>
+  <section id="series" class="series-section">
+    <div class="section-heading"><div><p class="eyebrow">Read in order or jump in</p><h2>The complete series</h2></div><p>Foundations first. Individual algorithms next. Evidence and experimental discipline at the end.</p></div>
+    <div class="series-grid"><article class="series-card">
+  <div class="card-meta"><span>Part 01</span><span>Foundations</span></div>
+  <h2><a href="01-sequence-models-for-prediction.html">Sequence Models for Prediction: A Practical Map</a></h2>
+  <p>How inputs, outputs, memory, and model families fit together before we write any architecture code</p>
+  <a class="read-link" href="01-sequence-models-for-prediction.html">Read article <span aria-hidden="true">→</span></a>
+</article><article class="series-card">
+  <div class="card-meta"><span>Part 02</span><span>Foundations</span></div>
+  <h2><a href="pytorch-data-pipeline-and-training-loop.html">A Leak-Free PyTorch Dataset, DataLoader, and Training Loop for Sequence Prediction</a></h2>
+  <p>The reusable plumbing behind every model in the series—from chronological forecast origins to early stopping and original-scale metrics</p>
+  <a class="read-link" href="pytorch-data-pipeline-and-training-loop.html">Read article <span aria-hidden="true">→</span></a>
+</article><article class="series-card">
+  <div class="card-meta"><span>Part 03</span><span>Models</span></div>
+  <h2><a href="02-linear-forecaster.html">Linear Forecasting: The Baseline That Sees the Whole Window</a></h2>
+  <p>Why a single dense layer is often the most revealing model in a time-series experiment</p>
+  <a class="read-link" href="02-linear-forecaster.html">Read article <span aria-hidden="true">→</span></a>
+</article><article class="series-card">
+  <div class="card-meta"><span>Part 04</span><span>Models</span></div>
+  <h2><a href="03-mlp-forecaster.html">MLP Forecasting: A Nonlinear Map from Past Window to Future Path</a></h2>
+  <p>How a multilayer perceptron models time without recurrence, convolution, or attention</p>
+  <a class="read-link" href="03-mlp-forecaster.html">Read article <span aria-hidden="true">→</span></a>
+</article><article class="series-card">
+  <div class="card-meta"><span>Part 05</span><span>Models</span></div>
+  <h2><a href="04-lstm-forecaster.html">LSTM Forecasting: Learning What to Remember</a></h2>
+  <p>An intuitive guide to gates, cell state, and direct multi-horizon prediction</p>
+  <a class="read-link" href="04-lstm-forecaster.html">Read article <span aria-hidden="true">→</span></a>
+</article><article class="series-card">
+  <div class="card-meta"><span>Part 06</span><span>Models</span></div>
+  <h2><a href="05-gru-forecaster.html">GRU Forecasting: A Leaner Gated Memory</a></h2>
+  <p>How update and reset gates create a compact alternative to the LSTM</p>
+  <a class="read-link" href="05-gru-forecaster.html">Read article <span aria-hidden="true">→</span></a>
+</article><article class="series-card">
+  <div class="card-meta"><span>Part 07</span><span>Models</span></div>
+  <h2><a href="06-cnn1d-forecaster.html">1D CNN Forecasting: Learning Local Shapes in Parallel</a></h2>
+  <p>How temporal filters detect motifs—and why pooling can erase the positions a forecast needs</p>
+  <a class="read-link" href="06-cnn1d-forecaster.html">Read article <span aria-hidden="true">→</span></a>
+</article><article class="series-card">
+  <div class="card-meta"><span>Part 08</span><span>Models</span></div>
+  <h2><a href="07-tcn-forecaster.html">TCN Forecasting: Long Memory Through Dilated Convolutions</a></h2>
+  <p>How causal filters create an efficient sequence model—and how to calculate what it can actually see</p>
+  <a class="read-link" href="07-tcn-forecaster.html">Read article <span aria-hidden="true">→</span></a>
+</article><article class="series-card">
+  <div class="card-meta"><span>Part 09</span><span>Models</span></div>
+  <h2><a href="08-transformer-forecaster.html">Transformer Forecasting: Let Every Time Step Look at Every Other Step</a></h2>
+  <p>Self-attention intuition, positional information, and the limits of a generic encoder</p>
+  <a class="read-link" href="08-transformer-forecaster.html">Read article <span aria-hidden="true">→</span></a>
+</article><article class="series-card">
+  <div class="card-meta"><span>Part 10</span><span>Models</span></div>
+  <h2><a href="09-patch-transformer-forecaster.html">Patch Transformer Forecasting: Turning Time Steps into Temporal Tokens</a></h2>
+  <p>Why grouping nearby observations can make attention cheaper—and exact lags harder to recover</p>
+  <a class="read-link" href="09-patch-transformer-forecaster.html">Read article <span aria-hidden="true">→</span></a>
+</article><article class="series-card">
+  <div class="card-meta"><span>Part 11</span><span>Models</span></div>
+  <h2><a href="10-nbeats-style-forecaster.html">N-BEATS-Style Forecasting: Explaining the Past to Build the Future</a></h2>
+  <p>Backcast residuals, forecast additions, and a fully connected route to multi-horizon prediction</p>
+  <a class="read-link" href="10-nbeats-style-forecaster.html">Read article <span aria-hidden="true">→</span></a>
+</article><article class="series-card">
+  <div class="card-meta"><span>Part 12</span><span>Synthesis</span></div>
+  <h2><a href="11-choosing-a-sequence-model.html">Which Time-Series Model Should You Use?</a></h2>
+  <p>A practical comparison of access, memory, computation, and inductive bias</p>
+  <a class="read-link" href="11-choosing-a-sequence-model.html">Read article <span aria-hidden="true">→</span></a>
+</article><article class="series-card">
+  <div class="card-meta"><span>Part 13</span><span>Case study</span></div>
+  <h2><a href="12-electricity-results-and-interpretation.html">Comparing Sequence Models on Electricity Prediction</a></h2>
+  <p>What happens when nine very different architectures receive exactly the same week of raw demand history?</p>
+  <a class="read-link" href="12-electricity-results-and-interpretation.html">Read article <span aria-hidden="true">→</span></a>
+</article><article class="series-card">
+  <div class="card-meta"><span>Part 14</span><span>Case study</span></div>
+  <h2><a href="13-calendar-and-lagged-features.html">Do Calendar and Lagged Features Help Sequence Models?</a></h2>
+  <p>When extra inputs add signal, supply a shortcut, or merely duplicate what the model already sees</p>
+  <a class="read-link" href="13-calendar-and-lagged-features.html">Read article <span aria-hidden="true">→</span></a>
+</article><article class="series-card">
+  <div class="card-meta"><span>Part 15</span><span>Practice</span></div>
+  <h2><a href="14-designing-a-trustworthy-experiment.html">How to Design a Time-Series Experiment You Can Trust</a></h2>
+  <p>A rigorous protocol for comparing models, features, and forecasting decisions</p>
+  <a class="read-link" href="14-designing-a-trustworthy-experiment.html">Read article <span aria-hidden="true">→</span></a>
+</article></div>
+  </section>
+  <section class="coming-next">
+    <div><p class="eyebrow">Next application</p><h2>Stock-price prediction—with stricter rules.</h2><p>The same framework will be extended to financial data using walk-forward evaluation, realistic baselines, transaction assumptions, and targets that are actually useful.</p></div>
+    <a class="button light-button" href="future-stock-prediction-roadmap.html">See the roadmap →</a>
+  </section>
+</main>
+<footer class="site-footer"><p>Sequence Models for Prediction · Open code, reproducible experiments, honest baselines.</p><a href="https://github.com/adidror005/sequence-models-for-prediction">Source on GitHub</a></footer>
+</body>
+</html>

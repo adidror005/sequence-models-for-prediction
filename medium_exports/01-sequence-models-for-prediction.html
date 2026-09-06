@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sequence Models for Prediction: A Practical Map — Medium export</title>
+<style>
+:root { color-scheme: light; }
+body { margin: 0; color: #242424; background: #f5f5f2; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.toolbar { position: sticky; top: 0; z-index: 5; padding: 14px 20px; color: #fff; background: #17324d; box-shadow: 0 2px 8px #0002; }
+.toolbar-inner { max-width: 1080px; margin: auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.toolbar strong { margin-right: auto; }
+button, .toolbar a { border: 1px solid #ffffff77; border-radius: 999px; padding: 8px 14px; color: white; background: transparent; font-weight: 600; text-decoration: none; cursor: pointer; }
+button.primary { color: #17324d; background: white; }
+.copy-status { width: 100%; color: #d9e6f2; font-size: 13px; }
+.instructions { max-width: 920px; margin: 28px auto 0; padding: 18px 24px; border-radius: 12px; background: #fff7d6; line-height: 1.5; }
+.instructions h2 { margin-top: 0; font-size: 20px; }
+.instructions code { background: #ffffff99; padding: 2px 5px; }
+.article-shell { max-width: 820px; margin: 28px auto 80px; padding: 56px 64px; background: white; box-shadow: 0 1px 8px #00000012; }
+.article-content { font-family: Georgia, Cambria, "Times New Roman", serif; font-size: 21px; line-height: 1.62; }
+.article-content h1 { margin: 0 0 12px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 46px; line-height: 1.12; letter-spacing: -0.025em; }
+.article-content h2 { margin: 50px 0 14px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 30px; line-height: 1.22; }
+.article-content h3 { margin: 34px 0 10px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 24px; line-height: 1.3; }
+.article-content p { margin: 0 0 24px; }
+.article-content ul, .article-content ol { margin: 0 0 24px; padding-left: 30px; }
+.article-content li { margin: 7px 0; }
+.article-content blockquote { margin: 32px 0; padding: 4px 0 4px 24px; border-left: 4px solid #242424; font-size: 25px; font-style: italic; }
+.article-content a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.article-content a.needs-live-url { text-decoration-color: #d93025; text-decoration-style: wavy; }
+.article-content img { display: block; max-width: 100%; height: auto; margin: 36px auto 10px; }
+.article-content figure { margin: 38px 0; }
+.article-content figcaption { color: #6b6b6b; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; text-align: center; }
+.article-content pre, .highlight { overflow-x: auto; margin: 28px 0; padding: 20px; border-radius: 6px; background: #f5f5f5; font-size: 15px; line-height: 1.5; }
+.article-content code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+.article-content :not(pre) > code { padding: 2px 5px; border-radius: 3px; background: #f2f2f2; font-size: 0.82em; }
+.article-content hr { margin: 48px 0; border: 0; text-align: center; }
+.article-content hr::after { content: "···"; letter-spacing: 14px; }
+pre { line-height: 125%; }
+td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+.highlight .hll { background-color: #ffffcc }
+.highlight { background: #f8f8f8; }
+.highlight .c { color: #3D7B7B; font-style: italic } /* Comment */
+.highlight .err { border: 1px solid #F00 } /* Error */
+.highlight .k { color: #008000; font-weight: bold } /* Keyword */
+.highlight .o { color: #666 } /* Operator */
+.highlight .ch { color: #3D7B7B; font-style: italic } /* Comment.Hashbang */
+.highlight .cm { color: #3D7B7B; font-style: italic } /* Comment.Multiline */
+.highlight .cp { color: #9C6500 } /* Comment.Preproc */
+.highlight .cpf { color: #3D7B7B; font-style: italic } /* Comment.PreprocFile */
+.highlight .c1 { color: #3D7B7B; font-style: italic } /* Comment.Single */
+.highlight .cs { color: #3D7B7B; font-style: italic } /* Comment.Special */
+.highlight .gd { color: #A00000 } /* Generic.Deleted */
+.highlight .ge { font-style: italic } /* Generic.Emph */
+.highlight .ges { font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.highlight .gr { color: #E40000 } /* Generic.Error */
+.highlight .gh { color: #000080; font-weight: bold } /* Generic.Heading */
+.highlight .gi { color: #008400 } /* Generic.Inserted */
+.highlight .go { color: #717171 } /* Generic.Output */
+.highlight .gp { color: #000080; font-weight: bold } /* Generic.Prompt */
+.highlight .gs { font-weight: bold } /* Generic.Strong */
+.highlight .gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+.highlight .gt { color: #04D } /* Generic.Traceback */
+.highlight .kc { color: #008000; font-weight: bold } /* Keyword.Constant */
+.highlight .kd { color: #008000; font-weight: bold } /* Keyword.Declaration */
+.highlight .kn { color: #008000; font-weight: bold } /* Keyword.Namespace */
+.highlight .kp { color: #008000 } /* Keyword.Pseudo */
+.highlight .kr { color: #008000; font-weight: bold } /* Keyword.Reserved */
+.highlight .kt { color: #B00040 } /* Keyword.Type */
+.highlight .m { color: #666 } /* Literal.Number */
+.highlight .s { color: #BA2121 } /* Literal.String */
+.highlight .na { color: #687822 } /* Name.Attribute */
+.highlight .nb { color: #008000 } /* Name.Builtin */
+.highlight .nc { color: #00F; font-weight: bold } /* Name.Class */
+.highlight .no { color: #800 } /* Name.Constant */
+.highlight .nd { color: #A2F } /* Name.Decorator */
+.highlight .ni { color: #717171; font-weight: bold } /* Name.Entity */
+.highlight .ne { color: #CB3F38; font-weight: bold } /* Name.Exception */
+.highlight .nf { color: #00F } /* Name.Function */
+.highlight .nl { color: #767600 } /* Name.Label */
+.highlight .nn { color: #00F; font-weight: bold } /* Name.Namespace */
+.highlight .nt { color: #008000; font-weight: bold } /* Name.Tag */
+.highlight .nv { color: #19177C } /* Name.Variable */
+.highlight .ow { color: #A2F; font-weight: bold } /* Operator.Word */
+.highlight .w { color: #BBB } /* Text.Whitespace */
+.highlight .mb { color: #666 } /* Literal.Number.Bin */
+.highlight .mf { color: #666 } /* Literal.Number.Float */
+.highlight .mh { color: #666 } /* Literal.Number.Hex */
+.highlight .mi { color: #666 } /* Literal.Number.Integer */
+.highlight .mo { color: #666 } /* Literal.Number.Oct */
+.highlight .sa { color: #BA2121 } /* Literal.String.Affix */
+.highlight .sb { color: #BA2121 } /* Literal.String.Backtick */
+.highlight .sc { color: #BA2121 } /* Literal.String.Char */
+.highlight .dl { color: #BA2121 } /* Literal.String.Delimiter */
+.highlight .sd { color: #BA2121; font-style: italic } /* Literal.String.Doc */
+.highlight .s2 { color: #BA2121 } /* Literal.String.Double */
+.highlight .se { color: #AA5D1F; font-weight: bold } /* Literal.String.Escape */
+.highlight .sh { color: #BA2121 } /* Literal.String.Heredoc */
+.highlight .si { color: #A45A77; font-weight: bold } /* Literal.String.Interpol */
+.highlight .sx { color: #008000 } /* Literal.String.Other */
+.highlight .sr { color: #A45A77 } /* Literal.String.Regex */
+.highlight .s1 { color: #BA2121 } /* Literal.String.Single */
+.highlight .ss { color: #19177C } /* Literal.String.Symbol */
+.highlight .bp { color: #008000 } /* Name.Builtin.Pseudo */
+.highlight .fm { color: #00F } /* Name.Function.Magic */
+.highlight .vc { color: #19177C } /* Name.Variable.Class */
+.highlight .vg { color: #19177C } /* Name.Variable.Global */
+.highlight .vi { color: #19177C } /* Name.Variable.Instance */
+.highlight .vm { color: #19177C } /* Name.Variable.Magic */
+.highlight .il { color: #666 } /* Literal.Number.Integer.Long */
+@media (max-width: 760px) {
+  .article-shell { margin: 0; padding: 36px 22px 60px; box-shadow: none; }
+  .article-content { font-size: 19px; }
+  .article-content h1 { font-size: 36px; }
+  .instructions { margin: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <strong>Medium export · 01-sequence-models-for-prediction.md</strong>
+    <button class="primary" onclick="copyRichArticle()">Copy rich article</button>
+    <button onclick="selectArticle()">Select article</button>
+    <a href="index.html">Export index</a>
+    <span id="copy-status" class="copy-status" aria-live="polite"></span>
+  </div>
+</div>
+<aside class="instructions">
+  <h2>Transfer notes</h2>
+  <p><strong>Replace 17 local series link(s) with live Medium URLs before publishing.</strong></p>
+  <p><strong>Suggested Medium tags:</strong> Time Series, Forecasting, Deep Learning, Neural Networks, Machine Learning</p>
+  <p>This preview contains 14 code block(s) and 0 rendered table image(s). After pasting, recreate code using Medium’s native code-block control and upload every image from the export package.</p>
+  <details><summary>Images required by this article</summary><ul><li>No images in this article.</li></ul></details>
+</aside>
+<main class="article-shell">
+  <article class="article-content"><h1>Sequence Models for Prediction: A Practical Map</h1>
+<p><em>How inputs, outputs, memory, and model families fit together before we write any architecture code</em></p>
+<p><strong>Series:</strong> Sequence Models for Prediction, Part 1 of 15</p>
+<p>A sequence is an ordered collection in which position and context matter.</p>
+<p>It might contain words, sensor measurements, transactions, medical events, audio samples, video frames, or market observations. Nearby elements may be related, patterns may repeat at several scales, and the meaning of one element can depend on what came before it.</p>
+<p>Before comparing LSTMs, convolutional networks, Transformers, and N-BEATS, we need a shared language for sequence prediction. Otherwise architecture names conceal differences in data, targets, and evaluation.</p>
+<p>This article builds that language. Part 2 builds the shared PyTorch data pipeline, Parts 3–11 explain the algorithms one at a time, and Part 12 compares them as design choices. Electricity forecasting appears later as a concrete case study rather than the premise of the series.</p>
+<h2>The series roadmap</h2>
+<p>This article also serves as the evolving table of contents:</p>
+<ol>
+<li><strong>Sequence Models for Prediction: A Practical Map</strong> — the shared language developed here.</li>
+<li><a class="needs-live-url" href="pytorch-data-pipeline-and-training-loop.html">A Leak-Free PyTorch Dataset, DataLoader, and Training Loop</a> — the shared forecasting machinery.</li>
+<li><a class="needs-live-url" href="02-linear-forecaster.html">Linear Forecasting</a> — the transparent global baseline.</li>
+<li><a class="needs-live-url" href="03-mlp-forecaster.html">MLP Forecasting</a> — nonlinear prediction from a flattened window.</li>
+<li><a class="needs-live-url" href="04-lstm-forecaster.html">LSTM Forecasting</a> — gated recurrent memory.</li>
+<li><a class="needs-live-url" href="05-gru-forecaster.html">GRU Forecasting</a> — a leaner recurrent state machine.</li>
+<li><a class="needs-live-url" href="06-cnn1d-forecaster.html">1D CNN Forecasting</a> — reusable local temporal patterns.</li>
+<li><a class="needs-live-url" href="07-tcn-forecaster.html">TCN Forecasting</a> — causal convolution with designed long-range memory.</li>
+<li><a class="needs-live-url" href="08-transformer-forecaster.html">Transformer Forecasting</a> — content-dependent global access.</li>
+<li><a class="needs-live-url" href="09-patch-transformer-forecaster.html">Patch Transformer Forecasting</a> — local segments as attention tokens.</li>
+<li><a class="needs-live-url" href="10-nbeats-style-forecaster.html">N-BEATS-Style Forecasting</a> — backcast and forecast residual refinement.</li>
+<li><a class="needs-live-url" href="11-choosing-a-sequence-model.html">Which Time-Series Model Should You Use?</a> — a practical selection framework.</li>
+<li><a class="needs-live-url" href="12-electricity-results-and-interpretation.html">Comparing Sequence Models on Electricity Prediction</a> — raw-history results.</li>
+<li><a class="needs-live-url" href="13-calendar-and-lagged-features.html">Do Calendar and Lagged Features Help?</a> — the later representation experiment.</li>
+<li><a class="needs-live-url" href="14-designing-a-trustworthy-experiment.html">How to Design an Experiment You Can Trust</a> — evaluation discipline.</li>
+</ol>
+<p>As each installment goes live, replace its local draft link with the public Medium URL. Unpublished titles can remain plain text so readers never encounter a dead link.</p>
+<p>Part 2 implements the shared forecasting machinery before choosing an architecture: <a class="needs-live-url" href="pytorch-data-pipeline-and-training-loop.html">A Leak-Free PyTorch Dataset, DataLoader, and Training Loop</a>.</p>
+<h2>The main sequence-prediction tasks</h2>
+<p>Different tasks ask a model to produce different output structures.</p>
+<h3>Sequence to one</h3>
+<p>The complete input sequence produces one result: sentiment from a sentence, equipment-failure risk from sensor history, or fraud probability from a transaction trail.</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>[x₁, x₂, ..., xₜ] → y
+</pre></div>
+</code></pre>
+<p>The output can be a class, probability, or continuous value.</p>
+<h3>Sequence to sequence</h3>
+<p>The model produces an output sequence: a label for every video frame, a translated sentence, or a forecast path.</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>[x₁, x₂, ..., xₜ] → [y₁, y₂, ..., yₖ]
+</pre></div>
+</code></pre>
+<p>Input and output lengths may be equal or different.</p>
+<h3>Next-element prediction</h3>
+<p>The model predicts what comes next from everything observed so far. Language modeling and one-step forecasting share this structure even though their targets are very different.</p>
+<h3>Multi-step prediction</h3>
+<p>The model predicts several future values from an observed prefix. This will be our main numerical example because it makes memory, causality, and evaluation especially concrete.</p>
+<p>The same architectural ideas recur across all four tasks: what context can the model access, how is that context compressed, and how does the output retrieve it?</p>
+<h2>Time-series forecasting begins at an origin</h2>
+<p>Imagine standing at time <code>t</code>. Everything before <code>t</code> is observed. Everything from <code>t</code> onward is unknown.</p>
+<p><code>t</code> is the <strong>forecast origin</strong>.</p>
+<p>We choose a lookback length <code>L</code> and forecast horizon <code>H</code>:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>observed context                   future target
+
+x[t-L] ... x[t-2] x[t-1]   │   y[t] y[t+1] ... y[t+H-1]
+                            ↑
+                      forecast origin
+</pre></div>
+</code></pre>
+<p>Sliding the origin through history creates supervised examples. With a 168-step lookback and 24-step horizon, one example has:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>X: [168, number_of_features]
+y: [24]
+</pre></div>
+</code></pre>
+<p>A mini-batch adds the first dimension:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>X: [batch, 168, features]
+y: [batch, 24]
+</pre></div>
+</code></pre>
+<p>Every algorithm in this series accepts that same conceptual contract. What changes is how it moves information from the context to the forecast.</p>
+<h2>Four ways to produce the future</h2>
+<p>The forecast head matters as much as the historical encoder.</p>
+<h3>One-step prediction</h3>
+<p>The model predicts only the next value. This is simple to train and evaluate, but many applications need an entire future path.</p>
+<h3>Recursive prediction</h3>
+<p>Predict one step, append that prediction to the context, and repeat.</p>
+<p>Recursive forecasting can use one shared next-step model for any horizon. Its weakness is error accumulation: later predictions are conditioned on earlier guesses rather than observations.</p>
+<h3>Direct multi-horizon prediction</h3>
+<p>Emit all <code>H</code> values at once:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>historical representation → [ŷ_t, ŷ_(t+1), ..., ŷ_(t+H-1)]
+</pre></div>
+</code></pre>
+<p>This avoids recursive feedback and lets each horizon learn a different relationship with the past. The electricity example uses this design.</p>
+<h3>Encoder-decoder prediction</h3>
+<p>An encoder represents the history, while a decoder generates or queries the future. Decoders can receive known future information and model dependencies among forecast steps, at the cost of more complexity.</p>
+<p>None of these choices is universally best. They define different learning problems even when the historical model is identical.</p>
+<h2>What counts as an input feature?</h2>
+<p>Forecasting systems usually combine several kinds of information.</p>
+<h3>Observed historical variables</h3>
+<p>These are measurements known only through the forecast origin: demand, temperature readings, prices, volume, sensor values, or sales.</p>
+<h3>Known future variables</h3>
+<p>These are available for the target period before it occurs: hour of day, holidays, scheduled promotions, tariffs, or planned capacity.</p>
+<p>Known future variables should be passed through an explicit future path when possible. Attaching calendar fields only to historical rows is not the same thing.</p>
+<h3>Static variables</h3>
+<p>These do not change within the sequence: location, customer type, device category, or asset identity.</p>
+<h3>Derived historical variables</h3>
+<p>Lags, differences, rolling means, and rolling volatility summarize observed history. They can be useful, redundant, or misleading depending on how they are constructed. Part 14 treats that as its own question.</p>
+<p>The algorithm articles do not assume a particular feature recipe. Each model can receive one channel or many.</p>
+<h2>Why time order changes evaluation</h2>
+<p>Ordinary random train/test splitting is usually wrong for forecasting. It allows later periods to influence training while earlier periods appear in validation, reversing the real prediction direction.</p>
+<p>Use chronological splits:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>training period │ validation period │ test period
+</pre></div>
+</code></pre>
+<p>The validation period selects hyperparameters and checkpoints. The final test period estimates future-like performance only after model choices are fixed.</p>
+<p>Rolling-origin evaluation repeats this process across several dates, revealing whether a conclusion depends on one unusually easy or difficult period.</p>
+<p>Scaling also respects time. Means, standard deviations, quantiles, and learned preprocessing parameters are fitted on training data, then applied unchanged to validation and test data.</p>
+<h2>Overlapping windows are not independent observations</h2>
+<p>Hourly windows shifted by one hour share nearly all their contents. A dataset may contain tens of thousands of windows without containing tens of thousands of independent situations.</p>
+<p>This has several consequences:</p>
+<ul>
+<li>random splitting causes near-duplicate leakage;</li>
+<li>confidence intervals based on independent samples become too optimistic;</li>
+<li>large networks can memorize period-specific detail;</li>
+<li>boundaries must ensure forecast targets remain inside their assigned split.</li>
+</ul>
+<p>The number of generated windows is not the same as the amount of independent evidence.</p>
+<h2>Always begin with naive baselines</h2>
+<p>A forecasting model should beat a rule that captures the domain’s obvious structure.</p>
+<p>Examples include:</p>
+<ul>
+<li>repeat the most recent value;</li>
+<li>repeat the corresponding value from the previous season;</li>
+<li>predict zero change;</li>
+<li>predict the training-period mean;</li>
+<li>use a regularized linear model over the same window.</li>
+</ul>
+<p>The correct baseline depends on the target. For a persistent price series, repeating the last price can be formidable. For strongly daily demand, repeating yesterday may be more meaningful.</p>
+<p>Complexity earns its place only through out-of-sample improvement over these rules.</p>
+<h2>The uncomfortable strong baseline: gradient boosting</h2>
+<p>Naive rules and linear models are not enough. For small and medium-sized forecasting datasets, a boosted-tree model such as CatBoost, LightGBM, or XGBoost is often competitive with—and sometimes better than—far more elaborate sequence networks.</p>
+<p>The tree model does not discover temporal order in the same way. We usually construct a causal table containing lags, calendar variables, rolling statistics, differences, and other information available at the forecast origin. Boosting then excels at thresholds, nonlinear interactions, mixed feature scales, and limited-data optimization.</p>
+<p>This is not an unfair comparison. The practitioner’s goal is accurate, reliable prediction, not proving that a preferred neural architecture can win. Every serious sequence-model experiment in this series should therefore include a boosted-tree benchmark using the same forecast origins and permitted information.</p>
+<p>If CatBoost wins, the lesson is not that sequence models are useless. It is that this dataset rewards explicit tabular structure more than the tested networks’ learned representations—and that is exactly the kind of result a benchmark should reveal.</p>
+<h2>The model families in this series</h2>
+<p>The next nine articles form a progression of inductive biases.</p>
+<h3>Linear forecaster</h3>
+<p>Every historical coordinate connects directly to every future horizon through one weighted sum. It is transparent, global, and rigid.</p>
+<h3>Multilayer perceptron</h3>
+<p>The complete window is flattened and passed through nonlinear dense layers. It gains flexible interactions but no built-in understanding of local time structure.</p>
+<h3>LSTM</h3>
+<p>The sequence is processed step by step through a gated cell and hidden state. The architecture learns what to retain, update, and expose.</p>
+<h3>GRU</h3>
+<p>A simpler gated recurrent unit carries one state with update and reset gates, often using fewer parameters than an LSTM.</p>
+<h3>1D CNN</h3>
+<p>Shared filters scan for local temporal motifs in parallel. Kernel size, depth, and pooling determine what information survives.</p>
+<h3>Temporal convolutional network</h3>
+<p>Causal, dilated convolutions expand the receptive field while retaining parallel computation.</p>
+<h3>Transformer</h3>
+<p>Self-attention lets each historical token interact directly with every other token, with positional information added separately.</p>
+<h3>Patch Transformer</h3>
+<p>Short segments become tokens, reducing attention cost and learning representations of local shapes.</p>
+<h3>N-BEATS</h3>
+<p>Fully connected residual blocks repeatedly explain the historical window and add contributions to the forecast.</p>
+<p>The goal is not to rank them in the abstract. Each architecture makes a different assumption about how temporal information should be reused, compressed, and retrieved.</p>
+<h2>Point forecasts are only one output</h2>
+<p>The examples begin with a single predicted value per horizon. Real decisions often require uncertainty.</p>
+<p>A model can instead predict:</p>
+<ul>
+<li>several quantiles;</li>
+<li>parameters of a probability distribution;</li>
+<li>samples from possible future paths;</li>
+<li>lower and upper prediction intervals.</li>
+</ul>
+<p>Uncertainty is not created by adding error bars after training. The output head, loss, and calibration procedure must support it.</p>
+<h2>A checklist before choosing an algorithm</h2>
+<p>Write down:</p>
+<ol>
+<li>What is the forecast origin?</li>
+<li>Which variables are observed historically, known in the future, or static?</li>
+<li>What are the lookback and horizon?</li>
+<li>Is the output one-step, recursive, direct, or decoder based?</li>
+<li>What naive rule must the model beat?</li>
+<li>How will chronological generalization be measured?</li>
+<li>Do we need a point forecast or a distribution?</li>
+</ol>
+<p>Once those choices are explicit, architecture comparisons become meaningful.</p>
+<p>Part 2 builds the Dataset, DataLoaders, and training loop shared by every model. Part 3 then begins with the least complicated learned architecture and one of the most important: the direct linear forecaster.</p>
+<hr/>
+<p><strong>Series navigation:</strong> <a class="needs-live-url" href="index.html">Series index</a> · <a class="needs-live-url" href="pytorch-data-pipeline-and-training-loop.html">Next: PyTorch data pipeline</a></p>
+</article>
+</main>
+<script>
+async function copyRichArticle() {
+  const source = document.querySelector('.article-content');
+  const clone = source.cloneNode(true);
+  const status = document.getElementById('copy-status');
+  clone.querySelectorAll('img').forEach((img) => img.src = new URL(img.getAttribute('src'), location.href).href);
+  clone.querySelectorAll('a').forEach((a) => a.href = new URL(a.getAttribute('href'), location.href).href);
+  const rich = new Blob([clone.innerHTML], {type: 'text/html'});
+  const plain = new Blob([source.innerText], {type: 'text/plain'});
+  try {
+    await navigator.clipboard.write([new ClipboardItem({'text/html': rich, 'text/plain': plain})]);
+    status.textContent = 'Copied as rich text. Paste it into a new Medium draft.';
+  } catch (error) {
+    selectArticle();
+    const copied = document.execCommand('copy');
+    status.textContent = copied
+      ? 'Copied using the compatibility fallback. Paste it into Medium.'
+      : 'Clipboard access was blocked. The article is selected; press Command/Ctrl+C.';
+  }
+}
+function selectArticle() {
+  const range = document.createRange();
+  range.selectNodeContents(document.querySelector('.article-content'));
+  const selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+  document.getElementById('copy-status').textContent = 'Article selected. Press Command/Ctrl+C to copy it.';
+}
+</script>
+</body>
+</html>

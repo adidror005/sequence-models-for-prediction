@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transformer Forecasting: Let Every Time Step Look at Every Other Step — Sequence Models for Prediction</title>
+<meta name="description" content="Self-attention intuition, positional information, and the limits of a generic encoder">
+<link rel="canonical" href="https://adidror005.github.io/sequence-models-for-prediction/08-transformer-forecaster.html">
+<link rel="stylesheet" href="styles.css">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Transformer Forecasting: Let Every Time Step Look at Every Other Step">
+<meta property="og:description" content="Self-attention intuition, positional information, and the limits of a generic encoder">
+<meta property="og:url" content="https://adidror005.github.io/sequence-models-for-prediction/08-transformer-forecaster.html">
+<meta property="og:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Transformer Forecasting: Let Every Time Step Look at Every Other Step">
+<meta name="twitter:description" content="Self-attention intuition, positional information, and the limits of a generic encoder">
+<meta name="twitter:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="index.html"><span class="brand-mark">S</span><span>Sequence Models<br><small>for Prediction</small></span></a>
+  <nav aria-label="Primary navigation"><a href="index.html#series">All articles</a><a href="index.html#about">About</a><a class="github-link" href="https://github.com/adidror005/sequence-models-for-prediction">View source</a></nav>
+</header>
+<div class="reading-progress" style="--progress: 60.00%"></div>
+<main>
+  <header class="article-hero">
+    <a class="back-link" href="index.html">← Series home</a>
+    <p class="eyebrow">Part 9 of 15 · Models</p>
+    <h1>Transformer Forecasting: Let Every Time Step Look at Every Other Step</h1>
+    <p class="dek">Self-attention intuition, positional information, and the limits of a generic encoder</p>
+  </header>
+  <div class="reading-layout">
+    <article class="article-content">
+
+<p>A recurrent model carries the past forward. A convolution builds the past from local neighborhoods. A Transformer lets every input position interact directly with every other position.</p>
+<p>That global connectivity is the attraction. A forecast representation can compare the most recent evening with yesterday evening or the same hour last week without passing information through 168 recurrent transitions.</p>
+<p>The mechanism that creates those connections is self-attention.</p>
+<h2 id="query-key-and-value-intuition">Query, key, and value intuition</h2>
+<p>For each historical token, the Transformer constructs three learned vectors:</p>
+<ul>
+<li>a <strong>query</strong> describing what this token is looking for;</li>
+<li>a <strong>key</strong> describing what this token offers;</li>
+<li>a <strong>value</strong> containing the information to retrieve.</li>
+</ul>
+<p>Attention compares queries with keys, converts the scores into weights, and forms a weighted combination of values:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>Attention(Q, K, V) = softmax(QKᵀ / √d) V
+</pre></div>
+</code></pre>
+<p>For a seasonal series, one attention head might learn that the final historical token should retrieve similar positions from earlier cycles. Another might connect the latest ramp with older ramps, regardless of their exact position.</p>
+<p>These interpretations are possibilities, not guaranteed meanings. Attention heads are learned numerical operations, and attention weights alone are not complete explanations.</p>
+<h2 id="why-position-must-be-added">Why position must be added</h2>
+<p>Self-attention by itself does not know whether one token came before another. Permuting the tokens would permute the outputs in the same way.</p>
+<p>A simple encoder can add a learned positional tensor with one vector for each of the 168 input locations:</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">proj</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">z</span> <span class="o">=</span> <span class="n">z</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">[:,</span> <span class="p">:</span><span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span>
+<span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+</pre></div>
+</code></pre>
+<p>This gives the model a stable identity for “oldest hour,” “24 hours ago,” and “most recent hour.”</p>
+<p>Calendar features provide a different kind of position. Learned embeddings describe location relative to the input window; hour and weekday describe location in real-world cycles.</p>
+<h2 id="a-compact-encoder-architecture">A compact encoder architecture</h2>
+<p>The model projects each feature vector to dimension 64, then applies two Transformer encoder layers:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>input projection:     F → 64
+attention heads:      4
+encoder layers:       2
+feed-forward width:   128
+dropout:              0.10
+</pre></div>
+</code></pre>
+<p>After encoding all 168 tokens, the model keeps the final token, normalizes it, and maps it to 24 forecasts.</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">z</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+</pre></div>
+</code></pre>
+<p>The final token can attend to the entire input window. It still has to compress everything useful for all forecast horizons into 64 values.</p>
+<p>Other designs use a forecast token, attention pooling, a decoder with one query per future horizon, or explicit future-known covariates. Final-token pooling is simply the smallest understandable version.</p>
+<h2 id="does-it-need-a-causal-mask">Does it need a causal mask?</h2>
+<p>There is no causal attention mask inside the encoder.</p>
+<p>That is acceptable for this setup. All 168 input tokens are observed before the forecast origin, and no target token enters the encoder. Letting an early historical token attend to a later historical token does not expose the future being predicted.</p>
+<p>A causal mask would be required for autoregressive next-token training or any setup in which target-period values appear inside the sequence.</p>
+<p>Causality is defined by the data boundary, not by copying a language-model mask into every time-series architecture.</p>
+<h2 id="global-access-is-not-free">Global access is not free</h2>
+<p>Full attention compares every pair of tokens. Its time and memory cost scale roughly with the square of sequence length:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>168 tokens → 28,224 pairwise positions per head
+336 tokens → 112,896 pairwise positions per head
+</pre></div>
+</code></pre>
+<p>Doubling context roughly quadruples the attention matrix. At one week of hourly data this is manageable; at years of minute bars it is not.</p>
+<p>Patching, sparse attention, downsampling, or state-space approaches can reduce that burden.</p>
+<h2 id="what-happens-inside-an-encoder-block">What happens inside an encoder block</h2>
+<p>Multi-head attention repeats the query-key-value operation in several learned subspaces. Different heads can specialize in different relationships, and their outputs are concatenated and projected back to the model dimension.</p>
+<p>The attention result passes through a position-wise feed-forward network. Residual connections wrap both the attention and feed-forward sublayers, while layer normalization helps stabilize optimization.</p>
+<p>Stacking blocks lets the model build higher-order relationships: the first layer can retrieve relevant observations, and the next can reason over the retrieved representations. More layers add capacity and cost but do not automatically improve forecasting.</p>
+<h2 id="what-this-transformer-is-and-is-not">What this Transformer is—and is not</h2>
+<p>It is a generic encoder adapted to emit a direct 24-hour forecast.</p>
+<p>It is not the Temporal Fusion Transformer, which distinguishes static variables, observed historical inputs, and known future covariates while adding gating and variable selection. It is not PatchTST, which tokenizes subseries and applies channel-independent processing. It is not an autoregressive language model for numbers.</p>
+<p>“Transformer” names a family of attention-based building blocks, not one forecasting algorithm.</p>
+<h2 id="complete-pytorch-implementation">Complete PyTorch implementation</h2>
+<p>This complete encoder matches the experiment. It projects each observation, adds a learned relative position, applies two pre-normalized encoder layers, and uses the final historical token for a direct 24-step forecast. No causal mask is needed because the tensor contains historical inputs only.</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">TransformerForecaster</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">lookback</span><span class="p">,</span>
+        <span class="n">n_features</span><span class="p">,</span>
+        <span class="n">horizon</span><span class="p">,</span>
+        <span class="n">d_model</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+        <span class="n">nhead</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+        <span class="n">layers</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="n">dropout</span><span class="o">=</span><span class="mf">0.10</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">d_model</span> <span class="o">%</span> <span class="n">nhead</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"d_model must be divisible by nhead"</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_projection</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span>
+            <span class="n">n_features</span><span class="p">,</span>
+            <span class="n">d_model</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">lookback</span><span class="p">,</span> <span class="n">d_model</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">encoder_layer</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">TransformerEncoderLayer</span><span class="p">(</span>
+            <span class="n">d_model</span><span class="o">=</span><span class="n">d_model</span><span class="p">,</span>
+            <span class="n">nhead</span><span class="o">=</span><span class="n">nhead</span><span class="p">,</span>
+            <span class="n">dim_feedforward</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+            <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">,</span>
+            <span class="n">batch_first</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">norm_first</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">TransformerEncoder</span><span class="p">(</span>
+            <span class="n">encoder_layer</span><span class="p">,</span>
+            <span class="n">num_layers</span><span class="o">=</span><span class="n">layers</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">norm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">horizon</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"input exceeds configured lookback"</span>
+            <span class="p">)</span>
+
+        <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_projection</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">z</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">[:,</span> <span class="p">:</span><span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="p">:]</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+        <span class="n">final_token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">z</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:])</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">final_token</span><span class="p">)</span>
+
+
+<span class="n">LOOKBACK</span> <span class="o">=</span> <span class="mi">168</span>
+<span class="n">N_FEATURES</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">HORIZON</span> <span class="o">=</span> <span class="mi">24</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">TransformerForecaster</span><span class="p">(</span>
+    <span class="n">lookback</span><span class="o">=</span><span class="n">LOOKBACK</span><span class="p">,</span>
+    <span class="n">n_features</span><span class="o">=</span><span class="n">N_FEATURES</span><span class="p">,</span>
+    <span class="n">horizon</span><span class="o">=</span><span class="n">HORIZON</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">LOOKBACK</span><span class="p">,</span> <span class="n">N_FEATURES</span><span class="p">)</span>
+<span class="n">y_hat</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">y_hat</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">HORIZON</span><span class="p">)</span>
+</pre></div>
+</code></pre>
+<p>The same verified implementation is available in the <a href="code/sequence_models.py">companion model module</a>. The complete Dataset, DataLoader, and fit/evaluate workflow is explained in the <a href="pytorch-data-pipeline-and-training-loop.html">shared PyTorch training companion</a>.</p>
+<h2 id="training-and-failure-modes">Training and failure modes</h2>
+<p>Transformers need enough data to learn both content relationships and useful positional structure. Small datasets can favor simpler models.</p>
+<p>Watch for overfitting, unstable attention patterns, excessive memory use, and weak performance at particular horizons. Attention weights may be interesting to visualize, but they are not a substitute for perturbation tests and out-of-sample evaluation.</p>
+<p>The input projection, model dimension, number of heads, feed-forward width, depth, dropout, positional scheme, and forecast head all affect behavior. “Using a Transformer” leaves many consequential choices unspecified.</p>
+<h2 id="when-to-choose-a-transformer">When to choose a Transformer</h2>
+<p>Choose it when global interactions are plausible, the dataset can support its capacity, and parallel training matters. Prefer a forecasting-specific design when known future covariates, static metadata, multiple variables, or probabilistic outputs are central.</p>
+<p>Do not choose it because attention is fashionable. At this context length, linear, recurrent, and convolutional models already provide strong alternatives.</p>
+<p>Part 10 reduces attention cost and changes the unit of representation from individual hours to patches.</p>
+<h2 id="further-reading">Further reading</h2>
+<ul>
+<li><a href="https://papers.neurips.cc/paper_files/paper/2017/hash/3f5ee243547dee91fbd053c1c4a845aa-Abstract.html" rel="noopener noreferrer">Vaswani et al., “Attention Is All You Need”</a></li>
+<li><a href="https://arxiv.org/abs/1912.09363" rel="noopener noreferrer">Lim et al., “Temporal Fusion Transformers for Interpretable Multi-horizon Time Series Forecasting”</a></li>
+</ul>
+<hr/>
+</article>
+    <aside class="toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#query-key-and-value-intuition">Query, key, and value intuition</a></li><li><a href="#why-position-must-be-added">Why position must be added</a></li><li><a href="#a-compact-encoder-architecture">A compact encoder architecture</a></li><li><a href="#does-it-need-a-causal-mask">Does it need a causal mask?</a></li><li><a href="#global-access-is-not-free">Global access is not free</a></li><li><a href="#what-happens-inside-an-encoder-block">What happens inside an encoder block</a></li><li><a href="#what-this-transformer-is-and-is-not">What this Transformer is—and is not</a></li><li><a href="#complete-pytorch-implementation">Complete PyTorch implementation</a></li><li><a href="#training-and-failure-modes">Training and failure modes</a></li><li><a href="#when-to-choose-a-transformer">When to choose a Transformer</a></li><li><a href="#further-reading">Further reading</a></li></ol></aside>
+  </div>
+  <nav class="article-pager" aria-label="Article navigation"><a class="pager-card previous" href="07-tcn-forecaster.html"><span>Previous</span><strong>TCN Forecasting: Long Memory Through Dilated Convolutions</strong></a><a class="pager-card next" href="09-patch-transformer-forecaster.html"><span>Next</span><strong>Patch Transformer Forecasting: Turning Time Steps into Temporal Tokens</strong></a></nav>
+</main>
+<footer class="site-footer"><p>Sequence Models for Prediction · Open code, reproducible experiments, honest baselines.</p><a href="index.html">Series index</a></footer>
+</body>
+</html>

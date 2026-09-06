@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Linear Forecasting: The Baseline That Sees the Whole Window — Sequence Models for Prediction</title>
+<meta name="description" content="Why a single dense layer is often the most revealing model in a time-series experiment">
+<link rel="canonical" href="https://adidror005.github.io/sequence-models-for-prediction/02-linear-forecaster.html">
+<link rel="stylesheet" href="styles.css">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linear Forecasting: The Baseline That Sees the Whole Window">
+<meta property="og:description" content="Why a single dense layer is often the most revealing model in a time-series experiment">
+<meta property="og:url" content="https://adidror005.github.io/sequence-models-for-prediction/02-linear-forecaster.html">
+<meta property="og:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Linear Forecasting: The Baseline That Sees the Whole Window">
+<meta name="twitter:description" content="Why a single dense layer is often the most revealing model in a time-series experiment">
+<meta name="twitter:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="index.html"><span class="brand-mark">S</span><span>Sequence Models<br><small>for Prediction</small></span></a>
+  <nav aria-label="Primary navigation"><a href="index.html#series">All articles</a><a href="index.html#about">About</a><a class="github-link" href="https://github.com/adidror005/sequence-models-for-prediction">View source</a></nav>
+</header>
+<div class="reading-progress" style="--progress: 20.00%"></div>
+<main>
+  <header class="article-hero">
+    <a class="back-link" href="index.html">← Series home</a>
+    <p class="eyebrow">Part 3 of 15 · Models</p>
+    <h1>Linear Forecasting: The Baseline That Sees the Whole Window</h1>
+    <p class="dek">Why a single dense layer is often the most revealing model in a time-series experiment</p>
+  </header>
+  <div class="reading-layout">
+    <article class="article-content">
+
+<p>A linear forecaster is easy to underestimate.</p>
+<p>It has no recurrent state, convolution, attention, or learned notion of memory. Yet after we flatten a time window, a linear model can connect every historical value directly to every future horizon.</p>
+<p>That makes it more than a weak baseline. It is a diagnostic instrument.</p>
+<p>If a large neural model cannot beat a well-constructed linear forecast, either the relationship is mostly linear, the dataset is too small for the complex model, or the experiment is rewarding the wrong behavior.</p>
+<h2 id="the-mental-model-one-weighted-forecast-per-horizon">The mental model: one weighted forecast per horizon</h2>
+<p>Suppose the input contains 168 hours and <code>F</code> features per hour. Flattening produces a vector with <code>168 × F</code> values.</p>
+<p>For forecast horizon <code>h</code>, the linear model learns:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>prediction[h] = bias[h]
+              + Σ weight[h, time, feature] × input[time, feature]
+</pre></div>
+</code></pre>
+<p>A direct 24-step implementation is only a few lines:</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">LinearForecaster</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_features</span><span class="p">,</span> <span class="n">horizon</span><span class="o">=</span><span class="mi">24</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">168</span> <span class="o">*</span> <span class="n">n_features</span><span class="p">,</span> <span class="n">horizon</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+</pre></div>
+</code></pre>
+<p>Each output hour receives its own set of weights. The model can learn that hour one depends heavily on the most recent demand, while tomorrow evening depends more on the same time yesterday.</p>
+<p>There is no requirement that adjacent timestamps receive similar weights. Time order matters only because each flattened position has a fixed column index.</p>
+<h2 id="why-this-counts-as-a-sequence-baseline">Why this counts as a sequence baseline</h2>
+<p>The architecture is not sequential, but the input is. Position 167 always means “most recent hour,” position 144 means “24 hours ago,” and position 0 means “168 hours ago.”</p>
+<p>A direct path connects each position to every forecast horizon. The linear model does not have to transport the oldest observation through 168 recurrent updates or a stack of local convolutions.</p>
+<p>Its memory is global but rigid.</p>
+<p>That rigidity is both its strength and weakness:</p>
+<ul>
+<li>it can learn stable lag relationships efficiently;</li>
+<li>it cannot make the importance of a lag depend nonlinearly on the current regime;</li>
+<li>it assumes the positional relationship learned during training continues into validation and test;</li>
+<li>it cannot share a learned local pattern across different positions unless the data force similar weights.</li>
+</ul>
+<h2 id="input-width-and-regularization">Input width and regularization</h2>
+<p>With one input channel, the input width is 168 and the layer contains 4,056 trainable parameters:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>168 inputs × 24 outputs + 24 biases
+</pre></div>
+</code></pre>
+<p>With six channels, the width becomes 1,008 and the model grows to 24,216 parameters. With 16 features, it reaches 64,536 parameters.</p>
+<p>This is a crucial caveat. Adding features changes three things at once:</p>
+<ol>
+<li>the values available to the model;</li>
+<li>the number of coefficients it must estimate;</li>
+<li>the amount of regularization needed to control those coefficients.</li>
+</ol>
+<p>Time-series inputs are often strongly correlated: adjacent values resemble one another, and derived variables may overlap. Multicollinearity does not necessarily prevent prediction, but it can make coefficients unstable and optimization more sensitive.</p>
+<p>A regularized linear model—ridge regression, for example—is often a stronger default than an unpenalized fit. L1 regularization can produce sparse weights, while elastic net combines sparsity with stability among correlated inputs.</p>
+<h2 id="how-the-model-learns">How the model learns</h2>
+<p>For point forecasting, the usual objective is mean squared error or mean absolute error across samples and forecast horizons.</p>
+<p>Classical linear regression can be solved directly with linear algebra. In a neural-network pipeline, it is often trained with the same mini-batch optimizer as the larger models. That keeps the surrounding code consistent, although optimizer settings and regularization still need tuning.</p>
+<p>There are two common multi-horizon designs:</p>
+<ul>
+<li>one model produces all future horizons jointly;</li>
+<li>a separate linear model is trained for each horizon.</li>
+</ul>
+<p>A single 24-output layer is mathematically close to fitting 24 linear regressions that share an input matrix. It does not model dependencies among its output errors, but it is simple, fast, and easy to inspect.</p>
+<h2 id="the-hidden-advantage-interpretability-by-horizon">The hidden advantage: interpretability by horizon</h2>
+<p>Reshape the learned weight matrix from:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>[24, 168 × F]
+</pre></div>
+</code></pre>
+<p>into:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>[forecast horizon, historical time, feature]
+</pre></div>
+</code></pre>
+<p>Now we can visualize which past hours influence each future hour.</p>
+<p>For seasonal demand, we might expect diagonal bands: a future evening hour placing weight near recent evening observations.</p>
+<p>Coefficient plots are not automatically causal explanations. Correlated inputs can divide weight arbitrarily. But they are an excellent debugging tool. If a supposedly causal model places surprising weight on a padding artifact or a missingness pattern, we learn that before deploying it.</p>
+<h2 id="complete-pytorch-implementation">Complete PyTorch implementation</h2>
+<p>This is the complete direct linear model used in the experiment. It accepts any feature count while keeping the lookback and horizon explicit. The final assertion is a useful shape test before training.</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">LinearForecaster</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lookback</span><span class="p">,</span> <span class="n">n_features</span><span class="p">,</span> <span class="n">horizon</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span>
+            <span class="n">lookback</span> <span class="o">*</span> <span class="n">n_features</span><span class="p">,</span>
+            <span class="n">horizon</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="c1"># x: [batch, lookback, features]</span>
+        <span class="n">flat_history</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc</span><span class="p">(</span><span class="n">flat_history</span><span class="p">)</span>
+
+
+<span class="n">LOOKBACK</span> <span class="o">=</span> <span class="mi">168</span>
+<span class="n">N_FEATURES</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">HORIZON</span> <span class="o">=</span> <span class="mi">24</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">LinearForecaster</span><span class="p">(</span>
+    <span class="n">lookback</span><span class="o">=</span><span class="n">LOOKBACK</span><span class="p">,</span>
+    <span class="n">n_features</span><span class="o">=</span><span class="n">N_FEATURES</span><span class="p">,</span>
+    <span class="n">horizon</span><span class="o">=</span><span class="n">HORIZON</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">LOOKBACK</span><span class="p">,</span> <span class="n">N_FEATURES</span><span class="p">)</span>
+<span class="n">y_hat</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">y_hat</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">HORIZON</span><span class="p">)</span>
+</pre></div>
+</code></pre>
+<p>The same verified implementation is available in the <a href="code/sequence_models.py">companion model module</a>. The complete Dataset, DataLoader, and fit/evaluate workflow is explained in the <a href="pytorch-data-pipeline-and-training-loop.html">shared PyTorch training companion</a>.</p>
+<h2 id="common-failure-modes">Common failure modes</h2>
+<p>A linear forecaster fails when the relationship changes with context. It cannot express rules such as “use yesterday’s pattern on weekdays but a different pattern on weekends” unless interaction terms are supplied explicitly.</p>
+<p>It can also look better than it is when the target is persistent. Always compare it with a domain-specific naive forecast, use chronological evaluation, and inspect each forecast horizon separately.</p>
+<p>Finally, coefficients should not be mistaken for causal effects. Correlation among historical positions means several weight patterns can make nearly identical predictions.</p>
+<h2 id="when-to-choose-the-linear-forecaster">When to choose the linear forecaster</h2>
+<p>Use it when:</p>
+<ul>
+<li>you need a fast, transparent benchmark;</li>
+<li>the dataset is modest;</li>
+<li>stable seasonal lags dominate;</li>
+<li>you want a coefficient map by forecast horizon;</li>
+<li>you need to detect whether complexity is earning its cost.</li>
+</ul>
+<p>Move beyond it when interactions and regimes are repeatable enough to justify nonlinear capacity.</p>
+<p>The linear forecaster has no glamour, which is precisely why it is valuable. It gives the rest of the model zoo nowhere to hide.</p>
+<p>Part 4 adds nonlinear interactions while preserving global access to the window: the multilayer perceptron.</p>
+<hr/>
+</article>
+    <aside class="toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#the-mental-model-one-weighted-forecast-per-horizon">The mental model: one weighted forecast per horizon</a></li><li><a href="#why-this-counts-as-a-sequence-baseline">Why this counts as a sequence baseline</a></li><li><a href="#input-width-and-regularization">Input width and regularization</a></li><li><a href="#how-the-model-learns">How the model learns</a></li><li><a href="#the-hidden-advantage-interpretability-by-horizon">The hidden advantage: interpretability by horizon</a></li><li><a href="#complete-pytorch-implementation">Complete PyTorch implementation</a></li><li><a href="#common-failure-modes">Common failure modes</a></li><li><a href="#when-to-choose-the-linear-forecaster">When to choose the linear forecaster</a></li></ol></aside>
+  </div>
+  <nav class="article-pager" aria-label="Article navigation"><a class="pager-card previous" href="pytorch-data-pipeline-and-training-loop.html"><span>Previous</span><strong>A Leak-Free PyTorch Dataset, DataLoader, and Training Loop for Sequence Prediction</strong></a><a class="pager-card next" href="03-mlp-forecaster.html"><span>Next</span><strong>MLP Forecasting: A Nonlinear Map from Past Window to Future Path</strong></a></nav>
+</main>
+<footer class="site-footer"><p>Sequence Models for Prediction · Open code, reproducible experiments, honest baselines.</p><a href="index.html">Series index</a></footer>
+</body>
+</html>

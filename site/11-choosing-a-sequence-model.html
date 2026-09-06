@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Which Time-Series Model Should You Use? — Sequence Models for Prediction</title>
+<meta name="description" content="A practical comparison of access, memory, computation, and inductive bias">
+<link rel="canonical" href="https://adidror005.github.io/sequence-models-for-prediction/11-choosing-a-sequence-model.html">
+<link rel="stylesheet" href="styles.css">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Which Time-Series Model Should You Use?">
+<meta property="og:description" content="A practical comparison of access, memory, computation, and inductive bias">
+<meta property="og:url" content="https://adidror005.github.io/sequence-models-for-prediction/11-choosing-a-sequence-model.html">
+<meta property="og:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Which Time-Series Model Should You Use?">
+<meta name="twitter:description" content="A practical comparison of access, memory, computation, and inductive bias">
+<meta name="twitter:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="index.html"><span class="brand-mark">S</span><span>Sequence Models<br><small>for Prediction</small></span></a>
+  <nav aria-label="Primary navigation"><a href="index.html#series">All articles</a><a href="index.html#about">About</a><a class="github-link" href="https://github.com/adidror005/sequence-models-for-prediction">View source</a></nav>
+</header>
+<div class="reading-progress" style="--progress: 80.00%"></div>
+<main>
+  <header class="article-hero">
+    <a class="back-link" href="index.html">← Series home</a>
+    <p class="eyebrow">Part 12 of 15 · Synthesis</p>
+    <h1>Which Time-Series Model Should You Use?</h1>
+    <p class="dek">A practical comparison of access, memory, computation, and inductive bias</p>
+  </header>
+  <div class="reading-layout">
+    <article class="article-content">
+
+<p>There is no universally best sequence model.</p>
+<p>The useful question is not “Are Transformers better than LSTMs?” It is:</p>
+<blockquote>
+<p>Which way of processing history matches the structure, scale, and constraints of this forecasting problem?</p>
+</blockquote>
+<p>Linear models, recurrent networks, convolutions, attention, patching, and residual basis models differ mainly in how information travels from the observed window to the future. Understanding those paths gives us a better starting point than choosing whichever architecture is currently fashionable.</p>
+<h2 id="the-comparison-at-a-glance">The comparison at a glance</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Model</th>
+<th>How it processes history</th>
+<th>Natural strength</th>
+<th>Main limitation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Linear</td>
+<td>Flattens the window into one weighted map</td>
+<td>Transparent global baseline</td>
+<td>No nonlinear interactions</td>
+</tr>
+<tr>
+<td>MLP</td>
+<td>Flattens, then applies nonlinear dense layers</td>
+<td>Flexible global interactions</td>
+<td>Parameter-heavy; no temporal weight sharing</td>
+</tr>
+<tr>
+<td>LSTM</td>
+<td>Updates a gated cell and hidden state sequentially</td>
+<td>Controlled recurrent memory</td>
+<td>Sequential training and final-state bottleneck</td>
+</tr>
+<tr>
+<td>GRU</td>
+<td>Updates one gated hidden state</td>
+<td>Compact recurrence</td>
+<td>Same compression bottleneck as other RNNs</td>
+</tr>
+<tr>
+<td>CNN1D</td>
+<td>Slides shared local filters</td>
+<td>Efficient motif detection</td>
+<td>Limited receptive field unless designed otherwise</td>
+</tr>
+<tr>
+<td>TCN</td>
+<td>Stacks causal dilated convolutions</td>
+<td>Parallel multi-scale memory</td>
+<td>Receptive field must be calculated explicitly</td>
+</tr>
+<tr>
+<td>Transformer</td>
+<td>Uses content-dependent global attention</td>
+<td>Direct long-range interactions</td>
+<td>Quadratic attention cost and high flexibility</td>
+</tr>
+<tr>
+<td>Patch Transformer</td>
+<td>Attends over short segments</td>
+<td>Efficient long-context representation</td>
+<td>Patch boundaries and lost fine detail</td>
+</tr>
+<tr>
+<td>N-BEATS</td>
+<td>Refines backcast residuals and adds forecasts</td>
+<td>Direct univariate multi-horizon prediction</td>
+<td>Dense scaling with context and channels</td>
+</tr>
+</tbody>
+</table></div>
+<p>This table is a map, not a ranking.</p>
+<h2 id="start-with-the-simplest-credible-baseline">Start with the simplest credible baseline</h2>
+<p>Before choosing a neural architecture, define a naive forecast that captures the obvious domain behavior. Then add a regularized linear model.</p>
+<p>The linear forecaster tells us whether stable weighted relationships across the window already solve most of the problem. It trains quickly, exposes coefficients by horizon, and makes a complex model earn its cost.</p>
+<p>If the linear model is competitive, that is not disappointing. Simpler systems are easier to debug, retrain, explain, and serve.</p>
+<h2 id="before-deep-learning-run-catboost">Before deep learning, run CatBoost</h2>
+<p>There is an uncomfortable recurring result in applied forecasting: a carefully prepared gradient-boosting model can beat an elegant LSTM, TCN, or Transformer.</p>
+<p>CatBoost and related boosted-tree methods operate on fixed rows rather than raw sequences. Give them causal lag values, calendar fields, rolling statistics, changes, and any future-known covariates available at the forecast origin. They are particularly strong on small and medium datasets, where flexible neural models may have too little independent evidence and too much optimization freedom.</p>
+<p>The comparison must use the same prediction timestamps and information budget. A tree model with two years of lag features should not be presented as equivalent to a network receiving one week of raw history. Conversely, forbidding trees from using tabular temporal features removes the representation they are designed to exploit.</p>
+<p>A boosted-tree victory is not a consolation result. It often means the useful relationships are mostly thresholded feature interactions rather than patterns that require end-to-end sequential representation learning. In a production setting, that can be excellent news: training, diagnostics, and feature attribution may all become easier.</p>
+<h3>Complete CatBoost baseline</h3>
+<p>The following implementation builds one causal tabular row per forecast origin and fits one CatBoost regressor for each future horizon. Separate horizon models make the strategy explicit and allow early stopping against the same chronological validation period. This code defines a follow-up benchmark; it was <strong>not</strong> run in the supplied electricity notebook.</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">catboost</span><span class="w"> </span><span class="kn">import</span> <span class="n">CatBoostRegressor</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_causal_feature_frame</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">timestamps</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Features known immediately before each origin."""</span>
+    <span class="n">series</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span>
+        <span class="n">index</span><span class="o">=</span><span class="n">timestamps</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">previous</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">hour</span> <span class="o">=</span> <span class="n">timestamps</span><span class="o">.</span><span class="n">hour</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+    <span class="n">dow</span> <span class="o">=</span> <span class="n">timestamps</span><span class="o">.</span><span class="n">dayofweek</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+
+    <span class="n">features</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">timestamps</span><span class="p">)</span>
+    <span class="n">features</span><span class="p">[</span><span class="s2">"lag_1"</span><span class="p">]</span> <span class="o">=</span> <span class="n">previous</span>
+    <span class="n">features</span><span class="p">[</span><span class="s2">"lag_24"</span><span class="p">]</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span>
+    <span class="n">features</span><span class="p">[</span><span class="s2">"lag_168"</span><span class="p">]</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">168</span><span class="p">)</span>
+    <span class="n">features</span><span class="p">[</span><span class="s2">"change_1"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">previous</span> <span class="o">-</span> <span class="n">series</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">features</span><span class="p">[</span><span class="s2">"change_24"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">previous</span> <span class="o">-</span> <span class="n">series</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">25</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">features</span><span class="p">[</span><span class="s2">"mean_24"</span><span class="p">]</span> <span class="o">=</span> <span class="n">previous</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span>
+        <span class="mi">24</span><span class="p">,</span> <span class="n">min_periods</span><span class="o">=</span><span class="mi">24</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">features</span><span class="p">[</span><span class="s2">"std_24"</span><span class="p">]</span> <span class="o">=</span> <span class="n">previous</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span>
+        <span class="mi">24</span><span class="p">,</span> <span class="n">min_periods</span><span class="o">=</span><span class="mi">24</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">ddof</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">features</span><span class="p">[</span><span class="s2">"mean_168"</span><span class="p">]</span> <span class="o">=</span> <span class="n">previous</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span>
+        <span class="mi">168</span><span class="p">,</span> <span class="n">min_periods</span><span class="o">=</span><span class="mi">168</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">features</span><span class="p">[</span><span class="s2">"std_168"</span><span class="p">]</span> <span class="o">=</span> <span class="n">previous</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span>
+        <span class="mi">168</span><span class="p">,</span> <span class="n">min_periods</span><span class="o">=</span><span class="mi">168</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">ddof</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">features</span><span class="p">[</span><span class="s2">"hour_sin"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span>
+        <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">hour</span> <span class="o">/</span> <span class="mf">24.0</span>
+    <span class="p">)</span>
+    <span class="n">features</span><span class="p">[</span><span class="s2">"hour_cos"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span>
+        <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">hour</span> <span class="o">/</span> <span class="mf">24.0</span>
+    <span class="p">)</span>
+    <span class="n">features</span><span class="p">[</span><span class="s2">"dow_sin"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span>
+        <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">dow</span> <span class="o">/</span> <span class="mf">7.0</span>
+    <span class="p">)</span>
+    <span class="n">features</span><span class="p">[</span><span class="s2">"dow_cos"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span>
+        <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">dow</span> <span class="o">/</span> <span class="mf">7.0</span>
+    <span class="p">)</span>
+    <span class="n">features</span><span class="p">[</span><span class="s2">"weekend"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">dow</span> <span class="o">&gt;=</span> <span class="mi">5</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">features</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">rows_at_origins</span><span class="p">(</span>
+    <span class="n">feature_frame</span><span class="p">,</span>
+    <span class="n">target</span><span class="p">,</span>
+    <span class="n">origins</span><span class="p">,</span>
+    <span class="n">horizon</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="n">origins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">origins</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">feature_frame</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">origins</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">([</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">target</span><span class="p">)[</span><span class="n">origins</span> <span class="o">+</span> <span class="n">step</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">horizon</span><span class="p">)</span>
+    <span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="n">valid</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">())</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">valid</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">DirectCatBoostForecaster</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">horizon</span><span class="p">,</span>
+        <span class="n">iterations</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>
+        <span class="n">learning_rate</span><span class="o">=</span><span class="mf">0.03</span><span class="p">,</span>
+        <span class="n">depth</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+        <span class="n">random_seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">horizon</span> <span class="o">=</span> <span class="n">horizon</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">"loss_function"</span><span class="p">:</span> <span class="s2">"RMSE"</span><span class="p">,</span>
+            <span class="s2">"eval_metric"</span><span class="p">:</span> <span class="s2">"RMSE"</span><span class="p">,</span>
+            <span class="s2">"iterations"</span><span class="p">:</span> <span class="n">iterations</span><span class="p">,</span>
+            <span class="s2">"learning_rate"</span><span class="p">:</span> <span class="n">learning_rate</span><span class="p">,</span>
+            <span class="s2">"depth"</span><span class="p">:</span> <span class="n">depth</span><span class="p">,</span>
+            <span class="s2">"l2_leaf_reg"</span><span class="p">:</span> <span class="mf">5.0</span><span class="p">,</span>
+            <span class="s2">"random_seed"</span><span class="p">:</span> <span class="n">random_seed</span><span class="p">,</span>
+            <span class="s2">"verbose"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">"allow_writing_files"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">models</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">x_train</span><span class="p">,</span>
+        <span class="n">y_train</span><span class="p">,</span>
+        <span class="n">x_validation</span><span class="p">,</span>
+        <span class="n">y_validation</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">y_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">horizon</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"y_train must be [samples, horizon]"</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">models</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">horizon</span><span class="p">):</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">CatBoostRegressor</span><span class="p">(</span>
+                <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
+            <span class="p">)</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+                <span class="n">x_train</span><span class="p">,</span>
+                <span class="n">y_train</span><span class="p">[:,</span> <span class="n">step</span><span class="p">],</span>
+                <span class="n">eval_set</span><span class="o">=</span><span class="p">(</span>
+                    <span class="n">x_validation</span><span class="p">,</span>
+                    <span class="n">y_validation</span><span class="p">[:,</span> <span class="n">step</span><span class="p">],</span>
+                <span class="p">),</span>
+                <span class="n">use_best_model</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">early_stopping_rounds</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">horizon</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">"fit must be called before predict"</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">([</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span>
+        <span class="p">])</span>
+
+
+<span class="c1"># Build these from the same chronological origins used</span>
+<span class="c1"># by the neural models.</span>
+<span class="n">feature_frame</span> <span class="o">=</span> <span class="n">make_causal_feature_frame</span><span class="p">(</span>
+    <span class="n">target</span><span class="o">=</span><span class="n">target_values</span><span class="p">,</span>
+    <span class="n">timestamps</span><span class="o">=</span><span class="n">timestamps</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span> <span class="o">=</span> <span class="n">rows_at_origins</span><span class="p">(</span>
+    <span class="n">feature_frame</span><span class="p">,</span>
+    <span class="n">target_values</span><span class="p">,</span>
+    <span class="n">train_origins</span><span class="p">,</span>
+    <span class="n">horizon</span><span class="o">=</span><span class="mi">24</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">x_validation</span><span class="p">,</span> <span class="n">y_validation</span> <span class="o">=</span> <span class="n">rows_at_origins</span><span class="p">(</span>
+    <span class="n">feature_frame</span><span class="p">,</span>
+    <span class="n">target_values</span><span class="p">,</span>
+    <span class="n">validation_origins</span><span class="p">,</span>
+    <span class="n">horizon</span><span class="o">=</span><span class="mi">24</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">x_test</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">rows_at_origins</span><span class="p">(</span>
+    <span class="n">feature_frame</span><span class="p">,</span>
+    <span class="n">target_values</span><span class="p">,</span>
+    <span class="n">test_origins</span><span class="p">,</span>
+    <span class="n">horizon</span><span class="o">=</span><span class="mi">24</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">catboost_model</span> <span class="o">=</span> <span class="n">DirectCatBoostForecaster</span><span class="p">(</span>
+    <span class="n">horizon</span><span class="o">=</span><span class="mi">24</span>
+<span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+    <span class="n">x_train</span><span class="p">,</span>
+    <span class="n">y_train</span><span class="p">,</span>
+    <span class="n">x_validation</span><span class="p">,</span>
+    <span class="n">y_validation</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">catboost_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x_test</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">predictions</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">y_test</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+</code></pre>
+<p>CatBoost also supports multidimensional regression objectives such as <code>MultiRMSE</code>; the one-model-per-horizon version above is chosen for transparency and horizon-specific early stopping. See the official <a href="https://catboost.ai/docs/en/concepts/python-reference_catboostregressor" rel="noopener noreferrer">CatBoost regressor</a> and <a href="https://catboost.ai/docs/en/concepts/python-reference_catboostregressor_fit" rel="noopener noreferrer"><code>fit</code></a> documentation. The reusable source is in the <a href="code/catboost_baseline.py">companion CatBoost module</a>.</p>
+<h2 id="choose-an-mlp-for-global-nonlinear-interactions">Choose an MLP for global nonlinear interactions</h2>
+<p>An MLP is the next baseline when any historical coordinate might interact with any other and the input window has fixed length.</p>
+<p>It is often surprisingly strong on medium-sized tabularized forecasting problems. It is less parameter-efficient as the number of timestamps and variables grows because the first dense layer connects to the entire flattened window.</p>
+<p>Use it when global nonlinear flexibility matters more than translation invariance or streaming state.</p>
+<h2 id="choose-recurrence-when-state-evolution-is-the-right-story">Choose recurrence when state evolution is the right story</h2>
+<p>LSTM and GRU reuse one transition across time. They are natural when the system can be represented as an evolving state that absorbs each new observation.</p>
+<p>Choose an LSTM when the extra gate and separate cell state are affordable and potentially useful. Choose a GRU when a smaller, simpler recurrent model is attractive.</p>
+<p>Neither should be selected through folklore. Compare them at equivalent training budgets, report parameter count, and test several hidden widths. The difference between them is often smaller than the difference caused by preprocessing or evaluation design.</p>
+<p>Recurrent models are particularly convenient for streaming because a hidden state can be updated as data arrive. That serving pattern must match training; carrying state indefinitely is not equivalent to evaluating independent fixed windows.</p>
+<h2 id="choose-a-cnn-when-local-motifs-repeat">Choose a CNN when local motifs repeat</h2>
+<p>A 1D CNN applies the same detector everywhere in the window. This is powerful when local shapes recur at different times: ramps, spikes, oscillations, bursts, or short transitions.</p>
+<p>Kernel size and depth define the local receptive field. Pooling decides whether exact position survives. A shallow CNN with global average pooling mainly learns whether a motif occurred, not necessarily when it occurred.</p>
+<p>Choose a CNN when local translation-equivariant patterns are plausible and parallel computation matters.</p>
+<h2 id="choose-a-tcn-when-you-want-convolutional-memory">Choose a TCN when you want convolutional memory</h2>
+<p>A TCN uses causal dilation to connect the present representation with a longer history. It retains convolutional weight sharing and parallel training while making the receptive field a controllable design variable.</p>
+<p>TCNs are strong candidates for long causal sequences, but the dilation schedule must cover the dependencies the task requires. A 168-step input attached to a 31-step receptive field is still a 31-step model at its final activation.</p>
+<p>Choose a TCN when local and multi-scale structure matter and you can design the receptive field deliberately.</p>
+<h2 id="choose-a-transformer-for-content-dependent-global-retrieval">Choose a Transformer for content-dependent global retrieval</h2>
+<p>Self-attention lets every token retrieve information from every other token based on learned content similarity. This creates short paths to distant observations and highly flexible interactions.</p>
+<p>That flexibility needs data and regularization. Full attention cost grows quadratically with token count, positional information must be represented, and the forecast head still determines how history becomes future outputs.</p>
+<p>Choose a Transformer when global relationships are plausible, context length is manageable, and the dataset supports its capacity. For rich covariates and multi-horizon outputs, consider forecasting-specific attention architectures rather than a generic encoder by default.</p>
+<h2 id="choose-a-patch-transformer-when-points-are-too-granular">Choose a patch Transformer when points are too granular</h2>
+<p>Patching turns local segments into tokens. It reduces attention cost and lets each token describe a short shape instead of one scalar timestamp.</p>
+<p>The trade-off is resolution. Patch length, stride, overlap, channel handling, and boundary alignment all affect what survives.</p>
+<p>Choose patching when context is long and local segments form meaningful units. Test several patch geometries rather than treating one length as canonical.</p>
+<h2 id="choose-n-beats-for-direct-residual-forecasting">Choose N-BEATS for direct residual forecasting</h2>
+<p>N-BEATS uses fully connected blocks that explain part of the past through a backcast and add a contribution to the future forecast.</p>
+<p>It is attractive for univariate, direct multi-horizon prediction and can support interpretable trend and seasonality bases. Dense backcast heads become expensive when context and feature count grow.</p>
+<p>Choose it when the target’s own history contains most of the signal and iterative residual decomposition fits the task.</p>
+<h2 id="dataset-size-changes-the-answer">Dataset size changes the answer</h2>
+<p>Small datasets usually reward strong priors and controlled capacity. Linear models, compact recurrent networks, and small convolutional models are difficult to beat honestly.</p>
+<p>Larger collections of related series can support global neural models. A model trained across many customers, sensors, products, or assets sees more independent situations than one trained on overlapping windows from a single series.</p>
+<p>Count independent entities and regimes, not only windows.</p>
+<h2 id="forecast-horizon-changes-the-answer">Forecast horizon changes the answer</h2>
+<p>For one-step forecasting, a compact recent-state representation may be enough. For long direct horizons, different future positions may need different historical evidence.</p>
+<p>Final-state pooling can become restrictive. Horizon-specific queries, encoder-decoder structures, skip connections, and direct residual heads become more valuable as the future path grows.</p>
+<p>Always inspect error by horizon. One aggregate score can hide a model that excels near term and fails farther out.</p>
+<h2 id="operational-constraints-change-the-answer">Operational constraints change the answer</h2>
+<p>Accuracy is not the only design objective.</p>
+<p>Consider:</p>
+<ul>
+<li>training and inference latency;</li>
+<li>memory use;</li>
+<li>retraining frequency;</li>
+<li>online versus batch serving;</li>
+<li>interpretability requirements;</li>
+<li>missing-data behavior;</li>
+<li>support for known future variables;</li>
+<li>point forecasts versus predictive distributions.</li>
+</ul>
+<p>A slightly more accurate model may be the wrong system if it cannot be monitored or updated reliably.</p>
+<h2 id="a-practical-model-selection-ladder">A practical model-selection ladder</h2>
+<p>For a new forecasting problem:</p>
+<ol>
+<li>Establish naive seasonal or persistence baselines.</li>
+<li>Train a regularized linear direct forecaster.</li>
+<li>Train CatBoost or another boosted-tree model on causal tabular features.</li>
+<li>Add an MLP as a global nonlinear baseline.</li>
+<li>Test one recurrent model and one convolutional model.</li>
+<li>Calculate the convolutional receptive field explicitly.</li>
+<li>Add a Transformer only when global retrieval or richer covariate handling is justified.</li>
+<li>Test patching when context length makes point-wise attention expensive.</li>
+<li>Include N-BEATS when univariate direct forecasting is central.</li>
+<li>Compare across time folds and random seeds.</li>
+<li>Prefer the least complicated model whose advantage is stable and operationally meaningful.</li>
+</ol>
+<p>The final choice is evidence plus constraints—not architecture mythology.</p>
+<p>Part 13 puts the algorithms into a shared electricity-prediction experiment using raw history only.</p>
+<h2 id="further-reading">Further reading</h2>
+<ul>
+<li><a href="https://doi.org/10.1162/neco.1997.9.8.1735" rel="noopener noreferrer">Long Short-Term Memory</a></li>
+<li><a href="https://arxiv.org/abs/1406.1078" rel="noopener noreferrer">The GRU-based RNN encoder-decoder</a></li>
+<li><a href="https://arxiv.org/abs/1803.01271" rel="noopener noreferrer">An Empirical Evaluation of Generic Convolutional and Recurrent Networks for Sequence Modeling</a></li>
+<li><a href="https://papers.neurips.cc/paper_files/paper/2017/hash/3f5ee243547dee91fbd053c1c4a845aa-Abstract.html" rel="noopener noreferrer">Attention Is All You Need</a></li>
+<li><a href="https://openreview.net/pdf?id=Jbdc0vTOcol" rel="noopener noreferrer">A Time Series Is Worth 64 Words</a></li>
+<li><a href="https://openreview.net/pdf?id=r1ecqn4YwB" rel="noopener noreferrer">N-BEATS</a></li>
+</ul>
+<hr/>
+</article>
+    <aside class="toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#the-comparison-at-a-glance">The comparison at a glance</a></li><li><a href="#start-with-the-simplest-credible-baseline">Start with the simplest credible baseline</a></li><li><a href="#before-deep-learning-run-catboost">Before deep learning, run CatBoost</a></li><li><a href="#choose-an-mlp-for-global-nonlinear-interactions">Choose an MLP for global nonlinear interactions</a></li><li><a href="#choose-recurrence-when-state-evolution-is-the-right-story">Choose recurrence when state evolution is the right story</a></li><li><a href="#choose-a-cnn-when-local-motifs-repeat">Choose a CNN when local motifs repeat</a></li><li><a href="#choose-a-tcn-when-you-want-convolutional-memory">Choose a TCN when you want convolutional memory</a></li><li><a href="#choose-a-transformer-for-content-dependent-global-retrieval">Choose a Transformer for content-dependent global retrieval</a></li><li><a href="#choose-a-patch-transformer-when-points-are-too-granular">Choose a patch Transformer when points are too granular</a></li><li><a href="#choose-n-beats-for-direct-residual-forecasting">Choose N-BEATS for direct residual forecasting</a></li><li><a href="#dataset-size-changes-the-answer">Dataset size changes the answer</a></li><li><a href="#forecast-horizon-changes-the-answer">Forecast horizon changes the answer</a></li><li><a href="#operational-constraints-change-the-answer">Operational constraints change the answer</a></li><li><a href="#a-practical-model-selection-ladder">A practical model-selection ladder</a></li><li><a href="#further-reading">Further reading</a></li></ol></aside>
+  </div>
+  <nav class="article-pager" aria-label="Article navigation"><a class="pager-card previous" href="10-nbeats-style-forecaster.html"><span>Previous</span><strong>N-BEATS-Style Forecasting: Explaining the Past to Build the Future</strong></a><a class="pager-card next" href="12-electricity-results-and-interpretation.html"><span>Next</span><strong>Comparing Sequence Models on Electricity Prediction</strong></a></nav>
+</main>
+<footer class="site-footer"><p>Sequence Models for Prediction · Open code, reproducible experiments, honest baselines.</p><a href="index.html">Series index</a></footer>
+</body>
+</html>

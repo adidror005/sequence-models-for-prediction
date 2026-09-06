@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to Design a Time-Series Experiment You Can Trust — Medium export</title>
+<style>
+:root { color-scheme: light; }
+body { margin: 0; color: #242424; background: #f5f5f2; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.toolbar { position: sticky; top: 0; z-index: 5; padding: 14px 20px; color: #fff; background: #17324d; box-shadow: 0 2px 8px #0002; }
+.toolbar-inner { max-width: 1080px; margin: auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.toolbar strong { margin-right: auto; }
+button, .toolbar a { border: 1px solid #ffffff77; border-radius: 999px; padding: 8px 14px; color: white; background: transparent; font-weight: 600; text-decoration: none; cursor: pointer; }
+button.primary { color: #17324d; background: white; }
+.copy-status { width: 100%; color: #d9e6f2; font-size: 13px; }
+.instructions { max-width: 920px; margin: 28px auto 0; padding: 18px 24px; border-radius: 12px; background: #fff7d6; line-height: 1.5; }
+.instructions h2 { margin-top: 0; font-size: 20px; }
+.instructions code { background: #ffffff99; padding: 2px 5px; }
+.article-shell { max-width: 820px; margin: 28px auto 80px; padding: 56px 64px; background: white; box-shadow: 0 1px 8px #00000012; }
+.article-content { font-family: Georgia, Cambria, "Times New Roman", serif; font-size: 21px; line-height: 1.62; }
+.article-content h1 { margin: 0 0 12px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 46px; line-height: 1.12; letter-spacing: -0.025em; }
+.article-content h2 { margin: 50px 0 14px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 30px; line-height: 1.22; }
+.article-content h3 { margin: 34px 0 10px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 24px; line-height: 1.3; }
+.article-content p { margin: 0 0 24px; }
+.article-content ul, .article-content ol { margin: 0 0 24px; padding-left: 30px; }
+.article-content li { margin: 7px 0; }
+.article-content blockquote { margin: 32px 0; padding: 4px 0 4px 24px; border-left: 4px solid #242424; font-size: 25px; font-style: italic; }
+.article-content a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.article-content a.needs-live-url { text-decoration-color: #d93025; text-decoration-style: wavy; }
+.article-content img { display: block; max-width: 100%; height: auto; margin: 36px auto 10px; }
+.article-content figure { margin: 38px 0; }
+.article-content figcaption { color: #6b6b6b; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; text-align: center; }
+.article-content pre, .highlight { overflow-x: auto; margin: 28px 0; padding: 20px; border-radius: 6px; background: #f5f5f5; font-size: 15px; line-height: 1.5; }
+.article-content code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+.article-content :not(pre) > code { padding: 2px 5px; border-radius: 3px; background: #f2f2f2; font-size: 0.82em; }
+.article-content hr { margin: 48px 0; border: 0; text-align: center; }
+.article-content hr::after { content: "···"; letter-spacing: 14px; }
+pre { line-height: 125%; }
+td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+.highlight .hll { background-color: #ffffcc }
+.highlight { background: #f8f8f8; }
+.highlight .c { color: #3D7B7B; font-style: italic } /* Comment */
+.highlight .err { border: 1px solid #F00 } /* Error */
+.highlight .k { color: #008000; font-weight: bold } /* Keyword */
+.highlight .o { color: #666 } /* Operator */
+.highlight .ch { color: #3D7B7B; font-style: italic } /* Comment.Hashbang */
+.highlight .cm { color: #3D7B7B; font-style: italic } /* Comment.Multiline */
+.highlight .cp { color: #9C6500 } /* Comment.Preproc */
+.highlight .cpf { color: #3D7B7B; font-style: italic } /* Comment.PreprocFile */
+.highlight .c1 { color: #3D7B7B; font-style: italic } /* Comment.Single */
+.highlight .cs { color: #3D7B7B; font-style: italic } /* Comment.Special */
+.highlight .gd { color: #A00000 } /* Generic.Deleted */
+.highlight .ge { font-style: italic } /* Generic.Emph */
+.highlight .ges { font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.highlight .gr { color: #E40000 } /* Generic.Error */
+.highlight .gh { color: #000080; font-weight: bold } /* Generic.Heading */
+.highlight .gi { color: #008400 } /* Generic.Inserted */
+.highlight .go { color: #717171 } /* Generic.Output */
+.highlight .gp { color: #000080; font-weight: bold } /* Generic.Prompt */
+.highlight .gs { font-weight: bold } /* Generic.Strong */
+.highlight .gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+.highlight .gt { color: #04D } /* Generic.Traceback */
+.highlight .kc { color: #008000; font-weight: bold } /* Keyword.Constant */
+.highlight .kd { color: #008000; font-weight: bold } /* Keyword.Declaration */
+.highlight .kn { color: #008000; font-weight: bold } /* Keyword.Namespace */
+.highlight .kp { color: #008000 } /* Keyword.Pseudo */
+.highlight .kr { color: #008000; font-weight: bold } /* Keyword.Reserved */
+.highlight .kt { color: #B00040 } /* Keyword.Type */
+.highlight .m { color: #666 } /* Literal.Number */
+.highlight .s { color: #BA2121 } /* Literal.String */
+.highlight .na { color: #687822 } /* Name.Attribute */
+.highlight .nb { color: #008000 } /* Name.Builtin */
+.highlight .nc { color: #00F; font-weight: bold } /* Name.Class */
+.highlight .no { color: #800 } /* Name.Constant */
+.highlight .nd { color: #A2F } /* Name.Decorator */
+.highlight .ni { color: #717171; font-weight: bold } /* Name.Entity */
+.highlight .ne { color: #CB3F38; font-weight: bold } /* Name.Exception */
+.highlight .nf { color: #00F } /* Name.Function */
+.highlight .nl { color: #767600 } /* Name.Label */
+.highlight .nn { color: #00F; font-weight: bold } /* Name.Namespace */
+.highlight .nt { color: #008000; font-weight: bold } /* Name.Tag */
+.highlight .nv { color: #19177C } /* Name.Variable */
+.highlight .ow { color: #A2F; font-weight: bold } /* Operator.Word */
+.highlight .w { color: #BBB } /* Text.Whitespace */
+.highlight .mb { color: #666 } /* Literal.Number.Bin */
+.highlight .mf { color: #666 } /* Literal.Number.Float */
+.highlight .mh { color: #666 } /* Literal.Number.Hex */
+.highlight .mi { color: #666 } /* Literal.Number.Integer */
+.highlight .mo { color: #666 } /* Literal.Number.Oct */
+.highlight .sa { color: #BA2121 } /* Literal.String.Affix */
+.highlight .sb { color: #BA2121 } /* Literal.String.Backtick */
+.highlight .sc { color: #BA2121 } /* Literal.String.Char */
+.highlight .dl { color: #BA2121 } /* Literal.String.Delimiter */
+.highlight .sd { color: #BA2121; font-style: italic } /* Literal.String.Doc */
+.highlight .s2 { color: #BA2121 } /* Literal.String.Double */
+.highlight .se { color: #AA5D1F; font-weight: bold } /* Literal.String.Escape */
+.highlight .sh { color: #BA2121 } /* Literal.String.Heredoc */
+.highlight .si { color: #A45A77; font-weight: bold } /* Literal.String.Interpol */
+.highlight .sx { color: #008000 } /* Literal.String.Other */
+.highlight .sr { color: #A45A77 } /* Literal.String.Regex */
+.highlight .s1 { color: #BA2121 } /* Literal.String.Single */
+.highlight .ss { color: #19177C } /* Literal.String.Symbol */
+.highlight .bp { color: #008000 } /* Name.Builtin.Pseudo */
+.highlight .fm { color: #00F } /* Name.Function.Magic */
+.highlight .vc { color: #19177C } /* Name.Variable.Class */
+.highlight .vg { color: #19177C } /* Name.Variable.Global */
+.highlight .vi { color: #19177C } /* Name.Variable.Instance */
+.highlight .vm { color: #19177C } /* Name.Variable.Magic */
+.highlight .il { color: #666 } /* Literal.Number.Integer.Long */
+@media (max-width: 760px) {
+  .article-shell { margin: 0; padding: 36px 22px 60px; box-shadow: none; }
+  .article-content { font-size: 19px; }
+  .article-content h1 { font-size: 36px; }
+  .instructions { margin: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <strong>Medium export · 14-designing-a-trustworthy-experiment.md</strong>
+    <button class="primary" onclick="copyRichArticle()">Copy rich article</button>
+    <button onclick="selectArticle()">Select article</button>
+    <a href="index.html">Export index</a>
+    <span id="copy-status" class="copy-status" aria-live="polite"></span>
+  </div>
+</div>
+<aside class="instructions">
+  <h2>Transfer notes</h2>
+  <p><strong>Replace 3 local series link(s) with live Medium URLs before publishing.</strong></p>
+  <p><strong>Suggested Medium tags:</strong> Experimental Design, Time Series, Machine Learning, Forecasting, MLOps</p>
+  <p>This preview contains 8 code block(s) and 1 rendered table image(s). After pasting, recreate code using Medium’s native code-block control and upload every image from the export package.</p>
+  <details><summary>Images required by this article</summary><ul><li><a href="table_images/14-designing-a-trustworthy-experiment-table-1.png" target="_blank">table_images/14-designing-a-trustworthy-experiment-table-1.png</a></li></ul></details>
+</aside>
+<main class="article-shell">
+  <article class="article-content"><h1>How to Design a Time-Series Experiment You Can Trust</h1>
+<p><em>A rigorous protocol for comparing models, features, and forecasting decisions</em></p>
+<p><strong>Series:</strong> Sequence Models for Prediction, Part 15 of 15</p>
+<p>A good ablation removes one thing.</p>
+<p>That sounds obvious until “one thing” is a feature set. Adding ten time-series features can simultaneously change:</p>
+<ul>
+<li>the oldest raw observation available to the model;</li>
+<li>the number of trainable parameters;</li>
+<li>the shortest path between seasonal values and the output;</li>
+<li>optimization difficulty;</li>
+<li>missing-value warm-up;</li>
+<li>and, if future covariates are involved, the forecasting interface itself.</li>
+</ul>
+<p>The original electricity-demand notebook is a useful prototype because it exposes these issues in a small, reproducible setting. Here is how I would turn it into a more defensible study.</p>
+<h2>1. Define the forecast contract first</h2>
+<p>Write down what is known at prediction time before choosing a model.</p>
+<p>For this task:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>forecast issued at: t
+targets:            demand[t : t+24]
+observed target:    available through demand[t-1]
+calendar:           known for all future horizons
+</pre></div>
+</code></pre>
+<p>Then classify every field:</p>
+<ul>
+<li><strong>observed historical:</strong> demand and any sensor values available through <code>t-1</code>;</li>
+<li><strong>known future:</strong> hour, weekday, holidays, tariffs, or schedules known through <code>t+23</code>;</li>
+<li><strong>static:</strong> household or meter metadata;</li>
+<li><strong>derived historical:</strong> lags, differences, and rolling summaries.</li>
+</ul>
+<p>This prevents historical calendar features from being confused with explicit future-known inputs.</p>
+<h2>2. Separate representation budget from information budget</h2>
+<p>The current engineered tensor has 168 rows, but its <code>lag_168</code> channel reaches back to <code>t-336</code>. The demand-only tensor reaches only to <code>t-168</code>.</p>
+<p>Run two complementary ablations.</p>
+<h3>Fixed raw-history ablation</h3>
+<p>Every representation may use only the raw demand observations in:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>[t-168, t-1]
+</pre></div>
+</code></pre>
+<p>Derived fields that require earlier values must be masked, reformulated, or calculated once at the forecast origin from the allowed window.</p>
+<p>This answers:</p>
+<blockquote>
+<p>Can handcrafted transformations help a model use the same evidence?</p>
+</blockquote>
+<h3>Fixed oldest-timestamp ablation</h3>
+<p>Give the raw model all 336 hours that the engineered sequence can indirectly access.</p>
+<p>This answers:</p>
+<blockquote>
+<p>Can manual summaries compress a larger historical context more effectively than the architecture consumes it directly?</p>
+</blockquote>
+<p>Both questions are useful. Mixing them produces an ambiguous answer.</p>
+<h2>3. Match receptive field to the hypothesis</h2>
+<p>If the study asks whether a TCN can learn a weekly lag, the TCN’s output must be able to depend on data at least 168 steps back.</p>
+<p>For kernel size three and one layer at each dilation, use:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>dilations = [1, 2, 4, 8, 16, 32, 64]
+receptive field = 1 + 2 × 127 = 255 hours
+</pre></div>
+</code></pre>
+<p>Alternatively, keep the 31-hour TCN and describe it honestly as a short-context model. Then the experiment becomes a test of whether engineered features can inject long-range summaries into a local architecture.</p>
+<p>That is a legitimate and practically relevant question—just a different one.</p>
+<h2>4. Control capacity, not only model class</h2>
+<p>For recurrent and convolutional models, changing input channels causes a relatively modest parameter increase. For flattened models, the increase is dramatic.</p>
+<p>In the notebook:</p>
+<ul>
+<li>MLP grows from roughly 79,000 to 724,000 parameters;</li>
+<li>N-BEATS-style grows from roughly 673,000 to 4.55 million;</li>
+<li>linear grows from roughly 4,000 to 65,000.</li>
+</ul>
+<p>A stronger study should report two tracks:</p>
+<ol>
+<li><strong>architecture fixed:</strong> preserve the original hidden sizes and observe the practical consequence of adding features;</li>
+<li><strong>capacity matched:</strong> adjust hidden widths or add an input bottleneck so parameter counts remain comparable.</li>
+</ol>
+<p>The first reflects what a practitioner might naturally code. The second isolates representation more cleanly.</p>
+<h2>5. Give each configuration a credible training budget</h2>
+<p>A universal epoch cap does not mean equal training. The notebook’s shallow CNN was still improving at epoch 15, while several other models had already stopped.</p>
+<p>Use:</p>
+<ul>
+<li>a generous maximum epoch count;</li>
+<li>early stopping with a clearly declared patience;</li>
+<li>learning-rate reduction or a comparable scheduler;</li>
+<li>checkpoint selection using validation data only;</li>
+<li>logged convergence curves for every run.</li>
+</ul>
+<p>If one family consistently hits the maximum while improving, extend its budget before comparing test scores.</p>
+<p>Hyperparameter tuning creates another choice. Either use one predefined configuration per architecture and present the work as a controlled teaching experiment, or grant every architecture and feature set the same tuning budget. Do not tune the eventual winner more heavily after seeing test performance.</p>
+<h2>6. Estimate variance</h2>
+<p>The notebook resets seeds carefully, but it runs one seed per configuration. Differences such as the LSTM’s 0.34% engineered gain can easily be smaller than training variance.</p>
+<p>For the most interesting configurations:</p>
+<ol>
+<li>choose seeds before running;</li>
+<li>train at least five repeats if compute allows;</li>
+<li>report mean, standard deviation, and the paired difference between feature sets;</li>
+<li>preserve the same forecast origins for every pair.</li>
+</ol>
+<p>A paired comparison is especially useful because every model is evaluated on the same target windows.</p>
+<p>Do not wait to inspect the first run before deciding which small difference deserves extra seeds. Predeclare a rule such as “rerun every within-family difference below 3%.”</p>
+<h2>7. Use more than one chronological split</h2>
+<p>A single held-out period answers an important operational question: how did the model generalize to this later era?</p>
+<p>It can also make the result sensitive to unusual months or a change in household behavior.</p>
+<p>Add rolling-origin evaluation:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>train ─────── validate ─ test 1
+      train ─────── validate ─ test 2
+            train ─────── validate ─ test 3
+</pre></div>
+</code></pre>
+<p>Keep the order intact. Never randomly shuffle timestamps across train and test. The goal is not to make every fold identically distributed; it is to observe how conclusions behave across forecast periods.</p>
+<h2>8. Strengthen the baselines</h2>
+<p>Yesterday, last week, and last value are good starting points. Add baselines that can exploit the same permitted information:</p>
+<ul>
+<li>a seasonal linear regression with hour and weekday;</li>
+<li>a regularized direct linear model over the raw window;</li>
+<li>a simple average or weighted combination of yesterday and last week;</li>
+<li>CatBoost or another well-tuned gradient-boosted tree model over the causal engineered features.</li>
+</ul>
+<p>For a multi-horizon target, state whether boosting uses one model per horizon, a native multi-output objective, or a wrapper. Give it the same forecast origins, allowed raw-history reach, and tuning discipline as the neural candidates.</p>
+<p>If a complex model’s gain disappears against a tuned linear or boosted-tree baseline, that is a valuable result. On many limited-data tabular forecasting tasks, it should be treated as an expected possibility rather than an embarrassment.</p>
+<h2>9. Audit preprocessing as part of the model</h2>
+<p>The notebook correctly uses training-only target scaling and causal forward fill. A production-grade follow-up should also test:</p>
+<ul>
+<li>a binary missingness channel;</li>
+<li>maximum forward-fill duration;</li>
+<li>robustness to contiguous missing blocks;</li>
+<li>daylight-saving and timezone handling;</li>
+<li>whether hourly averaging is available before the forecast deadline;</li>
+<li>distribution shifts in mean and variance.</li>
+</ul>
+<p>Preprocessing is not merely cleanup. It defines the information presented to the learner.</p>
+<h2>10. Report results at the level decisions are made</h2>
+<p>Aggregate RMSE and MAE are useful, but a 24-hour forecast is a vector.</p>
+<p>Report:</p>
+<ul>
+<li>MAE and RMSE overall;</li>
+<li>error at each horizon from 1 to 24;</li>
+<li>error by hour of day and weekday/weekend;</li>
+<li>performance during demand peaks;</li>
+<li>training time, inference time, and parameter count;</li>
+<li>mean and variation across seeds and time folds.</li>
+</ul>
+<p>If the forecast will drive an operational decision, add a metric aligned with that decision. A model that slightly improves average RMSE but misses the daily peak may be the worse system.</p>
+<h2>A revised experiment matrix</h2>
+<p>The follow-up does not need dozens of loosely related runs. A compact matrix can answer the core questions:</p>
+<figure><img alt="Table with columns: Axis, Conditions" src="table_images/14-designing-a-trustworthy-experiment-table-1.png"/><figcaption>Table 1. Axis · Conditions</figcaption></figure>
+<p>The most informative comparisons are planned pairs, not one giant leaderboard.</p>
+<h2>The conclusion should name its conditions</h2>
+<p>Weak conclusion:</p>
+<blockquote>
+<p>Transformers do not need feature engineering.</p>
+</blockquote>
+<p>Defensible conclusion:</p>
+<blockquote>
+<p>On this household-demand dataset, under a direct 24-hour objective and a fixed 168-hour raw-history budget, the tested Transformer’s mean RMSE changed by X% after causal lag and rolling transformations were added across five seeds and three forecast periods.</p>
+</blockquote>
+<p>Specific language is not timid. It is what allows another practitioner to decide whether a finding applies to their own data, horizon, and architecture.</p>
+<p>The lasting lesson from this series is not that raw data or engineered features always win.</p>
+<p>It is this:</p>
+<blockquote>
+<p>A feature is part data, part representation, and part information path. A trustworthy ablation controls all three—or says clearly which one it is changing.</p>
+</blockquote>
+<h2>Further reading</h2>
+<ul>
+<li><a href="https://archive.ics.uci.edu/dataset/235/individual%2Bhousehold%2Belectric%2Bpower%2Bconsumption">UCI Individual Household Electric Power Consumption dataset</a></li>
+<li><a href="https://arxiv.org/abs/1912.09363">Temporal Fusion Transformers for Interpretable Multi-horizon Time Series Forecasting</a></li>
+<li><a href="https://openreview.net/pdf?id=Jbdc0vTOcol">A Time Series Is Worth 64 Words: Long-Term Forecasting with Transformers</a></li>
+<li><a href="https://openreview.net/pdf?id=r1ecqn4YwB">N-BEATS: Neural Basis Expansion Analysis for Interpretable Time Series Forecasting</a></li>
+</ul>
+<hr/>
+<p><strong>Series navigation:</strong> <a class="needs-live-url" href="index.html">Series index</a> · <a class="needs-live-url" href="13-calendar-and-lagged-features.html">Previous: Calendar and lagged features</a> · <a class="needs-live-url" href="future-stock-prediction-roadmap.html">Future extension: Stock prediction roadmap</a></p>
+</article>
+</main>
+<script>
+async function copyRichArticle() {
+  const source = document.querySelector('.article-content');
+  const clone = source.cloneNode(true);
+  const status = document.getElementById('copy-status');
+  clone.querySelectorAll('img').forEach((img) => img.src = new URL(img.getAttribute('src'), location.href).href);
+  clone.querySelectorAll('a').forEach((a) => a.href = new URL(a.getAttribute('href'), location.href).href);
+  const rich = new Blob([clone.innerHTML], {type: 'text/html'});
+  const plain = new Blob([source.innerText], {type: 'text/plain'});
+  try {
+    await navigator.clipboard.write([new ClipboardItem({'text/html': rich, 'text/plain': plain})]);
+    status.textContent = 'Copied as rich text. Paste it into a new Medium draft.';
+  } catch (error) {
+    selectArticle();
+    const copied = document.execCommand('copy');
+    status.textContent = copied
+      ? 'Copied using the compatibility fallback. Paste it into Medium.'
+      : 'Clipboard access was blocked. The article is selected; press Command/Ctrl+C.';
+  }
+}
+function selectArticle() {
+  const range = document.createRange();
+  range.selectNodeContents(document.querySelector('.article-content'));
+  const selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+  document.getElementById('copy-status').textContent = 'Article selected. Press Command/Ctrl+C to copy it.';
+}
+</script>
+</body>
+</html>
