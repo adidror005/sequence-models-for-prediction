@@ -2,7 +2,7 @@
 
 *Self-attention intuition, positional information, and the limits of a generic encoder*
 
-**Series:** Sequence Models for Prediction, Part 9 of 15
+**Series:** Sequence Models for Prediction, Part 9 of 16
 **Suggested Medium tags:** Transformers, Attention, Time Series, Forecasting, Deep Learning
 
 A recurrent model carries the past forward. A convolution builds the past from local neighborhoods. A Transformer lets every input position interact directly with every other position.

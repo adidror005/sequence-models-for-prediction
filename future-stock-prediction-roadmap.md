@@ -1,15 +1,17 @@
-# Future Expansion: Sequence Models for Stock Prediction
+# Next Expansion: Broader Sequence Models for Stock Prediction
 
-*A pre-registered comparison designed to separate price persistence from genuine forecasting signal*
+*How to extend the first META result into a multi-asset, walk-forward, cost-aware experiment*
 
-**Status:** Future experiment roadmap; not part of the current publication sequence
+**Status:** Future experiment roadmap following the [one-minute META case study](15-finance-direction-case-study.md)
 **Suggested Medium tags:** Stock Market, Time Series, Forecasting, Deep Learning, Quantitative Finance
 
 Electricity demand is rhythmic. Stock prices are adversarial.
 
+Part 16 now provides a first financial stress test: six neural models and CatBoost predict one-minute META direction from 2013–2026 data. The best saved test AUC is `0.531812` from CatBoost, GRU and Transformer are close behind, and an MLP price-memory ablation gets worse. Those are classification results from one symbol, one chronological split, and one seed—not a profit result.
+
 Household power consumption repeats daily and weekly behaviors that remain visible in a short chart. Markets adapt, regimes shift, and easy patterns attract capital until they weaken. A model that performs well on electricity therefore deserves a second test where predictability is smaller and evaluation traps are larger.
 
-This article defines that test before looking at results.
+This roadmap defines the broader test that should come next. It keeps the earlier daily-horizon design because that experiment asks a different, complementary question from the one-minute case study.
 
 The goal is not to ask which network predicts the highest stock price. It is to ask:
 
@@ -216,15 +218,15 @@ Once results exist, the electricity and stock articles should share one summary 
 
 | Question | Electricity | Stocks |
 |---|---|---|
-| Dominant predictable structure | Daily and weekly seasonality | To be measured; likely weak and regime-dependent |
+| Dominant predictable structure | Daily and weekly seasonality | Weak short-horizon signal in the first META run; broader result pending |
 | Strong naive baseline | Repeat yesterday | Random walk / zero return |
 | Value of calendar | Helped 7 of 9 model families in one run | Pending |
-| Value of engineered history | −2.82% to +2.05% by architecture | Pending |
-| Best architecture | 31-hour TCN with engineered features, preliminary | Pending |
+| Value of engineered history | −2.82% to +2.05% by architecture | Six price-memory features reduced MLP test AUC by 0.005627; other models pending |
+| Best architecture | 31-hour TCN with engineered features, preliminary | CatBoost test AUC 0.531812 in the first saved META run; multi-asset result pending |
 | Main evaluation risk | Unequal history and receptive field | Persistence, selection bias, and costs |
 
 The most interesting outcome may be that rankings reverse. A model whose inductive bias matches stable electricity cycles may overfit market noise, while a disciplined linear or recurrent baseline may hold up better.
 
 That is why the stock article is specified before the data are scored. We are not searching for a market story. We are testing whether the architectural lessons transfer.
 
-This becomes a later article or follow-up series after the market-data experiment has been implemented and run.
+This becomes a later article or follow-up series after the broader market-data experiment has been implemented and run.

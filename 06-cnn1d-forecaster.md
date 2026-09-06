@@ -2,7 +2,7 @@
 
 *How temporal filters detect motifs—and why pooling can erase the positions a forecast needs*
 
-**Series:** Sequence Models for Prediction, Part 7 of 15
+**Series:** Sequence Models for Prediction, Part 7 of 16
 **Suggested Medium tags:** Convolutional Neural Networks, Time Series, Forecasting, Deep Learning, CNN
 
 A one-dimensional convolution does not remember a sequence. It scans it.

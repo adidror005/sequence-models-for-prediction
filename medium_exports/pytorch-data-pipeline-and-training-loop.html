@@ -138,7 +138,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <main class="article-shell">
   <article class="article-content"><h1>A Leak-Free PyTorch Dataset, DataLoader, and Training Loop for Sequence Prediction</h1>
 <p><em>The reusable plumbing behind every model in the series—from chronological forecast origins to early stopping and original-scale metrics</em></p>
-<p><strong>Series:</strong> Sequence Models for Prediction, Part 2 of 15</p>
+<p><strong>Series:</strong> Sequence Models for Prediction, Part 2 of 16</p>
 <p>An architecture definition is only part of a forecasting system.</p>
 <p>The model may accept a tensor shaped <code>[batch, lookback, features]</code>, but somebody still has to create those windows, keep forecast targets inside the correct chronological split, batch them efficiently, train without looking at test data, restore the best validation checkpoint, and transform the final error back into meaningful units.</p>
 <p>That plumbing is where many apparently impressive forecasting results go wrong.</p>

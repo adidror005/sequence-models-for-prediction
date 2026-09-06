@@ -1,6 +1,6 @@
 # Medium series: Sequence Models for Prediction
 
-This folder contains a 15-part series that starts with the general problem of learning from ordered data, builds a leak-free PyTorch pipeline, explains nine prediction algorithms individually, and only then compares them on an electricity-forecasting task.
+This folder contains a 16-part series that starts with the general problem of learning from ordered data, builds a leak-free PyTorch pipeline, explains nine prediction algorithms individually, and then tests them in electricity and financial case studies.
 
 The public GitHub Pages edition is published at [Sequence Models for Prediction](https://adidror005.github.io/sequence-models-for-prediction/).
 
@@ -13,7 +13,7 @@ The editorial angle is **model-first, feature-second**:
 
 Across all four questions, CatBoost or another gradient-boosted tree model remains a mandatory reality check. Sophisticated sequence architectures often lose to boosted trees on carefully constructed tabular time-series features, especially when the amount of independent training data is modest.
 
-Stock prediction is a future application of the same framework. It is deliberately not part of the numbered series until the experiment has been specified and executed.
+Part 16 applies the framework to a saved one-minute META direction experiment. It reports the weak statistical signal honestly and keeps that result separate from any claim about trading profitability. A broader multi-asset, walk-forward stock study remains a future extension.
 
 ## Publication structure
 
@@ -35,26 +35,32 @@ Part 14 then changes the inputs. It tests historical calendar variables and engi
 
 ### Part 15: experimental discipline
 
-The closing article turns the lessons into a reusable protocol for evaluating any sequence-prediction system without temporal leakage or misleading comparisons.
+This article turns the lessons into a reusable protocol for evaluating any sequence-prediction system without temporal leakage or misleading comparisons.
+
+### Part 16: finance case study
+
+The final article stress-tests six neural architectures and a CatBoost endpoint baseline on next-minute META direction. It also examines whether six longer price-memory features help an MLP and explains why ROC AUC is not a profitability result.
 
 ## Publication order
 
 | Part | Working title | Central question |
 |---:|---|---|
 | 1 | Sequence Models for Prediction: A Practical Map | What is a sequence-prediction problem, and how should it be framed? |
-| 2 | Linear Forecasting: The Baseline That Sees the Whole Window | How far can a direct linear map take us? |
-| 3 | MLP Forecasting: A Nonlinear Map from Past Window to Future Path | What does a dense network add to a fixed historical window? |
-| 4 | LSTM Forecasting: Learning What to Remember | How do gates create a persistent recurrent memory? |
-| 5 | GRU Forecasting: A Leaner Gated Memory | What does the GRU simplify, preserve, and trade away? |
-| 6 | 1D CNN Forecasting: Learning Local Shapes in Parallel | How do temporal filters recognize reusable local patterns? |
-| 7 | TCN Forecasting: Long Memory Through Dilated Convolutions | How do causality, dilation, and receptive field create convolutional memory? |
-| 8 | Transformer Forecasting: Let Every Time Step Look at Every Other Step | How does attention build direct relationships across a sequence? |
-| 9 | Patch Transformer Forecasting: Turning Time Steps into Temporal Tokens | When does grouping neighboring observations make attention more effective? |
-| 10 | N-BEATS-Style Forecasting: Explaining the Past to Build the Future | How do backcast and forecast residuals refine a prediction? |
-| 11 | Which Time-Series Model Should You Use? | How should the architecture match the data, horizon, and operational constraints? |
-| 12 | Comparing Sequence Models on Electricity Prediction | Which models perform best when all receive the same raw week? |
-| 13 | Do Calendar and Lagged Features Help Sequence Models? | When do extra temporal inputs help, duplicate, or shortcut learned memory? |
-| 14 | How to Design a Time-Series Experiment You Can Trust | How do we separate architecture, information, representation, and variance? |
+| 2 | A Leak-Free PyTorch Dataset, DataLoader, and Training Loop | How do we create windows, split time, batch examples, train, and evaluate without leakage? |
+| 3 | Linear Forecasting: The Baseline That Sees the Whole Window | How far can a direct linear map take us? |
+| 4 | MLP Forecasting: A Nonlinear Map from Past Window to Future Path | What does a dense network add to a fixed historical window? |
+| 5 | LSTM Forecasting: Learning What to Remember | How do gates create a persistent recurrent memory? |
+| 6 | GRU Forecasting: A Leaner Gated Memory | What does the GRU simplify, preserve, and trade away? |
+| 7 | 1D CNN Forecasting: Learning Local Shapes in Parallel | How do temporal filters recognize reusable local patterns? |
+| 8 | TCN Forecasting: Long Memory Through Dilated Convolutions | How do causality, dilation, and receptive field create convolutional memory? |
+| 9 | Transformer Forecasting: Let Every Time Step Look at Every Other Step | How does attention build direct relationships across a sequence? |
+| 10 | Patch Transformer Forecasting: Turning Time Steps into Temporal Tokens | When does grouping neighboring observations make attention more effective? |
+| 11 | N-BEATS-Style Forecasting: Explaining the Past to Build the Future | How do backcast and forecast residuals refine a prediction? |
+| 12 | Which Time-Series Model Should You Use? | How should the architecture match the data, horizon, and operational constraints? |
+| 13 | Comparing Sequence Models on Electricity Prediction | Which models perform best when all receive the same raw week? |
+| 14 | Do Calendar and Lagged Features Help Sequence Models? | When do extra temporal inputs help, duplicate, or shortcut learned memory? |
+| 15 | How to Design a Time-Series Experiment You Can Trust | How do we separate architecture, information, representation, and variance? |
+| 16 | When Sequence Models Meet Market Noise | What survives when the same modeling ideas face weak one-minute financial signal? |
 
 ## Release strategy
 
@@ -79,6 +85,7 @@ Each source draft includes local navigation. Before copying a post to Medium, re
 - [Part 13 — Electricity model comparison](12-electricity-results-and-interpretation.md)
 - [Part 14 — Calendar and lagged features](13-calendar-and-lagged-features.md)
 - [Part 15 — Trustworthy experiments](14-designing-a-trustworthy-experiment.md)
+- [Part 16 — One-minute META direction case study](15-finance-direction-case-study.md)
 
 ## Companion code
 
@@ -92,11 +99,11 @@ Parts 3–11 each contain a complete, standalone PyTorch model definition and an
 
 Keeping the training pipeline shared prevents each Medium article from repeating the same dataset, early-stopping, and evaluation code while still making every architecture implementation complete.
 
-## Future extension: stock prediction
+## Finance case study and future extension
 
-The planned stock-price study is outlined in [Future stock-prediction roadmap](future-stock-prediction-roadmap.md). It should reuse the same model-first structure while changing the prediction target, baselines, features, and evaluation criteria to suit financial data.
+The completed first finance application is [Part 16 — When Sequence Models Meet Market Noise](15-finance-direction-case-study.md). It compares six neural architectures with CatBoost on next-minute META direction and includes a controlled MLP price-memory ablation.
 
-It is intentionally labeled as a roadmap rather than a finished Medium article. No stock results should be published until the data contract, walk-forward evaluation, transaction assumptions, and experiments are complete.
+The broader [Future stock-prediction roadmap](future-stock-prediction-roadmap.md) remains intentionally separate. It specifies the multi-asset, walk-forward, cost-aware work required before making a financial-usefulness claim.
 
 ## Figures
 
@@ -110,6 +117,9 @@ It is intentionally labeled as a roadmap rather than a finished Medium article. 
 | `lstm-validation-curves.png` | Part 14 | LSTM validation loss by epoch for each representation. |
 | `transformer-example-forecast.png` | Optional Part 14 figure | One actual 24-hour demand path and three Transformer forecasts. |
 | `model-feature-rmse.png` | Source figure | Original grouped-bar output from the notebook. |
+| `finance-model-test-auc.png` | Part 16 | Test ROC AUC for CatBoost and six neural models on META next-minute direction. |
+| `finance-mlp-price-memory-ablation.png` | Part 16 | Validation and test AUC for the MLP with base versus added price-memory features. |
+| `finance-catboost-feature-importance.png` | Part 16 | CatBoost's ten highest endpoint-feature importances. |
 
 ## Editorial safeguards
 
@@ -122,8 +132,11 @@ It is intentionally labeled as a roadmap rather than a finished Medium article. 
 - Call the residual dense model **N-BEATS-style**, not a universal N-BEATS implementation.
 - Do not claim that the engineered representation contains only the same 168 raw observations; `lag_168` extends its raw reach to 336 hours.
 - Do not generalize one electricity run into a claim that an architecture always does or does not need engineered features.
-- Do not turn the stock roadmap into a results article until the experiment has actually run.
+- Describe Part 16 as a single-symbol, single-seed classification case study; the saved notebook run contains only META despite its multi-symbol scaffolding.
+- Do not interpret ROC AUC or balanced accuracy as evidence of trading profitability.
+- Do not report the notebook's CatBoost-plus-technical-analysis variant because its saved cells contain no executed result.
+- Keep the broader stock roadmap separate until its multi-asset, walk-forward, cost-aware experiment has actually run.
 
 ## Source experiment
 
-The electricity case study is derived from the companion feature-ablation notebook used to produce the reported results and figures.
+The electricity case study is derived from the companion feature-ablation notebook used to produce its reported results and figures. The finance case study is derived from the saved `deep_learning_comparison` notebook output supplied for this project.

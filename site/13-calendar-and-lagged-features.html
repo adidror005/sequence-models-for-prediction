@@ -12,22 +12,23 @@
 <meta property="og:title" content="Do Calendar and Lagged Features Help Sequence Models?">
 <meta property="og:description" content="When extra inputs add signal, supply a shortcut, or merely duplicate what the model already sees">
 <meta property="og:url" content="https://adidror005.github.io/sequence-models-for-prediction/13-calendar-and-lagged-features.html">
-<meta property="og:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
-<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Do Calendar and Lagged Features Help Sequence Models?">
 <meta name="twitter:description" content="When extra inputs add signal, supply a shortcut, or merely duplicate what the model already sees">
-<meta name="twitter:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
+
+<meta property="og:image" content="https://adidror005.github.io/sequence-models-for-prediction/assets/model-feature-rmse-editorial.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://adidror005.github.io/sequence-models-for-prediction/assets/model-feature-rmse-editorial.png">
 </head>
 <body>
 <header class="site-header">
   <a class="brand" href="index.html"><span class="brand-mark">S</span><span>Sequence Models<br><small>for Prediction</small></span></a>
   <nav aria-label="Primary navigation"><a href="index.html#series">All articles</a><a href="index.html#about">About</a><a class="github-link" href="https://github.com/adidror005/sequence-models-for-prediction">View source</a></nav>
 </header>
-<div class="reading-progress" style="--progress: 93.33%"></div>
+<div class="reading-progress" style="--progress: 87.50%"></div>
 <main>
   <header class="article-hero">
     <a class="back-link" href="index.html">← Series home</a>
-    <p class="eyebrow">Part 14 of 15 · Case study</p>
+    <p class="eyebrow">Part 14 of 16 · Case study</p>
     <h1>Do Calendar and Lagged Features Help Sequence Models?</h1>
     <p class="dek">When extra inputs add signal, supply a shortcut, or merely duplicate what the model already sees</p>
   </header>
@@ -317,7 +318,7 @@ engineered raw reach:   t-336 ... t-1
 <p>Engineered features are most promising when they expose information that an architecture cannot reach easily, compress a context it handles poorly, or introduce genuinely future-known inputs. When a model already has a short path to the same evidence, extra transformations may be neutral or harmful.</p>
 </blockquote>
 <p>Calendar features and lagged features should also remain conceptually separate. Calendar variables describe temporal identity and may be known into the future. Lags, differences, and rolling moments transform observed target history. They answer different questions and should be tested in different steps.</p>
-<p>Part 15 closes the series with a protocol for separating model capacity, receptive field, raw-history budget, representation, and training variance in a trustworthy prediction experiment.</p>
+<p>Part 15 develops a protocol for separating model capacity, receptive field, raw-history budget, representation, and training variance. Part 16 then applies that discipline to a much noisier one-minute financial-direction case study.</p>
 <hr/>
 </article>
     <aside class="toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#1-the-raw-target-history">1. The raw target history</a></li><li><a href="#2-calendar-identity">2. Calendar identity</a></li><li><a href="#3-engineered-demand-history">3. Engineered demand history</a></li><li><a href="#causal-does-not-mean-equal-information">Causal does not mean equal information</a></li><li><a href="#three-fair-questions-not-one">Three fair questions, not one</a></li><li><a href="#identical-origins-still-matter">Identical origins still matter</a></li><li><a href="#a-practical-feature-audit">A practical feature audit</a></li><li><a href="#what-happened-in-the-electricity-experiment">What happened in the electricity experiment?</a></li><li><a href="#calendar-information-helped-most-models">Calendar information helped most models</a></li><li><a href="#engineered-history-helped-four-models-and-hurt-four">Engineered history helped four models—and hurt four</a></li><li><a href="#why-did-flexible-global-models-fail-to-benefit">Why did flexible global models fail to benefit?</a></li><li><a href="#extra-features-also-change-model-capacity">Extra features also change model capacity</a></li><li><a href="#these-features-are-exactly-where-catboost-may-shine">These features are exactly where CatBoost may shine</a></li><li><a href="#training-curves-can-change-the-story">Training curves can change the story</a></li><li><a href="#the-useful-conclusion-is-conditional">The useful conclusion is conditional</a></li></ol></aside>

@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>When Sequence Models Meet Market Noise: A One-Minute META Case Study — Sequence Models for Prediction</title>
+<meta name="description" content="Six neural architectures, one CatBoost baseline, and the humbling difference between measurable signal and a tradable strategy">
+<link rel="canonical" href="https://adidror005.github.io/sequence-models-for-prediction/15-finance-direction-case-study.html">
+<link rel="stylesheet" href="styles.css">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="When Sequence Models Meet Market Noise: A One-Minute META Case Study">
+<meta property="og:description" content="Six neural architectures, one CatBoost baseline, and the humbling difference between measurable signal and a tradable strategy">
+<meta property="og:url" content="https://adidror005.github.io/sequence-models-for-prediction/15-finance-direction-case-study.html">
+<meta name="twitter:title" content="When Sequence Models Meet Market Noise: A One-Minute META Case Study">
+<meta name="twitter:description" content="Six neural architectures, one CatBoost baseline, and the humbling difference between measurable signal and a tradable strategy">
+
+<meta property="og:image" content="https://adidror005.github.io/sequence-models-for-prediction/assets/finance-model-test-auc.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://adidror005.github.io/sequence-models-for-prediction/assets/finance-model-test-auc.png">
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="index.html"><span class="brand-mark">S</span><span>Sequence Models<br><small>for Prediction</small></span></a>
+  <nav aria-label="Primary navigation"><a href="index.html#series">All articles</a><a href="index.html#about">About</a><a class="github-link" href="https://github.com/adidror005/sequence-models-for-prediction">View source</a></nav>
+</header>
+<div class="reading-progress" style="--progress: 100.00%"></div>
+<main>
+  <header class="article-hero">
+    <a class="back-link" href="index.html">← Series home</a>
+    <p class="eyebrow">Part 16 of 16 · Case study</p>
+    <h1>When Sequence Models Meet Market Noise: A One-Minute META Case Study</h1>
+    <p class="dek">Six neural architectures, one CatBoost baseline, and the humbling difference between measurable signal and a tradable strategy</p>
+  </header>
+  <div class="reading-layout">
+    <article class="article-content">
+
+<p>The electricity experiment gave our models a generous structural advantage: household demand contains recurring daily and weekly rhythms. Financial prices are less accommodating. Patterns are weaker, regimes move, and even a statistically detectable edge may disappear after costs.</p>
+<p>This case study asks a narrower question than “Can deep learning beat the market?”</p>
+<blockquote>
+<p>Given the last 78 one-minute META bars, can a model rank the direction of the next close-to-close move better than chance?</p>
+</blockquote>
+<p>Six neural architectures and one CatBoost baseline were evaluated on the saved output of a single experiment. The result is useful precisely because it is not dramatic: every model stayed close to chance, CatBoost narrowly led, and adding longer price-memory features made the tested MLP worse.</p>
+<p>That is not a trading strategy. It is a careful classification result—and a useful stress test for the architectural ideas in this series.</p>
+<h2 id="what-was-actually-run">What was actually run</h2>
+<p>The notebook was designed with multi-symbol scaffolding, but its recorded execution loaded only <code>META</code>. The evidence in this article is therefore a <strong>single-symbol case study</strong>, not a multi-asset benchmark.</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Saved experiment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Asset</td>
+<td>META</td>
+</tr>
+<tr>
+<td>Frequency</td>
+<td>One-minute regular-trading-hours bars</td>
+</tr>
+<tr>
+<td>Date range</td>
+<td>January 2, 2013 to September 2, 2026</td>
+</tr>
+<tr>
+<td>Raw rows</td>
+<td>1,335,228</td>
+</tr>
+<tr>
+<td>Input</td>
+<td>78 consecutive one-minute bars</td>
+</tr>
+<tr>
+<td>Features per bar</td>
+<td>31</td>
+</tr>
+<tr>
+<td>Target</td>
+<td>Direction of the next one-minute close-to-close return</td>
+</tr>
+<tr>
+<td>Split</td>
+<td>Whole sessions: 75% train, 10% validation, 15% test</td>
+</tr>
+<tr>
+<td>Selection metric</td>
+<td>Validation ROC AUC</td>
+</tr>
+<tr>
+<td>Random seed</td>
+<td>42</td>
+</tr>
+</tbody>
+</table></div>
+<p>The final neural tensor has shape:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>[batch, 78 minutes, 31 features]
+</pre></div>
+</code></pre>
+<p>The CatBoost baseline uses the same eligible forecast endpoints and the same 31 engineered variables at the final endpoint, but it does not receive the full 78-step tensor. That difference matters: this is a comparison between sequence access and a strong tabular summary, not a claim that the representations are identical.</p>
+<h2 id="define-the-target-before-choosing-the-model">Define the target before choosing the model</h2>
+<p>For a bar ending at time <code>t</code>, the next-minute return is:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>r[t → t+1] = Close[t+1] / Close[t] - 1
+</pre></div>
+</code></pre>
+<p>The underlying direction label is <code>+1</code> or <code>−1</code>; the binary classifier maps those values to <code>1</code> and <code>0</code>. Small changes are excluded rather than forcing nearly unchanged prices into an arbitrary up-or-down class.</p>
+<p>The absolute-return cutoff is fitted on the training period only. In the saved META run it is the 35th percentile of the training absolute-return distribution:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>cutoff = 2.228412 basis points
+</pre></div>
+</code></pre>
+<p>Only moves whose magnitude exceeds that cutoff are labeled. This retains roughly two-thirds of otherwise eligible endpoints:</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Split</th>
+<th style="text-align:right">Retained</th>
+<th style="text-align:right">Positive share</th>
+<th style="text-align:right">Labeled endpoints</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Train</td>
+<td style="text-align:right">65.00%</td>
+<td style="text-align:right">50.24%</td>
+<td style="text-align:right">545,415</td>
+</tr>
+<tr>
+<td>Validation</td>
+<td style="text-align:right">68.21%</td>
+<td style="text-align:right">50.54%</td>
+<td style="text-align:right">76,378</td>
+</tr>
+<tr>
+<td>Test</td>
+<td style="text-align:right">65.36%</td>
+<td style="text-align:right">50.02%</td>
+<td style="text-align:right">109,728</td>
+</tr>
+</tbody>
+</table></div>
+<p>After requiring a continuous 78-bar window and an eligible label, the sequence datasets contain 404,273 training examples, 56,694 validation examples, and 80,598 test examples.</p>
+<p>The nearly balanced positive shares are helpful. Plain accuracy would otherwise blur together ranking skill and class imbalance. ROC AUC asks whether a randomly selected positive example tends to receive a higher score than a randomly selected negative example. An AUC of <code>0.50</code> is chance; <code>1.00</code> is perfect ranking.</p>
+<h2 id="keep-the-time-axis-intact">Keep the time axis intact</h2>
+<p>Randomly splitting one-minute rows would leak market regimes and create near-duplicate windows on both sides of the boundary. This experiment instead assigns whole trading sessions chronologically:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>earliest sessions                            latest sessions
+┌────────────── train 75% ──────────────┬─ val 10% ─┬─ test 15% ─┐
+</pre></div>
+</code></pre>
+<p>The target cutoff and neural scaling statistics are fitted only on training data. Windows must be continuous, so a sequence never jumps across an overnight gap and pretends that yesterday’s close is one minute before today’s open.</p>
+<p>A minimal version of the alignment rule looks like this:</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_example</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">lookback</span><span class="o">=</span><span class="mi">78</span><span class="p">):</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">end</span> <span class="o">-</span> <span class="n">lookback</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">window</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">start</span> <span class="p">:</span> <span class="n">end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">window</span><span class="p">)</span> <span class="o">==</span> <span class="n">lookback</span>
+    <span class="k">assert</span> <span class="n">window</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">to_series</span><span class="p">()</span><span class="o">.</span><span class="n">diff</span><span class="p">()</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="n">window</span><span class="p">[</span><span class="n">FEATURE_COLS</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s2">"float32"</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">Close</span> <span class="o">&gt;</span> <span class="n">frame</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">end</span><span class="p">]</span><span class="o">.</span><span class="n">Close</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span>
+</pre></div>
+</code></pre>
+<p>Production code also needs the session boundary, return-magnitude cutoff, missing-data, and eligibility checks. The important idea is that the last input is bar <code>t</code> and the target uses <code>t+1</code>—never the same row.</p>
+<h2 id="what-information-did-the-models-receive">What information did the models receive?</h2>
+<p>The 31 inputs combine short-horizon price action, intraday context, volume, and longer price memory.</p>
+<h3>Twenty-five base features</h3>
+<p>The base representation includes:</p>
+<ul>
+<li>returns over 1, 2, 5, and 15 minutes;</li>
+<li>candle body, range, gap from the previous close, and close location inside the bar;</li>
+<li>rolling return means and standard deviations over 5, 15, 30, and 60 minutes;</li>
+<li>log volume, 30-minute volume z-score, and relative volume over 5 and 30 minutes;</li>
+<li>minute from the open plus sine and cosine time-of-day encodings;</li>
+<li>close relative to the bar’s average price, and average price relative to the session open.</li>
+</ul>
+<p>These variables mostly describe the current intraday state. They tell the model whether the latest move is large, volatile, high-volume, extended inside the bar, or occurring at a particular time of day.</p>
+<h3>Six price-memory features</h3>
+<p>The enhanced representation adds:</p>
+<ul>
+<li>close versus the previous day’s close;</li>
+<li>log distance from a 30-minute moving average;</li>
+<li>log distance from 1-, 5-, and 20-day moving averages;</li>
+<li>a one-day log-price z-score.</li>
+</ul>
+<p>Raw log price is intentionally omitted. The representation asks about relative location rather than allowing the model to memorize META’s nominal price level. No fractional differencing was used.</p>
+<p>Distribution-dependent neural inputs are scaled using training-only statistics. Naturally bounded or already relative variables keep their direct interpretation. The CatBoost baseline receives the unscaled engineered endpoints because trees do not need the same normalization.</p>
+<h2 id="six-neural-architectures-one-training-protocol">Six neural architectures, one training protocol</h2>
+<p>The experiment trains the model families already developed in this series:</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Model</th>
+<th style="text-align:right">Trainable parameters</th>
+<th>How it reads the window</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MLP</td>
+<td style="text-align:right">327,938</td>
+<td>Flattens all 78 bars into one vector</td>
+</tr>
+<tr>
+<td>LSTM</td>
+<td style="text-align:right">25,154</td>
+<td>Compresses the sequence through gated recurrent state</td>
+</tr>
+<tr>
+<td>GRU</td>
+<td style="text-align:right">18,882</td>
+<td>Uses a leaner gated recurrent state</td>
+</tr>
+<tr>
+<td>CNN1D</td>
+<td style="text-align:right">30,914</td>
+<td>Learns local temporal filters</td>
+</tr>
+<tr>
+<td>TCN</td>
+<td style="text-align:right">30,978</td>
+<td>Uses causal, dilated temporal convolutions</td>
+</tr>
+<tr>
+<td>Transformer</td>
+<td style="text-align:right">74,242</td>
+<td>Relates time positions through self-attention</td>
+</tr>
+</tbody>
+</table></div>
+<p>All six use AdamW, <code>0.20</code> dropout, <code>1e-3</code> weight decay, at most 20 epochs, and early stopping after two validation-AUC epochs without improvement.</p>
+<p>Before the full run, two fail-fast tests passed:</p>
+<ol>
+<li>a gradient and optimizer-step check confirmed that parameters actually changed;</li>
+<li>a tiny real-data subset reached 100% training accuracy, showing that the model and loss could memorize when asked to.</li>
+</ol>
+<p>These checks do not prove generalization. They eliminate quieter implementation failures that can make every architecture look equally mediocre.</p>
+<h2 id="the-main-result-everyone-stayed-near-chance">The main result: everyone stayed near chance</h2>
+<p><img alt="Horizontal bars showing test ROC AUC for CatBoost and six neural models; all scores lie between 0.5077 and 0.5318." src="assets/finance-model-test-auc.png"/></p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Model</th>
+<th style="text-align:right">Validation AUC</th>
+<th style="text-align:right">Test AUC</th>
+<th style="text-align:right">Test balanced accuracy</th>
+<th style="text-align:right">Test probability SD</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CatBoost</strong></td>
+<td style="text-align:right"><strong>0.530272</strong></td>
+<td style="text-align:right"><strong>0.531812</strong></td>
+<td style="text-align:right">0.520192</td>
+<td style="text-align:right">0.030451</td>
+</tr>
+<tr>
+<td>GRU</td>
+<td style="text-align:right">0.525753</td>
+<td style="text-align:right">0.530355</td>
+<td style="text-align:right"><strong>0.521797</strong></td>
+<td style="text-align:right">0.024802</td>
+</tr>
+<tr>
+<td>Transformer</td>
+<td style="text-align:right">0.528783</td>
+<td style="text-align:right">0.530250</td>
+<td style="text-align:right">0.520478</td>
+<td style="text-align:right">0.027154</td>
+</tr>
+<tr>
+<td>TCN</td>
+<td style="text-align:right">0.524231</td>
+<td style="text-align:right">0.529784</td>
+<td style="text-align:right">0.519835</td>
+<td style="text-align:right">0.025335</td>
+</tr>
+<tr>
+<td>LSTM</td>
+<td style="text-align:right">0.526310</td>
+<td style="text-align:right">0.528563</td>
+<td style="text-align:right">0.518969</td>
+<td style="text-align:right">0.026953</td>
+</tr>
+<tr>
+<td>MLP</td>
+<td style="text-align:right">0.514169</td>
+<td style="text-align:right">0.513493</td>
+<td style="text-align:right">0.509812</td>
+<td style="text-align:right">0.015184</td>
+</tr>
+<tr>
+<td>CNN1D</td>
+<td style="text-align:right">0.511011</td>
+<td style="text-align:right">0.507748</td>
+<td style="text-align:right">0.506471</td>
+<td style="text-align:right">0.009829</td>
+</tr>
+</tbody>
+</table></div>
+<p>Three observations matter more than the exact ranking.</p>
+<p>First, <strong>the signal is weak</strong>. The best test AUC is about <code>0.532</code>, only <code>0.032</code> above chance. Large sample size can make a small effect measurable, but it does not automatically make it economically useful.</p>
+<p>Second, <strong>CatBoost narrowly wins the statistical comparison</strong>. Its test AUC exceeds the best neural test score, GRU’s <code>0.530355</code>, by only <code>0.001457</code>. That is a difference of roughly fifteen ten-thousandths—not a chasm. Repeated seeds and additional time periods could change the order.</p>
+<p>Third, <strong>recurrent state and the better long-range encoders cluster together</strong>. GRU, Transformer, TCN, and LSTM all land between <code>0.5286</code> and <code>0.5304</code>. The MLP and CNN1D lag, and their smaller prediction dispersion suggests that they produced less differentiated scores.</p>
+<p>The saved run therefore supports a modest conclusion:</p>
+<blockquote>
+<p>On this META split and seed, several sequence models extracted a small amount of next-minute ranking signal, but none established a compelling advantage over a well-tuned CatBoost endpoint baseline.</p>
+</blockquote>
+<p>It does not support “Transformers work for trading,” “GRUs are best for stocks,” or “CatBoost always wins.”</p>
+<h2 id="why-the-catboost-result-is-such-a-useful-reality-check">Why the CatBoost result is such a useful reality check</h2>
+<p>CatBoost never sees the complete 78-by-31 sequence. It receives the same eligible endpoints represented by 31 causal features. Those summaries already expose returns, volatility, volume, intraday phase, bar geometry, and moving-average distances.</p>
+<p>That changes the modeling burden:</p>
+<ul>
+<li>a sequence network must learn which positions and patterns matter across the window;</li>
+<li>CatBoost receives a compact state description and learns nonlinear thresholds and interactions directly;</li>
+<li>the neural models get richer temporal access, but they also face a harder optimization problem.</li>
+</ul>
+<p>This is the same uncomfortable lesson raised earlier in the series: architectural sophistication must earn its cost. When domain features compress the useful history well, gradient boosting can be extremely difficult to beat.</p>
+<p>The comparison is still not perfectly representation-controlled. A stricter follow-up would add at least two conditions:</p>
+<ol>
+<li>CatBoost on lag-expanded snapshots that expose selected positions from the 78-bar window;</li>
+<li>neural models on the endpoint summary alone.</li>
+</ol>
+<p>That would separate “trees versus networks” from “summary features versus full sequence.”</p>
+<h2 id="did-longer-price-memory-help">Did longer price memory help?</h2>
+<p>The notebook includes a controlled MLP ablation. The eligible rows, labels, windows, and training rules remain fixed. Only six price-memory features are added to the original 25.</p>
+<p><img alt="Grouped bars comparing MLP validation and test AUC with 25 base features versus those features plus six price-memory variables." src="assets/finance-mlp-price-memory-ablation.png"/></p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>MLP representation</th>
+<th style="text-align:right">Validation AUC</th>
+<th style="text-align:right">Test AUC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>25 base features</td>
+<td style="text-align:right"><strong>0.519222</strong></td>
+<td style="text-align:right"><strong>0.519120</strong></td>
+</tr>
+<tr>
+<td>Base + 6 price-memory features</td>
+<td style="text-align:right">0.514169</td>
+<td style="text-align:right">0.513493</td>
+</tr>
+<tr>
+<td>Enhanced minus base</td>
+<td style="text-align:right">−0.005053</td>
+<td style="text-align:right">−0.005627</td>
+</tr>
+</tbody>
+</table></div>
+<p>For this MLP, more context made generalization worse.</p>
+<p>That can happen for several reasons. The longer-horizon distances may be redundant with recent returns, unstable across regimes, or easy for a large flattened MLP to overfit. The model may also need different regularization or capacity after the input dimension changes.</p>
+<p>What the result does <strong>not</strong> say is that price memory is useless. One model, one feature bundle, one symbol, and one seed cannot answer that general question. In fact, CatBoost assigned meaningful descriptive importance to some moving-average-distance features. The correct conclusion is narrower:</p>
+<blockquote>
+<p>Explicit 1-, 5-, and 20-day price-location features did not improve the tested MLP under this experiment’s training protocol.</p>
+</blockquote>
+<p>The next ablation should repeat the base-versus-enhanced comparison for every architecture and across several seeds. Otherwise feature value and model compatibility remain entangled.</p>
+<h2 id="what-did-catboost-use">What did CatBoost use?</h2>
+<p><img alt="Horizontal bars showing CatBoost's ten highest feature importances, led by close location inside the bar." src="assets/finance-catboost-feature-importance.png"/></p>
+<p>The largest CatBoost importance belongs to <code>close_location</code>: where the close falls between the minute’s low and high. Short-horizon geometry, the two-minute return, the gap from the prior close, volume, and time of day also rank highly. Two price-memory features—the distances from the 20-day and 30-minute moving averages—appear in the top ten.</p>
+<p>This ranking is descriptive, not causal. Correlated predictors can split credit, substitute for each other, or move in importance when another feature is removed. It tells us where the fitted tree ensemble found useful partitions; it does not prove that changing a feature would change the market outcome.</p>
+<p>A follow-up should combine permutation importance on untouched periods with grouped ablations. For example, remove all time-of-day variables together, then all bar-geometry variables, then the complete price-memory group. That is more informative than interpreting one importance number in isolation.</p>
+<h2 id="auc-is-not-profit">AUC is not profit</h2>
+<p>The experiment stops at classification metrics. It does not specify or evaluate a trading rule.</p>
+<p>To move from a score to an economic claim, we would still need:</p>
+<ul>
+<li>a probability threshold or position-sizing rule fixed before the final test;</li>
+<li>realistic bid-ask spread, fees, slippage, and latency;</li>
+<li>turnover, exposure, drawdown, and capacity diagnostics;</li>
+<li>calibration and stability across score buckets;</li>
+<li>repeated seeds and walk-forward time folds;</li>
+<li>multiple symbols selected without hindsight;</li>
+<li>comparison with “do nothing,” simple momentum/reversal rules, and cost-aware CatBoost baselines.</li>
+</ul>
+<p>At a one-minute horizon, those omissions are decisive. A test AUC near <code>0.53</code> can coexist with negative net returns if the errors occur on expensive trades or the edge is smaller than execution costs. It can also coexist with a usable strategy under a carefully chosen decision rule. The classification table alone cannot tell us which world we are in.</p>
+<p>So the sad but useful fact is this:</p>
+<blockquote>
+<p>A model can be statistically above chance and still be practically worthless.</p>
+</blockquote>
+<p>That sentence is not pessimism. It is the boundary between a machine-learning experiment and a trading claim.</p>
+<h2 id="what-changes-from-electricity-to-finance">What changes from electricity to finance?</h2>
+<p>The two case studies now expose very different kinds of sequence structure.</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Electricity demand</th>
+<th>META one-minute direction</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Target</td>
+<td>Next 24 demand values</td>
+<td>Next-minute direction after excluding small moves</td>
+</tr>
+<tr>
+<td>Dominant structure</td>
+<td>Strong daily and weekly rhythm</td>
+<td>Weak, shifting short-horizon dependencies</td>
+</tr>
+<tr>
+<td>Main metric</td>
+<td>Forecast RMSE</td>
+<td>ROC AUC and balanced accuracy</td>
+</tr>
+<tr>
+<td>Strong simple check</td>
+<td>Naive seasonal forecasts; CatBoost as global benchmark</td>
+<td>CatBoost on causal endpoint features</td>
+</tr>
+<tr>
+<td>Feature lesson</td>
+<td>Calendar helped most models; engineered history varied by architecture</td>
+<td>Added price memory hurt the tested MLP</td>
+</tr>
+<tr>
+<td>Biggest interpretation risk</td>
+<td>Unequal raw-history reach</td>
+<td>Confusing statistical ranking with tradable profit</td>
+</tr>
+</tbody>
+</table></div>
+<p>On electricity, inductive bias helps organize recurring structure. On intraday prices, there may be much less stable structure to organize. More expressive models do not manufacture predictability; they only create more ways to represent what the data actually contains.</p>
+<h2 id="what-i-would-run-next">What I would run next</h2>
+<p>The saved notebook also defines an additional CatBoost technical-analysis feature set, but those cells have no recorded result. It would be misleading to include that variant in the leaderboard.</p>
+<p>The next credible experiment should proceed in this order:</p>
+<ol>
+<li>rerun the neural and CatBoost comparisons across at least five seeds;</li>
+<li>use walk-forward periods rather than one final chronological split;</li>
+<li>run the 25-versus-31-feature ablation for every model family;</li>
+<li>add several liquid symbols and report both per-symbol and macro-average results;</li>
+<li>test the defined technical-analysis feature group as a predeclared CatBoost ablation;</li>
+<li>calibrate scores and declare a trading rule before viewing its final economic test;</li>
+<li>deduct spread, fees, slippage, and a latency assumption;</li>
+<li>report confidence intervals, turnover, drawdown, and sensitivity to thresholds and costs.</li>
+</ol>
+<p>Only then should this become a claim about financial usefulness.</p>
+<h2 id="the-takeaway">The takeaway</h2>
+<p>This is exactly the kind of result a practical sequence-model series needs.</p>
+<p>GRU, Transformer, TCN, and LSTM found similar, weak next-minute ranking signal. CatBoost extracted slightly more from a compact endpoint representation. Extra price-memory variables hurt the tested MLP. None of those facts establishes a profitable strategy.</p>
+<p>The most general lesson is not which model sits at the top of a third decimal place. It is how to reason when the leaderboard is compressed:</p>
+<ul>
+<li>verify alignment and optimization before interpreting failure;</li>
+<li>keep the chronological contract strict;</li>
+<li>compare architectures with strong tabular baselines;</li>
+<li>ablate feature groups instead of admiring feature importance;</li>
+<li>repeat across seeds, periods, and assets;</li>
+<li>keep statistical prediction separate from economic value.</li>
+</ul>
+<p>In noisy domains, humility is not a disclaimer added after the result. It is part of the modeling method.</p>
+<hr/>
+</article>
+    <aside class="toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#what-was-actually-run">What was actually run</a></li><li><a href="#define-the-target-before-choosing-the-model">Define the target before choosing the model</a></li><li><a href="#keep-the-time-axis-intact">Keep the time axis intact</a></li><li><a href="#what-information-did-the-models-receive">What information did the models receive?</a></li><li><a href="#six-neural-architectures-one-training-protocol">Six neural architectures, one training protocol</a></li><li><a href="#the-main-result-everyone-stayed-near-chance">The main result: everyone stayed near chance</a></li><li><a href="#why-the-catboost-result-is-such-a-useful-reality-check">Why the CatBoost result is such a useful reality check</a></li><li><a href="#did-longer-price-memory-help">Did longer price memory help?</a></li><li><a href="#what-did-catboost-use">What did CatBoost use?</a></li><li><a href="#auc-is-not-profit">AUC is not profit</a></li><li><a href="#what-changes-from-electricity-to-finance">What changes from electricity to finance?</a></li><li><a href="#what-i-would-run-next">What I would run next</a></li><li><a href="#the-takeaway">The takeaway</a></li></ol></aside>
+  </div>
+  <nav class="article-pager" aria-label="Article navigation"><a class="pager-card previous" href="14-designing-a-trustworthy-experiment.html"><span>Previous</span><strong>How to Design a Time-Series Experiment You Can Trust</strong></a><a class="pager-card next" href="future-stock-prediction-roadmap.html"><span>Next application</span><strong>Broader stock-prediction roadmap</strong></a></nav>
+</main>
+<footer class="site-footer"><p>Sequence Models for Prediction · Open code, reproducible experiments, honest baselines.</p><a href="index.html">Series index</a></footer>
+</body>
+</html>

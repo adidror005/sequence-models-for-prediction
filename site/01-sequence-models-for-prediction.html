@@ -12,10 +12,11 @@
 <meta property="og:title" content="Sequence Models for Prediction: A Practical Map">
 <meta property="og:description" content="How inputs, outputs, memory, and model families fit together before we write any architecture code">
 <meta property="og:url" content="https://adidror005.github.io/sequence-models-for-prediction/01-sequence-models-for-prediction.html">
-<meta property="og:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
-<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Sequence Models for Prediction: A Practical Map">
 <meta name="twitter:description" content="How inputs, outputs, memory, and model families fit together before we write any architecture code">
+
+<meta property="og:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
 </head>
 <body>
@@ -23,11 +24,11 @@
   <a class="brand" href="index.html"><span class="brand-mark">S</span><span>Sequence Models<br><small>for Prediction</small></span></a>
   <nav aria-label="Primary navigation"><a href="index.html#series">All articles</a><a href="index.html#about">About</a><a class="github-link" href="https://github.com/adidror005/sequence-models-for-prediction">View source</a></nav>
 </header>
-<div class="reading-progress" style="--progress: 6.67%"></div>
+<div class="reading-progress" style="--progress: 6.25%"></div>
 <main>
   <header class="article-hero">
     <a class="back-link" href="index.html">← Series home</a>
-    <p class="eyebrow">Part 1 of 15 · Foundations</p>
+    <p class="eyebrow">Part 1 of 16 · Foundations</p>
     <h1>Sequence Models for Prediction: A Practical Map</h1>
     <p class="dek">How inputs, outputs, memory, and model families fit together before we write any architecture code</p>
   </header>
@@ -37,7 +38,7 @@
 <p>A sequence is an ordered collection in which position and context matter.</p>
 <p>It might contain words, sensor measurements, transactions, medical events, audio samples, video frames, or market observations. Nearby elements may be related, patterns may repeat at several scales, and the meaning of one element can depend on what came before it.</p>
 <p>Before comparing LSTMs, convolutional networks, Transformers, and N-BEATS, we need a shared language for sequence prediction. Otherwise architecture names conceal differences in data, targets, and evaluation.</p>
-<p>This article builds that language. Part 2 builds the shared PyTorch data pipeline, Parts 3–11 explain the algorithms one at a time, and Part 12 compares them as design choices. Electricity forecasting appears later as a concrete case study rather than the premise of the series.</p>
+<p>This article builds that language. Part 2 builds the shared PyTorch data pipeline, Parts 3–11 explain the algorithms one at a time, and Part 12 compares them as design choices. Electricity forecasting and one-minute financial direction appear later as case studies rather than the premise of the series.</p>
 <h2 id="the-series-roadmap">The series roadmap</h2>
 <p>This article also serves as the evolving table of contents:</p>
 <ol>
@@ -56,6 +57,7 @@
 <li><a href="12-electricity-results-and-interpretation.html">Comparing Sequence Models on Electricity Prediction</a> — raw-history results.</li>
 <li><a href="13-calendar-and-lagged-features.html">Do Calendar and Lagged Features Help?</a> — the later representation experiment.</li>
 <li><a href="14-designing-a-trustworthy-experiment.html">How to Design an Experiment You Can Trust</a> — evaluation discipline.</li>
+<li><a href="15-finance-direction-case-study.html">When Sequence Models Meet Market Noise</a> — a one-minute META direction case study with six neural models and CatBoost.</li>
 </ol>
 <p>As each installment goes live, replace its local draft link with the public Medium URL. Unpublished titles can remain plain text so readers never encounter a dead link.</p>
 <p>Part 2 implements the shared forecasting machinery before choosing an architecture: <a href="pytorch-data-pipeline-and-training-loop.html">A Leak-Free PyTorch Dataset, DataLoader, and Training Loop</a>.</p>
@@ -212,7 +214,7 @@ y: [batch, 24]
 </article>
     <aside class="toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#the-series-roadmap">The series roadmap</a></li><li><a href="#the-main-sequence-prediction-tasks">The main sequence-prediction tasks</a></li><li><a href="#time-series-forecasting-begins-at-an-origin">Time-series forecasting begins at an origin</a></li><li><a href="#four-ways-to-produce-the-future">Four ways to produce the future</a></li><li><a href="#what-counts-as-an-input-feature">What counts as an input feature?</a></li><li><a href="#why-time-order-changes-evaluation">Why time order changes evaluation</a></li><li><a href="#overlapping-windows-are-not-independent-observations">Overlapping windows are not independent observations</a></li><li><a href="#always-begin-with-naive-baselines">Always begin with naive baselines</a></li><li><a href="#the-uncomfortable-strong-baseline-gradient-boosting">The uncomfortable strong baseline: gradient boosting</a></li><li><a href="#the-model-families-in-this-series">The model families in this series</a></li><li><a href="#point-forecasts-are-only-one-output">Point forecasts are only one output</a></li><li><a href="#a-checklist-before-choosing-an-algorithm">A checklist before choosing an algorithm</a></li></ol></aside>
   </div>
-  <nav class="article-pager" aria-label="Article navigation"><a class="pager-card previous" href="index.html"><span>Series home</span><strong>Explore all 15 parts</strong></a><a class="pager-card next" href="pytorch-data-pipeline-and-training-loop.html"><span>Next</span><strong>A Leak-Free PyTorch Dataset, DataLoader, and Training Loop for Sequence Prediction</strong></a></nav>
+  <nav class="article-pager" aria-label="Article navigation"><a class="pager-card previous" href="index.html"><span>Series home</span><strong>Explore all 16 parts</strong></a><a class="pager-card next" href="pytorch-data-pipeline-and-training-loop.html"><span>Next</span><strong>A Leak-Free PyTorch Dataset, DataLoader, and Training Loop for Sequence Prediction</strong></a></nav>
 </main>
 <footer class="site-footer"><p>Sequence Models for Prediction · Open code, reproducible experiments, honest baselines.</p><a href="index.html">Series index</a></footer>
 </body>

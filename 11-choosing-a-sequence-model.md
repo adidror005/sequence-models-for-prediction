@@ -2,7 +2,7 @@
 
 *A practical comparison of access, memory, computation, and inductive bias*
 
-**Series:** Sequence Models for Prediction, Part 12 of 15
+**Series:** Sequence Models for Prediction, Part 12 of 16
 **Suggested Medium tags:** Time Series, Neural Networks, LSTM, Transformer, Forecasting
 
 There is no universally best sequence model.

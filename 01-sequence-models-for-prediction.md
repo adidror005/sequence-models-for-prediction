@@ -2,7 +2,7 @@
 
 *How inputs, outputs, memory, and model families fit together before we write any architecture code*
 
-**Series:** Sequence Models for Prediction, Part 1 of 15
+**Series:** Sequence Models for Prediction, Part 1 of 16
 **Suggested Medium tags:** Time Series, Forecasting, Deep Learning, Neural Networks, Machine Learning
 
 A sequence is an ordered collection in which position and context matter.
@@ -11,7 +11,7 @@ It might contain words, sensor measurements, transactions, medical events, audio
 
 Before comparing LSTMs, convolutional networks, Transformers, and N-BEATS, we need a shared language for sequence prediction. Otherwise architecture names conceal differences in data, targets, and evaluation.
 
-This article builds that language. Part 2 builds the shared PyTorch data pipeline, Parts 3–11 explain the algorithms one at a time, and Part 12 compares them as design choices. Electricity forecasting appears later as a concrete case study rather than the premise of the series.
+This article builds that language. Part 2 builds the shared PyTorch data pipeline, Parts 3–11 explain the algorithms one at a time, and Part 12 compares them as design choices. Electricity forecasting and one-minute financial direction appear later as case studies rather than the premise of the series.
 
 ## The series roadmap
 
@@ -32,6 +32,7 @@ This article also serves as the evolving table of contents:
 13. [Comparing Sequence Models on Electricity Prediction](12-electricity-results-and-interpretation.md) — raw-history results.
 14. [Do Calendar and Lagged Features Help?](13-calendar-and-lagged-features.md) — the later representation experiment.
 15. [How to Design an Experiment You Can Trust](14-designing-a-trustworthy-experiment.md) — evaluation discipline.
+16. [When Sequence Models Meet Market Noise](15-finance-direction-case-study.md) — a one-minute META direction case study with six neural models and CatBoost.
 
 As each installment goes live, replace its local draft link with the public Medium URL. Unpublished titles can remain plain text so readers never encounter a dead link.
 

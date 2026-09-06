@@ -2,7 +2,7 @@
 
 *Why grouping nearby observations can make attention cheaper—and exact lags harder to recover*
 
-**Series:** Sequence Models for Prediction, Part 10 of 15
+**Series:** Sequence Models for Prediction, Part 10 of 16
 **Suggested Medium tags:** PatchTST, Transformers, Time Series, Forecasting, Deep Learning
 
 A language Transformer receives words or subwords. What should count as a token in a time series?

@@ -138,7 +138,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <main class="article-shell">
   <article class="article-content"><h1>Do Calendar and Lagged Features Help Sequence Models?</h1>
 <p><em>When extra inputs add signal, supply a shortcut, or merely duplicate what the model already sees</em></p>
-<p><strong>Series:</strong> Sequence Models for Prediction, Part 14 of 15</p>
+<p><strong>Series:</strong> Sequence Models for Prediction, Part 14 of 16</p>
 <p>Part 13 compared nine architectures using the same single input: one week of raw electricity demand. That isolated the model question.</p>
 <p>Now we can change the representation.</p>
 <p>A feature list looks harmless.</p>
@@ -347,7 +347,7 @@ engineered raw reach:   t-336 ... t-1
 <p>Engineered features are most promising when they expose information that an architecture cannot reach easily, compress a context it handles poorly, or introduce genuinely future-known inputs. When a model already has a short path to the same evidence, extra transformations may be neutral or harmful.</p>
 </blockquote>
 <p>Calendar features and lagged features should also remain conceptually separate. Calendar variables describe temporal identity and may be known into the future. Lags, differences, and rolling moments transform observed target history. They answer different questions and should be tested in different steps.</p>
-<p>Part 15 closes the series with a protocol for separating model capacity, receptive field, raw-history budget, representation, and training variance in a trustworthy prediction experiment.</p>
+<p>Part 15 develops a protocol for separating model capacity, receptive field, raw-history budget, representation, and training variance. Part 16 then applies that discipline to a much noisier one-minute financial-direction case study.</p>
 <hr/>
 <p><strong>Series navigation:</strong> <a class="needs-live-url" href="index.html">Series index</a> · <a class="needs-live-url" href="12-electricity-results-and-interpretation.html">Previous: Electricity model comparison</a> · <a class="needs-live-url" href="14-designing-a-trustworthy-experiment.html">Next: Trustworthy experiments</a></p>
 </article>

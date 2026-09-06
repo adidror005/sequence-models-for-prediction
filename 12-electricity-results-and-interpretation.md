@@ -2,7 +2,7 @@
 
 *What happens when nine very different architectures receive exactly the same week of raw demand history?*
 
-**Series:** Sequence Models for Prediction, Part 13 of 15
+**Series:** Sequence Models for Prediction, Part 13 of 16
 **Suggested Medium tags:** Time Series, Deep Learning, Forecasting, Model Evaluation, Data Science
 
 The previous articles studied sequence models one at a time. That was deliberate: an architecture is easier to understand when its mechanics are not buried inside a leaderboard.

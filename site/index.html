@@ -8,14 +8,15 @@
 <link rel="canonical" href="https://adidror005.github.io/sequence-models-for-prediction/">
 <link rel="stylesheet" href="styles.css">
 
-<meta property="og:type" content="article">
+<meta property="og:type" content="website">
 <meta property="og:title" content="Sequence Models for Prediction">
 <meta property="og:description" content="A practical, code-complete series about how modern sequence models learn from ordered data—and when simpler baselines still win.">
 <meta property="og:url" content="https://adidror005.github.io/sequence-models-for-prediction/">
-<meta property="og:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
-<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Sequence Models for Prediction">
 <meta name="twitter:description" content="A practical, code-complete series about how modern sequence models learn from ordered data—and when simpler baselines still win.">
+
+<meta property="og:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://adidror005.github.io/sequence-models-for-prediction/og.png">
 </head>
 <body class="home">
@@ -28,7 +29,7 @@
     <div class="hero-copy">
       <p class="eyebrow">A practical forecasting series</p>
       <h1>Sequence models,<br><em>without the mystique.</em></h1>
-      <p class="hero-dek">From linear windows and recurrent memory to convolutions, Transformers, and N-BEATS—built in PyTorch, tested on electricity demand, and judged against strong simple baselines.</p>
+      <p class="hero-dek">From linear windows and recurrent memory to convolutions, Transformers, and N-BEATS—built in PyTorch, tested on electricity demand and one-minute META direction, and judged against strong simple baselines.</p>
       <div class="hero-actions"><a class="button primary-button" href="01-sequence-models-for-prediction.html">Start with Part 1</a><a class="button text-button" href="#series">Browse the series ↓</a></div>
     </div>
     <div class="sequence-visual" aria-hidden="true">
@@ -39,14 +40,14 @@
       <div class="visual-label future-label">forecast</div>
     </div>
   </section>
-  <section class="proof-strip" aria-label="Series highlights"><div><strong>15</strong><span>focused parts</span></div><div><strong>9</strong><span>model families</span></div><div><strong>100%</strong><span>complete PyTorch code</span></div><div><strong>1</strong><span>honest CatBoost check</span></div></section>
+  <section class="proof-strip" aria-label="Series highlights"><div><strong>16</strong><span>focused parts</span></div><div><strong>9</strong><span>model families</span></div><div><strong>2</strong><span>real-data case studies</span></div><div><strong>1</strong><span>honest CatBoost check</span></div></section>
   <section id="about" class="about-section">
     <p class="eyebrow">The central question</p>
     <h2>What should a forecasting model learn—and what should we hand it?</h2>
     <div class="about-grid"><p>This series first holds the input fixed and compares how different architectures process the same history. Only then does it ask whether calendar variables, explicit lags, differences, and rolling statistics add useful information.</p><p>The uncomfortable benchmark stays visible throughout: sophisticated neural networks often lose to gradient boosting on a carefully designed time-series table. Complexity has to earn its place.</p></div>
   </section>
   <section id="series" class="series-section">
-    <div class="section-heading"><div><p class="eyebrow">Read in order or jump in</p><h2>The complete series</h2></div><p>Foundations first. Individual algorithms next. Evidence and experimental discipline at the end.</p></div>
+    <div class="section-heading"><div><p class="eyebrow">Read in order or jump in</p><h2>The complete series</h2></div><p>Foundations first. Individual algorithms next. Electricity and finance evidence at the end.</p></div>
     <div class="series-grid"><article class="series-card">
   <div class="card-meta"><span>Part 01</span><span>Foundations</span></div>
   <h2><a href="01-sequence-models-for-prediction.html">Sequence Models for Prediction: A Practical Map</a></h2>
@@ -122,11 +123,16 @@
   <h2><a href="14-designing-a-trustworthy-experiment.html">How to Design a Time-Series Experiment You Can Trust</a></h2>
   <p>A rigorous protocol for comparing models, features, and forecasting decisions</p>
   <a class="read-link" href="14-designing-a-trustworthy-experiment.html">Read article <span aria-hidden="true">→</span></a>
+</article><article class="series-card">
+  <div class="card-meta"><span>Part 16</span><span>Case study</span></div>
+  <h2><a href="15-finance-direction-case-study.html">When Sequence Models Meet Market Noise: A One-Minute META Case Study</a></h2>
+  <p>Six neural architectures, one CatBoost baseline, and the humbling difference between measurable signal and a tradable strategy</p>
+  <a class="read-link" href="15-finance-direction-case-study.html">Read article <span aria-hidden="true">→</span></a>
 </article></div>
   </section>
   <section class="coming-next">
-    <div><p class="eyebrow">Next application</p><h2>Stock-price prediction—with stricter rules.</h2><p>The same framework will be extended to financial data using walk-forward evaluation, realistic baselines, transaction assumptions, and targets that are actually useful.</p></div>
-    <a class="button light-button" href="future-stock-prediction-roadmap.html">See the roadmap →</a>
+    <div><p class="eyebrow">Beyond the first finance case</p><h2>Stock prediction—with stricter rules.</h2><p>Part 16 reports the saved one-minute META experiment. The broader roadmap adds multiple assets, walk-forward evaluation, realistic baselines, transaction assumptions, and economic tests.</p></div>
+    <a class="button light-button" href="future-stock-prediction-roadmap.html">See what comes next →</a>
   </section>
 </main>
 <footer class="site-footer"><p>Sequence Models for Prediction · Open code, reproducible experiments, honest baselines.</p><a href="https://github.com/adidror005/sequence-models-for-prediction">Source on GitHub</a></footer>

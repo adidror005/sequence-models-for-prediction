@@ -8,7 +8,7 @@
     "code_blocks": 14,
     "table_images": [],
     "images": [],
-    "local_links_to_replace": 17
+    "local_links_to_replace": 18
   },
   {
     "part": 2,
@@ -199,6 +199,34 @@
     ],
     "images": [
       "table_images/14-designing-a-trustworthy-experiment-table-1.png"
+    ],
+    "local_links_to_replace": 3
+  },
+  {
+    "part": 16,
+    "title": "When Sequence Models Meet Market Noise: A One-Minute META Case Study",
+    "source": "15-finance-direction-case-study.md",
+    "html": "15-finance-direction-case-study.html",
+    "suggested_tags": "Time Series, PyTorch, Quantitative Finance, Machine Learning, CatBoost",
+    "code_blocks": 10,
+    "table_images": [
+      "table_images/15-finance-direction-case-study-table-1.png",
+      "table_images/15-finance-direction-case-study-table-2.png",
+      "table_images/15-finance-direction-case-study-table-3.png",
+      "table_images/15-finance-direction-case-study-table-4.png",
+      "table_images/15-finance-direction-case-study-table-5.png",
+      "table_images/15-finance-direction-case-study-table-6.png"
+    ],
+    "images": [
+      "table_images/15-finance-direction-case-study-table-1.png",
+      "table_images/15-finance-direction-case-study-table-2.png",
+      "table_images/15-finance-direction-case-study-table-3.png",
+      "assets/finance-model-test-auc.png",
+      "table_images/15-finance-direction-case-study-table-4.png",
+      "assets/finance-mlp-price-memory-ablation.png",
+      "table_images/15-finance-direction-case-study-table-5.png",
+      "assets/finance-catboost-feature-importance.png",
+      "table_images/15-finance-direction-case-study-table-6.png"
     ],
     "local_links_to_replace": 3
   }

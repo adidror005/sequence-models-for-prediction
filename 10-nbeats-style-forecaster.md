@@ -2,7 +2,7 @@
 
 *Backcast residuals, forecast additions, and a fully connected route to multi-horizon prediction*
 
-**Series:** Sequence Models for Prediction, Part 11 of 15
+**Series:** Sequence Models for Prediction, Part 11 of 16
 **Suggested Medium tags:** N-BEATS, Time Series, Forecasting, Neural Networks, Deep Learning
 
 N-BEATS approaches forecasting with an elegant iterative idea:

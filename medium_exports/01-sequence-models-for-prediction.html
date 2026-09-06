@@ -130,7 +130,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <aside class="instructions">
   <h2>Transfer notes</h2>
-  <p><strong>Replace 17 local series link(s) with live Medium URLs before publishing.</strong></p>
+  <p><strong>Replace 18 local series link(s) with live Medium URLs before publishing.</strong></p>
   <p><strong>Suggested Medium tags:</strong> Time Series, Forecasting, Deep Learning, Neural Networks, Machine Learning</p>
   <p>This preview contains 14 code block(s) and 0 rendered table image(s). After pasting, recreate code using Medium’s native code-block control and upload every image from the export package.</p>
   <details><summary>Images required by this article</summary><ul><li>No images in this article.</li></ul></details>
@@ -138,11 +138,11 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <main class="article-shell">
   <article class="article-content"><h1>Sequence Models for Prediction: A Practical Map</h1>
 <p><em>How inputs, outputs, memory, and model families fit together before we write any architecture code</em></p>
-<p><strong>Series:</strong> Sequence Models for Prediction, Part 1 of 15</p>
+<p><strong>Series:</strong> Sequence Models for Prediction, Part 1 of 16</p>
 <p>A sequence is an ordered collection in which position and context matter.</p>
 <p>It might contain words, sensor measurements, transactions, medical events, audio samples, video frames, or market observations. Nearby elements may be related, patterns may repeat at several scales, and the meaning of one element can depend on what came before it.</p>
 <p>Before comparing LSTMs, convolutional networks, Transformers, and N-BEATS, we need a shared language for sequence prediction. Otherwise architecture names conceal differences in data, targets, and evaluation.</p>
-<p>This article builds that language. Part 2 builds the shared PyTorch data pipeline, Parts 3–11 explain the algorithms one at a time, and Part 12 compares them as design choices. Electricity forecasting appears later as a concrete case study rather than the premise of the series.</p>
+<p>This article builds that language. Part 2 builds the shared PyTorch data pipeline, Parts 3–11 explain the algorithms one at a time, and Part 12 compares them as design choices. Electricity forecasting and one-minute financial direction appear later as case studies rather than the premise of the series.</p>
 <h2>The series roadmap</h2>
 <p>This article also serves as the evolving table of contents:</p>
 <ol>
@@ -161,6 +161,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <li><a class="needs-live-url" href="12-electricity-results-and-interpretation.html">Comparing Sequence Models on Electricity Prediction</a> — raw-history results.</li>
 <li><a class="needs-live-url" href="13-calendar-and-lagged-features.html">Do Calendar and Lagged Features Help?</a> — the later representation experiment.</li>
 <li><a class="needs-live-url" href="14-designing-a-trustworthy-experiment.html">How to Design an Experiment You Can Trust</a> — evaluation discipline.</li>
+<li><a class="needs-live-url" href="15-finance-direction-case-study.html">When Sequence Models Meet Market Noise</a> — a one-minute META direction case study with six neural models and CatBoost.</li>
 </ol>
 <p>As each installment goes live, replace its local draft link with the public Medium URL. Unpublished titles can remain plain text so readers never encounter a dead link.</p>
 <p>Part 2 implements the shared forecasting machinery before choosing an architecture: <a class="needs-live-url" href="pytorch-data-pipeline-and-training-loop.html">A Leak-Free PyTorch Dataset, DataLoader, and Training Loop</a>.</p>

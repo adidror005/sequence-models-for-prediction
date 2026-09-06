@@ -2,7 +2,7 @@
 
 *How causal filters create an efficient sequence model—and how to calculate what it can actually see*
 
-**Series:** Sequence Models for Prediction, Part 8 of 15
+**Series:** Sequence Models for Prediction, Part 8 of 16
 **Suggested Medium tags:** TCN, Convolutional Neural Networks, Time Series, Forecasting, Deep Learning
 
 A temporal convolutional network replaces recurrent memory with a hierarchy of causal filters.

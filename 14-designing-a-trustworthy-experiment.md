@@ -2,7 +2,7 @@
 
 *A rigorous protocol for comparing models, features, and forecasting decisions*
 
-**Series:** Sequence Models for Prediction, Part 15 of 15
+**Series:** Sequence Models for Prediction, Part 15 of 16
 **Suggested Medium tags:** Experimental Design, Time Series, Machine Learning, Forecasting, MLOps
 
 A good ablation removes one thing.
@@ -232,4 +232,4 @@ It is this:
 
 ---
 
-**Series navigation:** [Series index](README.md) · [Previous: Calendar and lagged features](13-calendar-and-lagged-features.md) · [Future extension: Stock prediction roadmap](future-stock-prediction-roadmap.md)
+**Series navigation:** [Series index](README.md) · [Previous: Calendar and lagged features](13-calendar-and-lagged-features.md) · [Next: One-minute META direction case study](15-finance-direction-case-study.md)

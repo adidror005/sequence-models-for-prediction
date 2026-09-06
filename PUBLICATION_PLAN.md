@@ -2,13 +2,13 @@
 
 ## Recommended cadence
 
-Publish **two articles per week**, approximately three or four days apart. Do not release all 14 on consecutive days.
+Publish **two articles per week**, approximately three or four days apart. Do not release all 16 on consecutive days.
 
 A consistent Tuesday/Friday or Monday/Thursday rhythm gives each article time to circulate before the next one reaches the same followers. It also leaves enough time to answer comments, share a second promotional angle, and use early reader questions to improve later drafts.
 
 Medium supports scheduling in the writer’s local timezone. Choose one publication time for the first four posts, then use story statistics—especially presentations, views, reads, and follower conversions—to decide whether the time should change. Avoid changing topic, day, and time simultaneously, because then the source of any performance change becomes impossible to identify.
 
-## Seven-week release sequence
+## Eight-week release sequence
 
 | Week | First release | Second release | Editorial purpose |
 |---:|---|---|---|
@@ -19,7 +19,7 @@ Medium supports scheduling in the writer’s local timezone. Choose one publicat
 | 5 | Part 9: Transformer | Part 10: Patch Transformer | Contrast time-step attention with temporal tokens. |
 | 6 | Part 11: N-BEATS-style | Part 12: Choosing a model | Finish the algorithms and synthesize the design choices. |
 | 7 | Part 13: Electricity comparison | Part 14: Calendar and lag features | Move from controlled model comparison to input representation. |
-| 8 | Part 15: Trustworthy experiments | — | Close with a reusable evaluation protocol. |
+| 8 | Part 15: Trustworthy experiments | Part 16: META direction case study | Move from reusable protocol to a high-noise financial stress test. |
 
 If one post receives unusually strong discussion, delaying the next release by one or two days is reasonable. Preserve the order; the conceptual progression matters more than hitting an exact date.
 
@@ -77,6 +77,7 @@ Prioritize these articles when approaching established data-science, machine-lea
 3. **Part 12** — practical model-selection framing, including the CatBoost benchmark.
 4. **Part 13** — original electricity comparison and strongest chart-led story.
 5. **Part 14** — counterintuitive feature-engineering result and methodological lesson.
+6. **Part 16** — finance interest, a compressed leaderboard, and a careful distinction between AUC and profit.
 
 Publication editors control their own queues. Coordinate timing with them instead of promising readers an exact release date that an external editor may change.
 
@@ -95,6 +96,7 @@ Avoid announcing every post as “Part N is live.” Lead with the claim or ques
 | Electricity results | “Nine architectures received the same raw week. Seven finished within roughly 0.009 kW RMSE.” |
 | Feature comparison | “A causal lag can still make an ablation unfair by quietly doubling historical reach.” |
 | Experimental design | “A feature changes data, representation, and information path at the same time.” |
+| Finance case study | “Six neural models found weak next-minute signal. CatBoost still finished narrowly ahead—and none of that proves a profitable trade.” |
 
 ## Live URL registry
 
@@ -116,6 +118,8 @@ Fill this table as articles are published. It is the source of truth for updatin
 | 12 | Draft |  |  |  |
 | 13 | Draft |  |  |  |
 | 14 | Draft |  |  |  |
+| 15 | Draft |  |  |  |
+| 16 | Draft |  |  |  |
 
 ## Platform references
 

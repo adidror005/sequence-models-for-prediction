@@ -37,6 +37,7 @@ SERIES = [
     (13, "12-electricity-results-and-interpretation.md", "Case study"),
     (14, "13-calendar-and-lagged-features.md", "Case study"),
     (15, "14-designing-a-trustworthy-experiment.md", "Practice"),
+    (16, "15-finance-direction-case-study.md", "Case study"),
 ]
 
 
@@ -104,21 +105,31 @@ def slugify(value: str) -> str:
     return slug or "section"
 
 
-def social_meta(title: str, description: str, canonical: str) -> str:
-    og_source = SERIES_ROOT / "assets" / "og.png"
-    if not og_source.exists():
-        return ""
-    image_url = f"{SITE_URL}/og.png"
+def social_meta(
+    title: str,
+    description: str,
+    canonical: str,
+    image_url: str | None = None,
+    page_type: str = "article",
+) -> str:
+    if image_url is None:
+        og_source = SERIES_ROOT / "assets" / "og.png"
+        if og_source.exists():
+            image_url = f"{SITE_URL}/og.png"
+    image_meta = ""
+    if image_url:
+        image_meta = f"""
+<meta property="og:image" content="{html.escape(image_url)}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="{html.escape(image_url)}">"""
     return f"""
-<meta property="og:type" content="article">
+<meta property="og:type" content="{html.escape(page_type)}">
 <meta property="og:title" content="{html.escape(title)}">
 <meta property="og:description" content="{html.escape(description)}">
 <meta property="og:url" content="{html.escape(canonical)}">
-<meta property="og:image" content="{image_url}">
-<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{html.escape(title)}">
 <meta name="twitter:description" content="{html.escape(description)}">
-<meta name="twitter:image" content="{image_url}">"""
+{image_meta}"""
 
 
 def parse_article(part: int, source_name: str, section: str) -> dict[str, object]:
@@ -161,6 +172,16 @@ def parse_article(part: int, source_name: str, section: str) -> dict[str, object
         wrapper["class"] = "table-scroll"
         table.wrap(wrapper)
 
+    first_image = soup.find("img", src=True)
+    social_image = None
+    if first_image:
+        image_source = str(first_image["src"])
+        social_image = (
+            image_source
+            if image_source.startswith(("http://", "https://"))
+            else f"{SITE_URL}/{image_source.lstrip('/')}"
+        )
+
     return {
         "part": part,
         "section": section,
@@ -170,6 +191,7 @@ def parse_article(part: int, source_name: str, section: str) -> dict[str, object
         "description": description,
         "body": str(soup),
         "toc": toc,
+        "social_image": social_image,
     }
 
 
@@ -188,12 +210,16 @@ def article_page(
     previous_link = (
         f'<a class="pager-card previous" href="{previous["html"]}"><span>Previous</span><strong>{html.escape(str(previous["title"]))}</strong></a>'
         if previous
-        else '<a class="pager-card previous" href="index.html"><span>Series home</span><strong>Explore all 15 parts</strong></a>'
+        else f'<a class="pager-card previous" href="index.html"><span>Series home</span><strong>Explore all {len(SERIES)} parts</strong></a>'
     )
     following_link = (
         f'<a class="pager-card next" href="{following["html"]}"><span>Next</span><strong>{html.escape(str(following["title"]))}</strong></a>'
         if following
-        else '<a class="pager-card next" href="index.html"><span>Finished</span><strong>Return to the series</strong></a>'
+        else (
+            '<a class="pager-card next" href="future-stock-prediction-roadmap.html"><span>Next application</span><strong>Broader stock-prediction roadmap</strong></a>'
+            if int(article["part"]) == len(SERIES)
+            else '<a class="pager-card next" href="index.html"><span>Finished</span><strong>Return to the series</strong></a>'
+        )
     )
     return f"""<!doctype html>
 <html lang="en">
@@ -204,7 +230,7 @@ def article_page(
 <meta name="description" content="{html.escape(description)}">
 <link rel="canonical" href="{canonical}">
 <link rel="stylesheet" href="styles.css">
-{social_meta(title, description, canonical)}
+{social_meta(title, description, canonical, article.get('social_image'))}
 </head>
 <body>
 <header class="site-header">
@@ -253,7 +279,7 @@ def index_page(articles: list[dict[str, object]]) -> str:
 <meta name="description" content="{html.escape(description)}">
 <link rel="canonical" href="{canonical}">
 <link rel="stylesheet" href="styles.css">
-{social_meta(title, description, canonical)}
+{social_meta(title, description, canonical, f'{SITE_URL}/og.png', page_type='website')}
 </head>
 <body class="home">
 <header class="site-header home-header">
@@ -265,7 +291,7 @@ def index_page(articles: list[dict[str, object]]) -> str:
     <div class="hero-copy">
       <p class="eyebrow">A practical forecasting series</p>
       <h1>Sequence models,<br><em>without the mystique.</em></h1>
-      <p class="hero-dek">From linear windows and recurrent memory to convolutions, Transformers, and N-BEATS—built in PyTorch, tested on electricity demand, and judged against strong simple baselines.</p>
+      <p class="hero-dek">From linear windows and recurrent memory to convolutions, Transformers, and N-BEATS—built in PyTorch, tested on electricity demand and one-minute META direction, and judged against strong simple baselines.</p>
       <div class="hero-actions"><a class="button primary-button" href="{articles[0]['html']}">Start with Part 1</a><a class="button text-button" href="#series">Browse the series ↓</a></div>
     </div>
     <div class="sequence-visual" aria-hidden="true">
@@ -276,19 +302,19 @@ def index_page(articles: list[dict[str, object]]) -> str:
       <div class="visual-label future-label">forecast</div>
     </div>
   </section>
-  <section class="proof-strip" aria-label="Series highlights"><div><strong>15</strong><span>focused parts</span></div><div><strong>9</strong><span>model families</span></div><div><strong>100%</strong><span>complete PyTorch code</span></div><div><strong>1</strong><span>honest CatBoost check</span></div></section>
+  <section class="proof-strip" aria-label="Series highlights"><div><strong>{len(articles)}</strong><span>focused parts</span></div><div><strong>9</strong><span>model families</span></div><div><strong>2</strong><span>real-data case studies</span></div><div><strong>1</strong><span>honest CatBoost check</span></div></section>
   <section id="about" class="about-section">
     <p class="eyebrow">The central question</p>
     <h2>What should a forecasting model learn—and what should we hand it?</h2>
     <div class="about-grid"><p>This series first holds the input fixed and compares how different architectures process the same history. Only then does it ask whether calendar variables, explicit lags, differences, and rolling statistics add useful information.</p><p>The uncomfortable benchmark stays visible throughout: sophisticated neural networks often lose to gradient boosting on a carefully designed time-series table. Complexity has to earn its place.</p></div>
   </section>
   <section id="series" class="series-section">
-    <div class="section-heading"><div><p class="eyebrow">Read in order or jump in</p><h2>The complete series</h2></div><p>Foundations first. Individual algorithms next. Evidence and experimental discipline at the end.</p></div>
+    <div class="section-heading"><div><p class="eyebrow">Read in order or jump in</p><h2>The complete series</h2></div><p>Foundations first. Individual algorithms next. Electricity and finance evidence at the end.</p></div>
     <div class="series-grid">{''.join(cards)}</div>
   </section>
   <section class="coming-next">
-    <div><p class="eyebrow">Next application</p><h2>Stock-price prediction—with stricter rules.</h2><p>The same framework will be extended to financial data using walk-forward evaluation, realistic baselines, transaction assumptions, and targets that are actually useful.</p></div>
-    <a class="button light-button" href="future-stock-prediction-roadmap.html">See the roadmap →</a>
+    <div><p class="eyebrow">Beyond the first finance case</p><h2>Stock prediction—with stricter rules.</h2><p>Part 16 reports the saved one-minute META experiment. The broader roadmap adds multiple assets, walk-forward evaluation, realistic baselines, transaction assumptions, and economic tests.</p></div>
+    <a class="button light-button" href="future-stock-prediction-roadmap.html">See what comes next →</a>
   </section>
 </main>
 <footer class="site-footer"><p>Sequence Models for Prediction · Open code, reproducible experiments, honest baselines.</p><a href="https://github.com/adidror005/sequence-models-for-prediction">Source on GitHub</a></footer>
@@ -306,9 +332,9 @@ def roadmap_page() -> str:
         title_node.decompose()
     for anchor in soup.find_all("a", href=True):
         anchor["href"] = convert_link(anchor["href"])
-    description = "A future experiment plan for applying the sequence-model framework to stock prediction."
+    description = "A roadmap for extending the first META case study into a broader, cost-aware stock-prediction experiment."
     canonical = f"{SITE_URL}/future-stock-prediction-roadmap.html"
-    return f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{html.escape(title)} — Sequence Models for Prediction</title><meta name="description" content="{description}"><link rel="canonical" href="{canonical}"><link rel="stylesheet" href="styles.css">{social_meta(title, description, canonical)}</head><body><header class="site-header"><a class="brand" href="index.html"><span class="brand-mark">S</span><span>Sequence Models<br><small>for Prediction</small></span></a><nav aria-label="Primary navigation"><a href="index.html#series">All articles</a><a href="index.html#about">About</a><a class="github-link" href="https://github.com/adidror005/sequence-models-for-prediction">View source</a></nav></header><main><header class="article-hero"><a class="back-link" href="index.html">← Series home</a><p class="eyebrow">Future application · Research roadmap</p><h1>{html.escape(title)}</h1><p class="dek">{description}</p></header><div class="reading-layout roadmap-layout"><article class="article-content">{str(soup)}</article></div><nav class="article-pager"><a class="pager-card previous" href="14-designing-a-trustworthy-experiment.html"><span>Previous</span><strong>Designing a trustworthy experiment</strong></a><a class="pager-card next" href="index.html"><span>Series</span><strong>Return to all articles</strong></a></nav></main><footer class="site-footer"><p>Sequence Models for Prediction · Open code, reproducible experiments, honest baselines.</p><a href="index.html">Series index</a></footer></body></html>"""
+    return f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{html.escape(title)} — Sequence Models for Prediction</title><meta name="description" content="{description}"><link rel="canonical" href="{canonical}"><link rel="stylesheet" href="styles.css">{social_meta(title, description, canonical)}</head><body><header class="site-header"><a class="brand" href="index.html"><span class="brand-mark">S</span><span>Sequence Models<br><small>for Prediction</small></span></a><nav aria-label="Primary navigation"><a href="index.html#series">All articles</a><a href="index.html#about">About</a><a class="github-link" href="https://github.com/adidror005/sequence-models-for-prediction">View source</a></nav></header><main><header class="article-hero"><a class="back-link" href="index.html">← Series home</a><p class="eyebrow">Future application · Research roadmap</p><h1>{html.escape(title)}</h1><p class="dek">{description}</p></header><div class="reading-layout roadmap-layout"><article class="article-content">{str(soup)}</article></div><nav class="article-pager"><a class="pager-card previous" href="15-finance-direction-case-study.html"><span>Previous</span><strong>One-minute META case study</strong></a><a class="pager-card next" href="index.html"><span>Series</span><strong>Return to all articles</strong></a></nav></main><footer class="site-footer"><p>Sequence Models for Prediction · Open code, reproducible experiments, honest baselines.</p><a href="index.html">Series index</a></footer></body></html>"""
 
 
 STYLES = r"""

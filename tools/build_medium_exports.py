@@ -389,7 +389,7 @@ h1 {{ font-size: 46px; margin-bottom: 10px; }}
 .card h2 {{ font-size: 22px; line-height: 1.25; }}
 a {{ color: #17324d; }}
 .card p {{ color: #666; font-size: 14px; }}
-</style></head><body><h1>Sequence Models for Prediction</h1><p class="intro">Copy-friendly Medium previews for all 15 articles. Open an article, use <strong>Copy rich article</strong>, paste into Medium, then recreate native code blocks, upload the listed images, and replace local series links with live URLs.</p><div class="grid">{''.join(cards)}</div></body></html>""",
+</style></head><body><h1>Sequence Models for Prediction</h1><p class="intro">Copy-friendly Medium previews for all {len(manifest)} articles. Open an article, use <strong>Copy rich article</strong>, paste into Medium, then recreate native code blocks, upload the listed images, and replace local series links with live URLs.</p><div class="grid">{''.join(cards)}</div></body></html>""",
         encoding="utf-8",
     )
 
