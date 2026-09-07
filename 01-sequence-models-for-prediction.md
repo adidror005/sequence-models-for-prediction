@@ -5,13 +5,15 @@
 **Series:** Sequence Models for Prediction, Part 1 of 18
 **Suggested Medium tags:** Time Series, Forecasting, Deep Learning, Neural Networks, Machine Learning
 
+This is Part 1 of a growing 18-part series on sequence models for prediction.
+
 A sequence is an ordered collection in which position and context matter.
 
 It might contain words, sensor measurements, transactions, medical events, audio samples, video frames, or market observations. Nearby elements may be related, patterns may repeat at several scales, and the meaning of one element can depend on what came before it.
 
-Before comparing LSTMs, convolutional networks, Transformers, state-space models, Mamba, and N-BEATS, we need a shared language for sequence prediction. Otherwise architecture names conceal differences in data, targets, and evaluation.
+Before comparing LSTMs, convolutional networks, Transformers, state-space models, Mamba, and N-BEATS, we need a shared language. Otherwise, architecture names conceal differences in data, targets, and evaluation.
 
-This article builds that language. Part 2 builds the shared PyTorch data pipeline, Parts 3–13 explain the algorithms one at a time, and Part 14 compares them as design choices. Electricity forecasting and one-minute financial direction appear later as case studies rather than the premise of the series.
+Part 2 builds the shared PyTorch pipeline, Parts 3–13 explain the algorithms one at a time, and Part 14 compares them. Electricity forecasting and one-minute financial direction appear later as case studies.
 
 ## The series roadmap
 
@@ -35,10 +37,6 @@ This article also serves as the evolving table of contents:
 16. [Do Calendar and Lagged Features Help?](13-calendar-and-lagged-features.md) — the later representation experiment.
 17. [How to Design an Experiment You Can Trust](14-designing-a-trustworthy-experiment.md) — evaluation discipline.
 18. [One Model Per Stock or One Model for the Market?](15-finance-direction-case-study.md) — per-symbol datasets, pooled learning, and learned ticker embeddings.
-
-As each installment goes live, replace its local draft link with the public Medium URL. Unpublished titles can remain plain text so readers never encounter a dead link.
-
-Part 2 implements the shared forecasting machinery before choosing an architecture: [A Leak-Free PyTorch Dataset, DataLoader, and Training Loop](pytorch-data-pipeline-and-training-loop.md).
 
 ## The main sequence-prediction tasks
 
@@ -120,6 +118,33 @@ Predict one step, append that prediction to the context, and repeat.
 
 Recursive forecasting can use one shared next-step model for any horizon. Its weakness is error accumulation: later predictions are conditioned on earlier guesses rather than observations.
 
+Suppose an electricity model predicts only the next hour. To forecast three hours, it predicts hour one, appends that estimate to the context, and uses it to predict hour two. That estimate then helps predict hour three. Recursion is necessary because those future lagged values have not been observed.
+
+For a univariate PyTorch model, the loop can be this small:
+
+```python
+import torch
+
+
+@torch.no_grad()
+def recursive_forecast(model, history, horizon):
+    """history: [batch, lookback, 1]"""
+    window = history.clone()
+    predictions = []
+
+    for _ in range(horizon):
+        next_value = model(window)       # [batch, 1]
+        predictions.append(next_value)
+        next_step = next_value.unsqueeze(-1)
+        window = torch.cat(
+            [window[:, 1:, :], next_step], dim=1
+        )
+
+    return torch.cat(predictions, dim=1)
+```
+
+If the first estimate is wrong, its error can affect every later step. With known future covariates such as weather, insert the appropriate future row at each iteration rather than predicting that covariate.
+
 ### Direct multi-horizon prediction
 
 Emit all `H` values at once:
@@ -146,7 +171,7 @@ These are measurements known only through the forecast origin: demand, temperatu
 
 ### Known future variables
 
-These are available for the target period before it occurs: hour of day, holidays, scheduled promotions, tariffs, or planned capacity.
+These are available for the target period before it occurs: hour of day, holidays, earnings dates, scheduled promotions, tariffs, or planned capacity.
 
 Known future variables should be passed through an explicit future path when possible. Attaching calendar fields only to historical rows is not the same thing.
 
@@ -169,6 +194,36 @@ Use chronological splits:
 ```text
 training period │ validation period │ test period
 ```
+
+It is safest to split forecast origins and require each target horizon to stay inside its period:
+
+```python
+import numpy as np
+
+
+def split_forecast_origins(
+    n_rows,
+    lookback,
+    horizon,
+    train_fraction=0.70,
+    validation_fraction=0.15,
+):
+    train_end = int(n_rows * train_fraction)
+    validation_end = int(
+        n_rows * (train_fraction + validation_fraction)
+    )
+    origins = np.arange(lookback, n_rows - horizon + 1)
+
+    train = origins[origins + horizon <= train_end]
+    validation = origins[
+        (origins >= train_end)
+        & (origins + horizon <= validation_end)
+    ]
+    test = origins[origins >= validation_end]
+    return train, validation, test
+```
+
+Validation and test inputs may use already observed context from the preceding period, but their forecast targets never cross split boundaries.
 
 The validation period selects hyperparameters and checkpoints. The final test period estimates future-like performance only after model choices are fixed.
 
@@ -207,7 +262,7 @@ Complexity earns its place only through out-of-sample improvement over these rul
 
 ## The uncomfortable strong baseline: gradient boosting
 
-Naive rules and linear models are not enough. For small and medium-sized forecasting datasets, a boosted-tree model such as CatBoost, LightGBM, or XGBoost is often competitive with—and sometimes better than—far more elaborate sequence networks.
+Naive rules and linear models are not enough. On small and medium-sized forecasting datasets, a boosted-tree model such as CatBoost, LightGBM, or XGBoost often beats far more elaborate sequence networks.
 
 The tree model does not discover temporal order in the same way. We usually construct a causal table containing lags, calendar variables, rolling statistics, differences, and other information available at the forecast origin. Boosting then excels at thresholds, nonlinear interactions, mixed feature scales, and limited-data optimization.
 

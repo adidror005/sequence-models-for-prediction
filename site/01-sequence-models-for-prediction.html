@@ -35,10 +35,11 @@
   <div class="reading-layout">
     <article class="article-content">
 
+<p>This is Part 1 of a growing 18-part series on sequence models for prediction.</p>
 <p>A sequence is an ordered collection in which position and context matter.</p>
 <p>It might contain words, sensor measurements, transactions, medical events, audio samples, video frames, or market observations. Nearby elements may be related, patterns may repeat at several scales, and the meaning of one element can depend on what came before it.</p>
-<p>Before comparing LSTMs, convolutional networks, Transformers, state-space models, Mamba, and N-BEATS, we need a shared language for sequence prediction. Otherwise architecture names conceal differences in data, targets, and evaluation.</p>
-<p>This article builds that language. Part 2 builds the shared PyTorch data pipeline, Parts 3–13 explain the algorithms one at a time, and Part 14 compares them as design choices. Electricity forecasting and one-minute financial direction appear later as case studies rather than the premise of the series.</p>
+<p>Before comparing LSTMs, convolutional networks, Transformers, state-space models, Mamba, and N-BEATS, we need a shared language. Otherwise, architecture names conceal differences in data, targets, and evaluation.</p>
+<p>Part 2 builds the shared PyTorch pipeline, Parts 3–13 explain the algorithms one at a time, and Part 14 compares them. Electricity forecasting and one-minute financial direction appear later as case studies.</p>
 <h2 id="the-series-roadmap">The series roadmap</h2>
 <p>This article also serves as the evolving table of contents:</p>
 <ol>
@@ -61,8 +62,6 @@
 <li><a href="14-designing-a-trustworthy-experiment.html">How to Design an Experiment You Can Trust</a> — evaluation discipline.</li>
 <li><a href="15-finance-direction-case-study.html">One Model Per Stock or One Model for the Market?</a> — per-symbol datasets, pooled learning, and learned ticker embeddings.</li>
 </ol>
-<p>As each installment goes live, replace its local draft link with the public Medium URL. Unpublished titles can remain plain text so readers never encounter a dead link.</p>
-<p>Part 2 implements the shared forecasting machinery before choosing an architecture: <a href="pytorch-data-pipeline-and-training-loop.html">A Leak-Free PyTorch Dataset, DataLoader, and Training Loop</a>.</p>
 <h2 id="the-main-sequence-prediction-tasks">The main sequence-prediction tasks</h2>
 <p>Different tasks ask a model to produce different output structures.</p>
 <h3>Sequence to one</h3>
@@ -111,6 +110,29 @@ y: [batch, 24]
 <h3>Recursive prediction</h3>
 <p>Predict one step, append that prediction to the context, and repeat.</p>
 <p>Recursive forecasting can use one shared next-step model for any horizon. Its weakness is error accumulation: later predictions are conditioned on earlier guesses rather than observations.</p>
+<p>Suppose an electricity model predicts only the next hour. To forecast three hours, it predicts hour one, appends that estimate to the context, and uses it to predict hour two. That estimate then helps predict hour three. Recursion is necessary because those future lagged values have not been observed.</p>
+<p>For a univariate PyTorch model, the loop can be this small:</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+
+
+<span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">recursive_forecast</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">history</span><span class="p">,</span> <span class="n">horizon</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""history: [batch, lookback, 1]"""</span>
+    <span class="n">window</span> <span class="o">=</span> <span class="n">history</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+    <span class="n">predictions</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">horizon</span><span class="p">):</span>
+        <span class="n">next_value</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">window</span><span class="p">)</span>       <span class="c1"># [batch, 1]</span>
+        <span class="n">predictions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">next_value</span><span class="p">)</span>
+        <span class="n">next_step</span> <span class="o">=</span> <span class="n">next_value</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">window</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">window</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:,</span> <span class="p">:],</span> <span class="n">next_step</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</code></pre>
+<p>If the first estimate is wrong, its error can affect every later step. With known future covariates such as weather, insert the appropriate future row at each iteration rather than predicting that covariate.</p>
 <h3>Direct multi-horizon prediction</h3>
 <p>Emit all <code>H</code> values at once:</p>
 <pre><code class="language-text"><div class="highlight"><pre><span></span>historical representation → [ŷ_t, ŷ_(t+1), ..., ŷ_(t+H-1)]
@@ -125,7 +147,7 @@ y: [batch, 24]
 <h3>Observed historical variables</h3>
 <p>These are measurements known only through the forecast origin: demand, temperature readings, prices, volume, sensor values, or sales.</p>
 <h3>Known future variables</h3>
-<p>These are available for the target period before it occurs: hour of day, holidays, scheduled promotions, tariffs, or planned capacity.</p>
+<p>These are available for the target period before it occurs: hour of day, holidays, earnings dates, scheduled promotions, tariffs, or planned capacity.</p>
 <p>Known future variables should be passed through an explicit future path when possible. Attaching calendar fields only to historical rows is not the same thing.</p>
 <h3>Static variables</h3>
 <p>These do not change within the sequence: location, customer type, device category, or asset identity.</p>
@@ -138,6 +160,33 @@ y: [batch, 24]
 <pre><code class="language-text"><div class="highlight"><pre><span></span>training period │ validation period │ test period
 </pre></div>
 </code></pre>
+<p>It is safest to split forecast origins and require each target horizon to stay inside its period:</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">split_forecast_origins</span><span class="p">(</span>
+    <span class="n">n_rows</span><span class="p">,</span>
+    <span class="n">lookback</span><span class="p">,</span>
+    <span class="n">horizon</span><span class="p">,</span>
+    <span class="n">train_fraction</span><span class="o">=</span><span class="mf">0.70</span><span class="p">,</span>
+    <span class="n">validation_fraction</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="n">train_end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_rows</span> <span class="o">*</span> <span class="n">train_fraction</span><span class="p">)</span>
+    <span class="n">validation_end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+        <span class="n">n_rows</span> <span class="o">*</span> <span class="p">(</span><span class="n">train_fraction</span> <span class="o">+</span> <span class="n">validation_fraction</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">origins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">lookback</span><span class="p">,</span> <span class="n">n_rows</span> <span class="o">-</span> <span class="n">horizon</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">train</span> <span class="o">=</span> <span class="n">origins</span><span class="p">[</span><span class="n">origins</span> <span class="o">+</span> <span class="n">horizon</span> <span class="o">&lt;=</span> <span class="n">train_end</span><span class="p">]</span>
+    <span class="n">validation</span> <span class="o">=</span> <span class="n">origins</span><span class="p">[</span>
+        <span class="p">(</span><span class="n">origins</span> <span class="o">&gt;=</span> <span class="n">train_end</span><span class="p">)</span>
+        <span class="o">&amp;</span> <span class="p">(</span><span class="n">origins</span> <span class="o">+</span> <span class="n">horizon</span> <span class="o">&lt;=</span> <span class="n">validation_end</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="n">test</span> <span class="o">=</span> <span class="n">origins</span><span class="p">[</span><span class="n">origins</span> <span class="o">&gt;=</span> <span class="n">validation_end</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">train</span><span class="p">,</span> <span class="n">validation</span><span class="p">,</span> <span class="n">test</span>
+</pre></div>
+</code></pre>
+<p>Validation and test inputs may use already observed context from the preceding period, but their forecast targets never cross split boundaries.</p>
 <p>The validation period selects hyperparameters and checkpoints. The final test period estimates future-like performance only after model choices are fixed.</p>
 <p>Rolling-origin evaluation repeats this process across several dates, revealing whether a conclusion depends on one unusually easy or difficult period.</p>
 <p>Scaling also respects time. Means, standard deviations, quantiles, and learned preprocessing parameters are fitted on training data, then applied unchanged to validation and test data.</p>
@@ -164,7 +213,7 @@ y: [batch, 24]
 <p>The correct baseline depends on the target. For a persistent price series, repeating the last price can be formidable. For strongly daily demand, repeating yesterday may be more meaningful.</p>
 <p>Complexity earns its place only through out-of-sample improvement over these rules.</p>
 <h2 id="the-uncomfortable-strong-baseline-gradient-boosting">The uncomfortable strong baseline: gradient boosting</h2>
-<p>Naive rules and linear models are not enough. For small and medium-sized forecasting datasets, a boosted-tree model such as CatBoost, LightGBM, or XGBoost is often competitive with—and sometimes better than—far more elaborate sequence networks.</p>
+<p>Naive rules and linear models are not enough. On small and medium-sized forecasting datasets, a boosted-tree model such as CatBoost, LightGBM, or XGBoost often beats far more elaborate sequence networks.</p>
 <p>The tree model does not discover temporal order in the same way. We usually construct a causal table containing lags, calendar variables, rolling statistics, differences, and other information available at the forecast origin. Boosting then excels at thresholds, nonlinear interactions, mixed feature scales, and limited-data optimization.</p>
 <p>This is not an unfair comparison. The practitioner’s goal is accurate, reliable prediction, not proving that a preferred neural architecture can win. Every serious sequence-model experiment in this series should therefore include a boosted-tree benchmark using the same forecast origins and permitted information.</p>
 <p>If CatBoost wins, the lesson is not that sequence models are useless. It is that this dataset rewards explicit tabular structure more than the tested networks’ learned representations—and that is exactly the kind of result a benchmark should reveal.</p>

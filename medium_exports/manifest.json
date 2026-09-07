@@ -5,10 +5,10 @@
     "source": "01-sequence-models-for-prediction.md",
     "html": "01-sequence-models-for-prediction.html",
     "suggested_tags": "Time Series, Forecasting, Deep Learning, Neural Networks, Machine Learning",
-    "code_blocks": 14,
+    "code_blocks": 18,
     "table_images": [],
     "images": [],
-    "local_links_to_replace": 20
+    "local_links_to_replace": 19
   },
   {
     "part": 2,
