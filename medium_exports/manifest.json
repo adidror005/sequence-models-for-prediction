@@ -204,7 +204,7 @@
   },
   {
     "part": 16,
-    "title": "When Sequence Models Meet Market Noise: A One-Minute META Case Study",
+    "title": "Can Sequence Models Predict Stock-Price Direction? A 0.53 AUC META Case Study",
     "source": "15-finance-direction-case-study.md",
     "html": "15-finance-direction-case-study.html",
     "suggested_tags": "Time Series, PyTorch, Quantitative Finance, Machine Learning, CatBoost",

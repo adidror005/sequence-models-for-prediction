@@ -96,7 +96,7 @@ Avoid announcing every post as “Part N is live.” Lead with the claim or ques
 | Electricity results | “Nine architectures received the same raw week. Seven finished within roughly 0.009 kW RMSE.” |
 | Feature comparison | “A causal lag can still make an ablation unfair by quietly doubling historical reach.” |
 | Experimental design | “A feature changes data, representation, and information path at the same time.” |
-| Finance case study | “Six neural models found weak next-minute signal. CatBoost still finished narrowly ahead—and none of that proves a profitable trade.” |
+| Finance case study | “AUC 0.53 sounds terrible—until the target is next-minute stock direction. Six neural models found a small signal, and CatBoost still finished narrowly ahead.” |
 
 ## Live URL registry
 

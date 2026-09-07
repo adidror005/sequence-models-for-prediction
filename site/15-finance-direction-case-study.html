@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>When Sequence Models Meet Market Noise: A One-Minute META Case Study — Sequence Models for Prediction</title>
-<meta name="description" content="Six neural architectures, one CatBoost baseline, and the humbling difference between measurable signal and a tradable strategy">
+<title>Can Sequence Models Predict Stock-Price Direction? A 0.53 AUC META Case Study — Sequence Models for Prediction</title>
+<meta name="description" content="An AUC near 0.53 looks bad on an ordinary benchmark. For next-minute stock-price direction, it is weak—but genuinely interesting.">
 <link rel="canonical" href="https://adidror005.github.io/sequence-models-for-prediction/15-finance-direction-case-study.html">
 <link rel="stylesheet" href="styles.css">
 
 <meta property="og:type" content="article">
-<meta property="og:title" content="When Sequence Models Meet Market Noise: A One-Minute META Case Study">
-<meta property="og:description" content="Six neural architectures, one CatBoost baseline, and the humbling difference between measurable signal and a tradable strategy">
+<meta property="og:title" content="Can Sequence Models Predict Stock-Price Direction? A 0.53 AUC META Case Study">
+<meta property="og:description" content="An AUC near 0.53 looks bad on an ordinary benchmark. For next-minute stock-price direction, it is weak—but genuinely interesting.">
 <meta property="og:url" content="https://adidror005.github.io/sequence-models-for-prediction/15-finance-direction-case-study.html">
-<meta name="twitter:title" content="When Sequence Models Meet Market Noise: A One-Minute META Case Study">
-<meta name="twitter:description" content="Six neural architectures, one CatBoost baseline, and the humbling difference between measurable signal and a tradable strategy">
+<meta name="twitter:title" content="Can Sequence Models Predict Stock-Price Direction? A 0.53 AUC META Case Study">
+<meta name="twitter:description" content="An AUC near 0.53 looks bad on an ordinary benchmark. For next-minute stock-price direction, it is weak—but genuinely interesting.">
 
 <meta property="og:image" content="https://adidror005.github.io/sequence-models-for-prediction/assets/finance-model-test-auc.png">
 <meta name="twitter:card" content="summary_large_image">
@@ -29,8 +29,8 @@
   <header class="article-hero">
     <a class="back-link" href="index.html">← Series home</a>
     <p class="eyebrow">Part 16 of 16 · Case study</p>
-    <h1>When Sequence Models Meet Market Noise: A One-Minute META Case Study</h1>
-    <p class="dek">Six neural architectures, one CatBoost baseline, and the humbling difference between measurable signal and a tradable strategy</p>
+    <h1>Can Sequence Models Predict Stock-Price Direction? A 0.53 AUC META Case Study</h1>
+    <p class="dek">An AUC near 0.53 looks bad on an ordinary benchmark. For next-minute stock-price direction, it is weak—but genuinely interesting.</p>
   </header>
   <div class="reading-layout">
     <article class="article-content">
@@ -40,7 +40,7 @@
 <blockquote>
 <p>Given the last 78 one-minute META bars, can a model rank the direction of the next close-to-close move better than chance?</p>
 </blockquote>
-<p>Six neural architectures and one CatBoost baseline were evaluated on the saved output of a single experiment. The result is useful precisely because it is not dramatic: every model stayed close to chance, CatBoost narrowly led, and adding longer price-memory features made the tested MLP worse.</p>
+<p>Six neural architectures and one CatBoost baseline were evaluated on the saved output of a single experiment. By ordinary machine-learning standards, the scores look unimpressive. But the target is next-minute stock-price direction, where stable signal is scarce and competition is intense. In that setting, an out-of-time AUC around <code>0.53</code> is weak, but it is not automatically meaningless.</p>
 <p>That is not a trading strategy. It is a careful classification result—and a useful stress test for the architectural ideas in this series.</p>
 <blockquote>
 <p><strong>Companion code:</strong> <a href="https://github.com/adidror005/sequence-models-for-prediction/blob/main/notebooks/meta_minute_direction_case_study.ipynb" rel="noopener noreferrer">View the complete notebook on GitHub</a> · <a href="https://colab.research.google.com/github/adidror005/sequence-models-for-prediction/blob/main/notebooks/meta_minute_direction_case_study.ipynb" rel="noopener noreferrer">Open it in Google Colab</a> · <a href="https://github.com/adidror005/sequence-models-for-prediction/tree/main/notebooks" rel="noopener noreferrer">Read the data and setup notes</a></p>
@@ -242,7 +242,7 @@
 <li>a tiny real-data subset reached 100% training accuracy, showing that the model and loss could memorize when asked to.</li>
 </ol>
 <p>These checks do not prove generalization. They eliminate quieter implementation failures that can make every architecture look equally mediocre.</p>
-<h2 id="the-main-result-everyone-stayed-near-chance">The main result: everyone stayed near chance</h2>
+<h2 id="the-main-result-0-53-auc-on-stock-price-direction">The main result: 0.53 AUC on stock-price direction</h2>
 <p><img alt="Horizontal bars showing test ROC AUC for CatBoost and six neural models; all scores lie between 0.5077 and 0.5318." src="assets/finance-model-test-auc.png"/></p>
 <div class="table-scroll"><table>
 <thead>
@@ -306,8 +306,16 @@
 </tr>
 </tbody>
 </table></div>
+<h2 id="does-0-53-auc-suck-yes-and-that-is-why-it-is-interesting">Does 0.53 AUC suck? Yes—and that is why it is interesting</h2>
+<p>On a conventional classification benchmark, an AUC of <code>0.53</code> would be a poor result. It means the model ranked a randomly chosen retained up move above a randomly chosen retained down move about 53% of the time. It does <strong>not</strong> mean 53% accuracy, and it definitely does not mean a 3% return.</p>
+<p>But markets are not conventional classification benchmarks. The next minute of a liquid stock is dominated by noise, changing order flow, and information the feature set cannot observe. Easy, persistent patterns are competed away. A small ranking edge that survives a chronological test is therefore more interesting here than the same number would be on a stable, low-noise task.</p>
+<p>There is still an important statistical brake. The 80,598 test sequences overlap heavily, so they are not 80,598 independent experiments. We need walk-forward periods, multiple symbols, repeated seeds, and uncertainty estimates before deciding whether the edge is stable.</p>
+<p>The right reaction is neither “0.53 is useless” nor “we can trade this.” It is:</p>
+<blockquote>
+<p>For next-minute stock direction, 0.53 is strong enough to investigate and far too weak to trust without a cost-aware replication.</p>
+</blockquote>
 <p>Three observations matter more than the exact ranking.</p>
-<p>First, <strong>the signal is weak</strong>. The best test AUC is about <code>0.532</code>, only <code>0.032</code> above chance. Large sample size can make a small effect measurable, but it does not automatically make it economically useful.</p>
+<p>First, <strong>the signal is small but interesting</strong>. The best test AUC is about <code>0.532</code>, only <code>0.032</code> above chance. The difficulty of the target makes that worth studying, while the market setting makes overconfidence especially dangerous.</p>
 <p>Second, <strong>CatBoost narrowly wins the statistical comparison</strong>. Its test AUC exceeds the best neural test score, GRU’s <code>0.530355</code>, by only <code>0.001457</code>. That is a difference of roughly fifteen ten-thousandths—not a chasm. Repeated seeds and additional time periods could change the order.</p>
 <p>Third, <strong>recurrent state and the better long-range encoders cluster together</strong>. GRU, Transformer, TCN, and LSTM all land between <code>0.5286</code> and <code>0.5304</code>. The MLP and CNN1D lag, and their smaller prediction dispersion suggests that they produced less differentiated scores.</p>
 <p>The saved run therefore supports a modest conclusion:</p>
@@ -463,7 +471,7 @@
 <p>The <a href="https://github.com/adidror005/sequence-models-for-prediction/blob/main/notebooks/meta_minute_direction_case_study.ipynb" rel="noopener noreferrer">public companion notebook</a> contains the complete saved experiment through the reported CatBoost comparison. Bring your own licensed one-minute data; the repository intentionally does not redistribute market bars.</p>
 <hr/>
 </article>
-    <aside class="toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#what-was-actually-run">What was actually run</a></li><li><a href="#define-the-target-before-choosing-the-model">Define the target before choosing the model</a></li><li><a href="#keep-the-time-axis-intact">Keep the time axis intact</a></li><li><a href="#what-information-did-the-models-receive">What information did the models receive?</a></li><li><a href="#six-neural-architectures-one-training-protocol">Six neural architectures, one training protocol</a></li><li><a href="#the-main-result-everyone-stayed-near-chance">The main result: everyone stayed near chance</a></li><li><a href="#why-the-catboost-result-is-such-a-useful-reality-check">Why the CatBoost result is such a useful reality check</a></li><li><a href="#did-longer-price-memory-help">Did longer price memory help?</a></li><li><a href="#what-did-catboost-use">What did CatBoost use?</a></li><li><a href="#auc-is-not-profit">AUC is not profit</a></li><li><a href="#what-changes-from-electricity-to-finance">What changes from electricity to finance?</a></li><li><a href="#what-i-would-run-next">What I would run next</a></li><li><a href="#the-takeaway">The takeaway</a></li></ol></aside>
+    <aside class="toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#what-was-actually-run">What was actually run</a></li><li><a href="#define-the-target-before-choosing-the-model">Define the target before choosing the model</a></li><li><a href="#keep-the-time-axis-intact">Keep the time axis intact</a></li><li><a href="#what-information-did-the-models-receive">What information did the models receive?</a></li><li><a href="#six-neural-architectures-one-training-protocol">Six neural architectures, one training protocol</a></li><li><a href="#the-main-result-0-53-auc-on-stock-price-direction">The main result: 0.53 AUC on stock-price direction</a></li><li><a href="#does-0-53-auc-suck-yes-and-that-is-why-it-is-interesting">Does 0.53 AUC suck? Yes—and that is why it is interesting</a></li><li><a href="#why-the-catboost-result-is-such-a-useful-reality-check">Why the CatBoost result is such a useful reality check</a></li><li><a href="#did-longer-price-memory-help">Did longer price memory help?</a></li><li><a href="#what-did-catboost-use">What did CatBoost use?</a></li><li><a href="#auc-is-not-profit">AUC is not profit</a></li><li><a href="#what-changes-from-electricity-to-finance">What changes from electricity to finance?</a></li><li><a href="#what-i-would-run-next">What I would run next</a></li><li><a href="#the-takeaway">The takeaway</a></li></ol></aside>
   </div>
   <nav class="article-pager" aria-label="Article navigation"><a class="pager-card previous" href="14-designing-a-trustworthy-experiment.html"><span>Previous</span><strong>How to Design a Time-Series Experiment You Can Trust</strong></a><a class="pager-card next" href="future-stock-prediction-roadmap.html"><span>Next application</span><strong>Broader stock-prediction roadmap</strong></a></nav>
 </main>

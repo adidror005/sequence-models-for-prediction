@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>When Sequence Models Meet Market Noise: A One-Minute META Case Study — Medium export</title>
+<title>Can Sequence Models Predict Stock-Price Direction? A 0.53 AUC META Case Study — Medium export</title>
 <style>
 :root { color-scheme: light; }
 body { margin: 0; color: #242424; background: #f5f5f2; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
@@ -136,15 +136,15 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
   <details><summary>Images required by this article</summary><ul><li><a href="table_images/15-finance-direction-case-study-table-1.png" target="_blank">table_images/15-finance-direction-case-study-table-1.png</a></li><li><a href="table_images/15-finance-direction-case-study-table-2.png" target="_blank">table_images/15-finance-direction-case-study-table-2.png</a></li><li><a href="table_images/15-finance-direction-case-study-table-3.png" target="_blank">table_images/15-finance-direction-case-study-table-3.png</a></li><li><a href="assets/finance-model-test-auc.png" target="_blank">assets/finance-model-test-auc.png</a></li><li><a href="table_images/15-finance-direction-case-study-table-4.png" target="_blank">table_images/15-finance-direction-case-study-table-4.png</a></li><li><a href="assets/finance-mlp-price-memory-ablation.png" target="_blank">assets/finance-mlp-price-memory-ablation.png</a></li><li><a href="table_images/15-finance-direction-case-study-table-5.png" target="_blank">table_images/15-finance-direction-case-study-table-5.png</a></li><li><a href="assets/finance-catboost-feature-importance.png" target="_blank">assets/finance-catboost-feature-importance.png</a></li><li><a href="table_images/15-finance-direction-case-study-table-6.png" target="_blank">table_images/15-finance-direction-case-study-table-6.png</a></li></ul></details>
 </aside>
 <main class="article-shell">
-  <article class="article-content"><h1>When Sequence Models Meet Market Noise: A One-Minute META Case Study</h1>
-<p><em>Six neural architectures, one CatBoost baseline, and the humbling difference between measurable signal and a tradable strategy</em></p>
+  <article class="article-content"><h1>Can Sequence Models Predict Stock-Price Direction? A 0.53 AUC META Case Study</h1>
+<p><em>An AUC near 0.53 looks bad on an ordinary benchmark. For next-minute stock-price direction, it is weak—but genuinely interesting.</em></p>
 <p><strong>Series:</strong> Sequence Models for Prediction, Part 16 of 16</p>
 <p>The electricity experiment gave our models a generous structural advantage: household demand contains recurring daily and weekly rhythms. Financial prices are less accommodating. Patterns are weaker, regimes move, and even a statistically detectable edge may disappear after costs.</p>
 <p>This case study asks a narrower question than “Can deep learning beat the market?”</p>
 <blockquote>
 <p>Given the last 78 one-minute META bars, can a model rank the direction of the next close-to-close move better than chance?</p>
 </blockquote>
-<p>Six neural architectures and one CatBoost baseline were evaluated on the saved output of a single experiment. The result is useful precisely because it is not dramatic: every model stayed close to chance, CatBoost narrowly led, and adding longer price-memory features made the tested MLP worse.</p>
+<p>Six neural architectures and one CatBoost baseline were evaluated on the saved output of a single experiment. By ordinary machine-learning standards, the scores look unimpressive. But the target is next-minute stock-price direction, where stable signal is scarce and competition is intense. In that setting, an out-of-time AUC around <code>0.53</code> is weak, but it is not automatically meaningless.</p>
 <p>That is not a trading strategy. It is a careful classification result—and a useful stress test for the architectural ideas in this series.</p>
 <blockquote>
 <p><strong>Companion code:</strong> <a href="https://github.com/adidror005/sequence-models-for-prediction/blob/main/notebooks/meta_minute_direction_case_study.ipynb">View the complete notebook on GitHub</a> · <a href="https://colab.research.google.com/github/adidror005/sequence-models-for-prediction/blob/main/notebooks/meta_minute_direction_case_study.ipynb">Open it in Google Colab</a> · <a href="https://github.com/adidror005/sequence-models-for-prediction/tree/main/notebooks">Read the data and setup notes</a></p>
@@ -228,11 +228,19 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <li>a tiny real-data subset reached 100% training accuracy, showing that the model and loss could memorize when asked to.</li>
 </ol>
 <p>These checks do not prove generalization. They eliminate quieter implementation failures that can make every architecture look equally mediocre.</p>
-<h2>The main result: everyone stayed near chance</h2>
+<h2>The main result: 0.53 AUC on stock-price direction</h2>
 <p><img alt="Horizontal bars showing test ROC AUC for CatBoost and six neural models; all scores lie between 0.5077 and 0.5318." src="assets/finance-model-test-auc.png"/></p>
 <figure><img alt="Table with columns: Model, Validation AUC, Test AUC, Test balanced accuracy, Test probability SD" src="table_images/15-finance-direction-case-study-table-4.png"/><figcaption>Table 4. Model · Validation AUC · Test AUC · Test balanced accuracy · Test probability SD</figcaption></figure>
+<h2>Does 0.53 AUC suck? Yes—and that is why it is interesting</h2>
+<p>On a conventional classification benchmark, an AUC of <code>0.53</code> would be a poor result. It means the model ranked a randomly chosen retained up move above a randomly chosen retained down move about 53% of the time. It does <strong>not</strong> mean 53% accuracy, and it definitely does not mean a 3% return.</p>
+<p>But markets are not conventional classification benchmarks. The next minute of a liquid stock is dominated by noise, changing order flow, and information the feature set cannot observe. Easy, persistent patterns are competed away. A small ranking edge that survives a chronological test is therefore more interesting here than the same number would be on a stable, low-noise task.</p>
+<p>There is still an important statistical brake. The 80,598 test sequences overlap heavily, so they are not 80,598 independent experiments. We need walk-forward periods, multiple symbols, repeated seeds, and uncertainty estimates before deciding whether the edge is stable.</p>
+<p>The right reaction is neither “0.53 is useless” nor “we can trade this.” It is:</p>
+<blockquote>
+<p>For next-minute stock direction, 0.53 is strong enough to investigate and far too weak to trust without a cost-aware replication.</p>
+</blockquote>
 <p>Three observations matter more than the exact ranking.</p>
-<p>First, <strong>the signal is weak</strong>. The best test AUC is about <code>0.532</code>, only <code>0.032</code> above chance. Large sample size can make a small effect measurable, but it does not automatically make it economically useful.</p>
+<p>First, <strong>the signal is small but interesting</strong>. The best test AUC is about <code>0.532</code>, only <code>0.032</code> above chance. The difficulty of the target makes that worth studying, while the market setting makes overconfidence especially dangerous.</p>
 <p>Second, <strong>CatBoost narrowly wins the statistical comparison</strong>. Its test AUC exceeds the best neural test score, GRU’s <code>0.530355</code>, by only <code>0.001457</code>. That is a difference of roughly fifteen ten-thousandths—not a chasm. Repeated seeds and additional time periods could change the order.</p>
 <p>Third, <strong>recurrent state and the better long-range encoders cluster together</strong>. GRU, Transformer, TCN, and LSTM all land between <code>0.5286</code> and <code>0.5304</code>. The MLP and CNN1D lag, and their smaller prediction dispersion suggests that they produced less differentiated scores.</p>
 <p>The saved run therefore supports a modest conclusion:</p>

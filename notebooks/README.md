@@ -1,6 +1,6 @@
 # META direction case-study notebook
 
-[`meta_minute_direction_case_study.ipynb`](meta_minute_direction_case_study.ipynb) is the public, code-complete companion to [When Sequence Models Meet Market Noise](https://adidror005.github.io/sequence-models-for-prediction/15-finance-direction-case-study.html).
+[`meta_minute_direction_case_study.ipynb`](meta_minute_direction_case_study.ipynb) is the public, code-complete companion to [Can Sequence Models Predict Stock-Price Direction?](https://adidror005.github.io/sequence-models-for-prediction/15-finance-direction-case-study.html).
 
 It includes the saved outputs reported in the article:
 

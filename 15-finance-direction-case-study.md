@@ -1,6 +1,6 @@
-# When Sequence Models Meet Market Noise: A One-Minute META Case Study
+# Can Sequence Models Predict Stock-Price Direction? A 0.53 AUC META Case Study
 
-*Six neural architectures, one CatBoost baseline, and the humbling difference between measurable signal and a tradable strategy*
+*An AUC near 0.53 looks bad on an ordinary benchmark. For next-minute stock-price direction, it is weak—but genuinely interesting.*
 
 **Series:** Sequence Models for Prediction, Part 16 of 16
 **Suggested Medium tags:** Time Series, PyTorch, Quantitative Finance, Machine Learning, CatBoost
@@ -11,7 +11,7 @@ This case study asks a narrower question than “Can deep learning beat the mark
 
 > Given the last 78 one-minute META bars, can a model rank the direction of the next close-to-close move better than chance?
 
-Six neural architectures and one CatBoost baseline were evaluated on the saved output of a single experiment. The result is useful precisely because it is not dramatic: every model stayed close to chance, CatBoost narrowly led, and adding longer price-memory features made the tested MLP worse.
+Six neural architectures and one CatBoost baseline were evaluated on the saved output of a single experiment. By ordinary machine-learning standards, the scores look unimpressive. But the target is next-minute stock-price direction, where stable signal is scarce and competition is intense. In that setting, an out-of-time AUC around `0.53` is weak, but it is not automatically meaningless.
 
 That is not a trading strategy. It is a careful classification result—and a useful stress test for the architectural ideas in this series.
 
@@ -153,7 +153,7 @@ Before the full run, two fail-fast tests passed:
 
 These checks do not prove generalization. They eliminate quieter implementation failures that can make every architecture look equally mediocre.
 
-## The main result: everyone stayed near chance
+## The main result: 0.53 AUC on stock-price direction
 
 ![Horizontal bars showing test ROC AUC for CatBoost and six neural models; all scores lie between 0.5077 and 0.5318.](assets/finance-model-test-auc.png)
 
@@ -167,9 +167,21 @@ These checks do not prove generalization. They eliminate quieter implementation 
 | MLP | 0.514169 | 0.513493 | 0.509812 | 0.015184 |
 | CNN1D | 0.511011 | 0.507748 | 0.506471 | 0.009829 |
 
+## Does 0.53 AUC suck? Yes—and that is why it is interesting
+
+On a conventional classification benchmark, an AUC of `0.53` would be a poor result. It means the model ranked a randomly chosen retained up move above a randomly chosen retained down move about 53% of the time. It does **not** mean 53% accuracy, and it definitely does not mean a 3% return.
+
+But markets are not conventional classification benchmarks. The next minute of a liquid stock is dominated by noise, changing order flow, and information the feature set cannot observe. Easy, persistent patterns are competed away. A small ranking edge that survives a chronological test is therefore more interesting here than the same number would be on a stable, low-noise task.
+
+There is still an important statistical brake. The 80,598 test sequences overlap heavily, so they are not 80,598 independent experiments. We need walk-forward periods, multiple symbols, repeated seeds, and uncertainty estimates before deciding whether the edge is stable.
+
+The right reaction is neither “0.53 is useless” nor “we can trade this.” It is:
+
+> For next-minute stock direction, 0.53 is strong enough to investigate and far too weak to trust without a cost-aware replication.
+
 Three observations matter more than the exact ranking.
 
-First, **the signal is weak**. The best test AUC is about `0.532`, only `0.032` above chance. Large sample size can make a small effect measurable, but it does not automatically make it economically useful.
+First, **the signal is small but interesting**. The best test AUC is about `0.532`, only `0.032` above chance. The difficulty of the target makes that worth studying, while the market setting makes overconfidence especially dangerous.
 
 Second, **CatBoost narrowly wins the statistical comparison**. Its test AUC exceeds the best neural test score, GRU’s `0.530355`, by only `0.001457`. That is a difference of roughly fifteen ten-thousandths—not a chasm. Repeated seeds and additional time periods could change the order.
 

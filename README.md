@@ -60,7 +60,7 @@ The final article stress-tests six neural architectures and a CatBoost endpoint 
 | 13 | Comparing Sequence Models on Electricity Prediction | Which models perform best when all receive the same raw week? |
 | 14 | Do Calendar and Lagged Features Help Sequence Models? | When do extra temporal inputs help, duplicate, or shortcut learned memory? |
 | 15 | How to Design a Time-Series Experiment You Can Trust | How do we separate architecture, information, representation, and variance? |
-| 16 | When Sequence Models Meet Market Noise | What survives when the same modeling ideas face weak one-minute financial signal? |
+| 16 | Can Sequence Models Predict Stock-Price Direction? | Is 0.53 AUC meaningless—or interesting because the target is next-minute stock direction? |
 
 ## Release strategy
 
@@ -102,7 +102,7 @@ Keeping the training pipeline shared prevents each Medium article from repeating
 
 ## Finance case study and future extension
 
-The completed first finance application is [Part 16 — When Sequence Models Meet Market Noise](15-finance-direction-case-study.md). It compares six neural architectures with CatBoost on next-minute META direction and includes a controlled MLP price-memory ablation.
+The completed first finance application is [Part 16 — Can Sequence Models Predict Stock-Price Direction?](15-finance-direction-case-study.md). It compares six neural architectures with CatBoost on next-minute META direction, explains why 0.53 AUC is weak but still interesting in this domain, and includes a controlled MLP price-memory ablation.
 
 The broader [Future stock-prediction roadmap](future-stock-prediction-roadmap.md) remains intentionally separate. It specifies the multi-asset, walk-forward, cost-aware work required before making a financial-usefulness claim.
 

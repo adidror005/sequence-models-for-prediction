@@ -32,7 +32,7 @@ This article also serves as the evolving table of contents:
 13. [Comparing Sequence Models on Electricity Prediction](12-electricity-results-and-interpretation.md) — raw-history results.
 14. [Do Calendar and Lagged Features Help?](13-calendar-and-lagged-features.md) — the later representation experiment.
 15. [How to Design an Experiment You Can Trust](14-designing-a-trustworthy-experiment.md) — evaluation discipline.
-16. [When Sequence Models Meet Market Noise](15-finance-direction-case-study.md) — a one-minute META direction case study with six neural models and CatBoost.
+16. [Can Sequence Models Predict Stock-Price Direction?](15-finance-direction-case-study.md) — a 0.53 AUC, one-minute META case study with six neural models and CatBoost.
 
 As each installment goes live, replace its local draft link with the public Medium URL. Unpublished titles can remain plain text so readers never encounter a dead link.
 
