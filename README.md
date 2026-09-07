@@ -93,6 +93,29 @@ Each source draft includes local navigation. Before copying a post to Medium, re
 - [Part 17 — Trustworthy experiments](14-designing-a-trustworthy-experiment.md)
 - [Part 18 — Local versus global stock models](15-finance-direction-case-study.md)
 
+## Editing and publishing an article
+
+Edit the article's Markdown source from the list above. For example, edit [`mamba-for-time-series.md`](mamba-for-time-series.md) to change the Mamba page. **Do not edit files inside `site/` or `medium_exports/` directly**; those are generated files and will be overwritten the next time the builders run.
+
+From the repository root, rebuild both versions:
+
+```bash
+python tools/build_github_site.py
+python tools/build_medium_exports.py
+```
+
+The first command rebuilds the public GitHub Pages files in `site/`. The second rebuilds the copy-friendly Medium package in `medium_exports/`. Before publishing, open the corresponding HTML file in `site/` to check the article, code blocks, images, and navigation.
+
+When the preview looks right, commit and publish the changes:
+
+```bash
+git add -A
+git commit -m "Update article"
+git push origin main
+```
+
+GitHub Pages normally updates within a few minutes. If an article is added, removed, or reordered rather than merely edited, also update `SERIES` in [`tools/build_github_site.py`](tools/build_github_site.py) and `SOURCE_ORDER` in [`tools/build_medium_exports.py`](tools/build_medium_exports.py) before rebuilding.
+
 ## Companion code
 
 Parts 3–13 each contain a complete, standalone PyTorch model definition and an executable tensor-shape check. The reusable source is collected in:
