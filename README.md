@@ -96,6 +96,7 @@ Parts 3–11 each contain a complete, standalone PyTorch model definition and an
 - [chronological training and evaluation pipeline](code/training_pipeline.py);
 - [causal direct multi-horizon CatBoost benchmark](code/catboost_baseline.py);
 - [companion-code usage guide](code/README.md).
+- [complete META direction case-study notebook](notebooks/meta_minute_direction_case_study.ipynb) and its [data/setup guide](notebooks/README.md).
 
 Keeping the training pipeline shared prevents each Medium article from repeating the same dataset, early-stopping, and evaluation code while still making every architecture implementation complete.
 

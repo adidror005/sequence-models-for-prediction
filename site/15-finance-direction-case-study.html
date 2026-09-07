@@ -42,6 +42,9 @@
 </blockquote>
 <p>Six neural architectures and one CatBoost baseline were evaluated on the saved output of a single experiment. The result is useful precisely because it is not dramatic: every model stayed close to chance, CatBoost narrowly led, and adding longer price-memory features made the tested MLP worse.</p>
 <p>That is not a trading strategy. It is a careful classification result—and a useful stress test for the architectural ideas in this series.</p>
+<blockquote>
+<p><strong>Companion code:</strong> <a href="https://github.com/adidror005/sequence-models-for-prediction/blob/main/notebooks/meta_minute_direction_case_study.ipynb" rel="noopener noreferrer">View the complete notebook on GitHub</a> · <a href="https://colab.research.google.com/github/adidror005/sequence-models-for-prediction/blob/main/notebooks/meta_minute_direction_case_study.ipynb" rel="noopener noreferrer">Open it in Google Colab</a> · <a href="https://github.com/adidror005/sequence-models-for-prediction/tree/main/notebooks" rel="noopener noreferrer">Read the data and setup notes</a></p>
+</blockquote>
 <h2 id="what-was-actually-run">What was actually run</h2>
 <p>The notebook was designed with multi-symbol scaffolding, but its recorded execution loaded only <code>META</code>. The evidence in this article is therefore a <strong>single-symbol case study</strong>, not a multi-asset benchmark.</p>
 <div class="table-scroll"><table>
@@ -457,6 +460,7 @@
 <li>keep statistical prediction separate from economic value.</li>
 </ul>
 <p>In noisy domains, humility is not a disclaimer added after the result. It is part of the modeling method.</p>
+<p>The <a href="https://github.com/adidror005/sequence-models-for-prediction/blob/main/notebooks/meta_minute_direction_case_study.ipynb" rel="noopener noreferrer">public companion notebook</a> contains the complete saved experiment through the reported CatBoost comparison. Bring your own licensed one-minute data; the repository intentionally does not redistribute market bars.</p>
 <hr/>
 </article>
     <aside class="toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#what-was-actually-run">What was actually run</a></li><li><a href="#define-the-target-before-choosing-the-model">Define the target before choosing the model</a></li><li><a href="#keep-the-time-axis-intact">Keep the time axis intact</a></li><li><a href="#what-information-did-the-models-receive">What information did the models receive?</a></li><li><a href="#six-neural-architectures-one-training-protocol">Six neural architectures, one training protocol</a></li><li><a href="#the-main-result-everyone-stayed-near-chance">The main result: everyone stayed near chance</a></li><li><a href="#why-the-catboost-result-is-such-a-useful-reality-check">Why the CatBoost result is such a useful reality check</a></li><li><a href="#did-longer-price-memory-help">Did longer price memory help?</a></li><li><a href="#what-did-catboost-use">What did CatBoost use?</a></li><li><a href="#auc-is-not-profit">AUC is not profit</a></li><li><a href="#what-changes-from-electricity-to-finance">What changes from electricity to finance?</a></li><li><a href="#what-i-would-run-next">What I would run next</a></li><li><a href="#the-takeaway">The takeaway</a></li></ol></aside>

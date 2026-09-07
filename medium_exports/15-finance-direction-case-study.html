@@ -146,6 +146,9 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </blockquote>
 <p>Six neural architectures and one CatBoost baseline were evaluated on the saved output of a single experiment. The result is useful precisely because it is not dramatic: every model stayed close to chance, CatBoost narrowly led, and adding longer price-memory features made the tested MLP worse.</p>
 <p>That is not a trading strategy. It is a careful classification result—and a useful stress test for the architectural ideas in this series.</p>
+<blockquote>
+<p><strong>Companion code:</strong> <a href="https://github.com/adidror005/sequence-models-for-prediction/blob/main/notebooks/meta_minute_direction_case_study.ipynb">View the complete notebook on GitHub</a> · <a href="https://colab.research.google.com/github/adidror005/sequence-models-for-prediction/blob/main/notebooks/meta_minute_direction_case_study.ipynb">Open it in Google Colab</a> · <a href="https://github.com/adidror005/sequence-models-for-prediction/tree/main/notebooks">Read the data and setup notes</a></p>
+</blockquote>
 <h2>What was actually run</h2>
 <p>The notebook was designed with multi-symbol scaffolding, but its recorded execution loaded only <code>META</code>. The evidence in this article is therefore a <strong>single-symbol case study</strong>, not a multi-asset benchmark.</p>
 <figure><img alt="Table with columns: Item, Saved experiment" src="table_images/15-finance-direction-case-study-table-1.png"/><figcaption>Table 1. Item · Saved experiment</figcaption></figure>
@@ -317,6 +320,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <li>keep statistical prediction separate from economic value.</li>
 </ul>
 <p>In noisy domains, humility is not a disclaimer added after the result. It is part of the modeling method.</p>
+<p>The <a href="https://github.com/adidror005/sequence-models-for-prediction/blob/main/notebooks/meta_minute_direction_case_study.ipynb">public companion notebook</a> contains the complete saved experiment through the reported CatBoost comparison. Bring your own licensed one-minute data; the repository intentionally does not redistribute market bars.</p>
 <hr/>
 <p><strong>Series navigation:</strong> <a class="needs-live-url" href="index.html">Series index</a> · <a class="needs-live-url" href="14-designing-a-trustworthy-experiment.html">Previous: Designing a trustworthy experiment</a> · <a class="needs-live-url" href="future-stock-prediction-roadmap.html">Next application: Stock-prediction roadmap</a></p>
 </article>

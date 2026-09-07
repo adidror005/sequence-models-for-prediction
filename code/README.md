@@ -4,6 +4,8 @@ The code in this folder mirrors the complete PyTorch implementations embedded in
 
 ## Files
 
+The electricity-oriented reusable modules in this directory are complemented by the [full META one-minute direction notebook](../notebooks/meta_minute_direction_case_study.ipynb), which includes its own classification models, data pipeline, saved results, and [setup notes](../notebooks/README.md).
+
 - [`sequence_models.py`](sequence_models.py) contains all nine forecasting architectures and a shape smoke test.
 - [`training_pipeline.py`](training_pipeline.py) contains chronological window construction, data loaders, training-only early stopping, prediction, inverse-scale metrics, and parameter counting.
 - [`catboost_baseline.py`](catboost_baseline.py) contains the proposed causal tabular benchmark with one explicitly validated model per forecast horizon. It was not run in the supplied notebook.

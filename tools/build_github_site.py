@@ -259,12 +259,17 @@ def article_page(
 def index_page(articles: list[dict[str, object]]) -> str:
     cards = []
     for article in articles:
+        notebook_link = (
+            '<a class="read-link code-link" href="https://github.com/adidror005/sequence-models-for-prediction/blob/main/notebooks/meta_minute_direction_case_study.ipynb">View notebook <span aria-hidden="true">↗</span></a>'
+            if int(article["part"]) == 16
+            else ""
+        )
         cards.append(
             f"""<article class="series-card">
   <div class="card-meta"><span>Part {article['part']:02d}</span><span>{html.escape(str(article['section']))}</span></div>
   <h2><a href="{article['html']}">{html.escape(str(article['title']))}</a></h2>
   <p>{html.escape(str(article['description']))}</p>
-  <a class="read-link" href="{article['html']}">Read article <span aria-hidden="true">→</span></a>
+  <div class="card-actions"><a class="read-link" href="{article['html']}">Read article <span aria-hidden="true">→</span></a>{notebook_link}</div>
 </article>"""
         )
     title = "Sequence Models for Prediction"
@@ -399,7 +404,7 @@ a { color: inherit; }
 .card-meta { display: flex; justify-content: space-between; gap: 12px; color: var(--green-2); font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 .series-card h2 { margin: 34px 0 16px; font-family: Georgia, serif; font-size: 28px; font-weight: 500; line-height: 1.15; letter-spacing: -.02em; }
 .series-card h2 a { text-decoration: none; }.series-card p { margin: 0 0 28px; color: var(--muted); line-height: 1.55; }
-.read-link { margin-top: auto; color: var(--green); font-size: 13px; font-weight: 800; text-decoration: none; }.read-link span { color: var(--rust); }
+.card-actions { margin-top: auto; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }.read-link { color: var(--green); font-size: 13px; font-weight: 800; text-decoration: none; }.read-link span { color: var(--rust); }.code-link { color: var(--rust); }
 .coming-next { padding: 90px max(24px, calc((100vw - 1200px) / 2)); display: flex; align-items: end; justify-content: space-between; gap: 60px; color: var(--white); background: var(--rust); }
 .coming-next > div { max-width: 850px; }.coming-next .eyebrow { color: #ffe8df; }.coming-next p:last-child { max-width: 690px; font-size: 18px; line-height: 1.6; }
 .light-button { flex: 0 0 auto; color: var(--rust); background: var(--white); }

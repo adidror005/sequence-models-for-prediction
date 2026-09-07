@@ -15,6 +15,8 @@ Six neural architectures and one CatBoost baseline were evaluated on the saved o
 
 That is not a trading strategy. It is a careful classification result—and a useful stress test for the architectural ideas in this series.
 
+> **Companion code:** [View the complete notebook on GitHub](https://github.com/adidror005/sequence-models-for-prediction/blob/main/notebooks/meta_minute_direction_case_study.ipynb) · [Open it in Google Colab](https://colab.research.google.com/github/adidror005/sequence-models-for-prediction/blob/main/notebooks/meta_minute_direction_case_study.ipynb) · [Read the data and setup notes](https://github.com/adidror005/sequence-models-for-prediction/tree/main/notebooks)
+
 ## What was actually run
 
 The notebook was designed with multi-symbol scaffolding, but its recorded execution loaded only `META`. The evidence in this article is therefore a **single-symbol case study**, not a multi-asset benchmark.
@@ -300,6 +302,8 @@ The most general lesson is not which model sits at the top of a third decimal pl
 - keep statistical prediction separate from economic value.
 
 In noisy domains, humility is not a disclaimer added after the result. It is part of the modeling method.
+
+The [public companion notebook](https://github.com/adidror005/sequence-models-for-prediction/blob/main/notebooks/meta_minute_direction_case_study.ipynb) contains the complete saved experiment through the reported CatBoost comparison. Bring your own licensed one-minute data; the repository intentionally does not redistribute market bars.
 
 ---
 
