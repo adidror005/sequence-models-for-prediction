@@ -3,21 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Can Sequence Models Predict Stock-Price Direction? A 0.53 AUC META Case Study — Sequence Models for Prediction</title>
-<meta name="description" content="An AUC near 0.53 looks bad on an ordinary benchmark. For next-minute stock-price direction, it is weak—but genuinely interesting.">
+<title>One Model Per Stock or One Model for the Market? — Sequence Models for Prediction</title>
+<meta name="description" content="How per-symbol datasets, pooled training, and learned ticker embeddings change a financial sequence model">
 <link rel="canonical" href="https://adidror005.github.io/sequence-models-for-prediction/15-finance-direction-case-study.html">
 <link rel="stylesheet" href="styles.css">
 
 <meta property="og:type" content="article">
-<meta property="og:title" content="Can Sequence Models Predict Stock-Price Direction? A 0.53 AUC META Case Study">
-<meta property="og:description" content="An AUC near 0.53 looks bad on an ordinary benchmark. For next-minute stock-price direction, it is weak—but genuinely interesting.">
+<meta property="og:title" content="One Model Per Stock or One Model for the Market?">
+<meta property="og:description" content="How per-symbol datasets, pooled training, and learned ticker embeddings change a financial sequence model">
 <meta property="og:url" content="https://adidror005.github.io/sequence-models-for-prediction/15-finance-direction-case-study.html">
-<meta name="twitter:title" content="Can Sequence Models Predict Stock-Price Direction? A 0.53 AUC META Case Study">
-<meta name="twitter:description" content="An AUC near 0.53 looks bad on an ordinary benchmark. For next-minute stock-price direction, it is weak—but genuinely interesting.">
+<meta name="twitter:title" content="One Model Per Stock or One Model for the Market?">
+<meta name="twitter:description" content="How per-symbol datasets, pooled training, and learned ticker embeddings change a financial sequence model">
 
-<meta property="og:image" content="https://adidror005.github.io/sequence-models-for-prediction/assets/finance-model-test-auc.png">
+<meta property="og:image" content="https://adidror005.github.io/sequence-models-for-prediction/assets/finance-local-vs-global-models.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://adidror005.github.io/sequence-models-for-prediction/assets/finance-model-test-auc.png">
+<meta name="twitter:image" content="https://adidror005.github.io/sequence-models-for-prediction/assets/finance-local-vs-global-models.png">
 </head>
 <body>
 <header class="site-header">
@@ -29,24 +29,237 @@
   <header class="article-hero">
     <a class="back-link" href="index.html">← Series home</a>
     <p class="eyebrow">Part 16 of 16 · Case study</p>
-    <h1>Can Sequence Models Predict Stock-Price Direction? A 0.53 AUC META Case Study</h1>
-    <p class="dek">An AUC near 0.53 looks bad on an ordinary benchmark. For next-minute stock-price direction, it is weak—but genuinely interesting.</p>
+    <h1>One Model Per Stock or One Model for the Market?</h1>
+    <p class="dek">How per-symbol datasets, pooled training, and learned ticker embeddings change a financial sequence model</p>
   </header>
   <div class="reading-layout">
     <article class="article-content">
 
-<p>The electricity experiment gave our models a generous structural advantage: household demand contains recurring daily and weekly rhythms. Financial prices are less accommodating. Patterns are weaker, regimes move, and even a statistically detectable edge may disappear after costs.</p>
-<p>This case study asks a narrower question than “Can deep learning beat the market?”</p>
+<p>Suppose you have one-minute data for META, MSFT, NVDA, AMZN, and dozens of other stocks. Before choosing an LSTM, TCN, or Transformer, you face a more fundamental modeling decision:</p>
 <blockquote>
-<p>Given the last 78 one-minute META bars, can a model rank the direction of the next close-to-close move better than chance?</p>
+<p>Should every stock get its own model, or should one global model learn across all stocks and receive the symbol as an input?</p>
 </blockquote>
-<p>Six neural architectures and one CatBoost baseline were evaluated on the saved output of a single experiment. By ordinary machine-learning standards, the scores look unimpressive. But the target is next-minute stock-price direction, where stable signal is scarce and competition is intense. In that setting, an out-of-time AUC around <code>0.53</code> is weak, but it is not automatically meaningless.</p>
-<p>That is not a trading strategy. It is a careful classification result—and a useful stress test for the architectural ideas in this series.</p>
+<p>A local model can specialize in one stock’s behavior, but it throws away the training examples available in every other stock. A global model gains far more data and can learn reusable market patterns, but it also needs a way to distinguish META from MSFT. Otherwise it is asked to treat genuinely different processes as interchangeable.</p>
+<p>This article develops that local-versus-global design. It shows how to build an independent sequence dataset for each ticker, combine those datasets without joining their timelines, carry a symbol ID through the <code>DataLoader</code>, and turn the ID into a learned embedding that any sequence architecture can use.</p>
+<p>META is not the subject of the whole article. The saved notebook happened to execute with only META available, so that run is the <strong>single-symbol control</strong>. Its results show that the pipeline works in local mode. The more important next comparison is local models versus a pooled model across many symbols, with and without symbol identity.</p>
 <blockquote>
-<p><strong>Companion code:</strong> <a href="https://github.com/adidror005/sequence-models-for-prediction/blob/main/notebooks/meta_minute_direction_case_study.ipynb" rel="noopener noreferrer">View the complete notebook on GitHub</a> · <a href="https://colab.research.google.com/github/adidror005/sequence-models-for-prediction/blob/main/notebooks/meta_minute_direction_case_study.ipynb" rel="noopener noreferrer">Open it in Google Colab</a> · <a href="https://github.com/adidror005/sequence-models-for-prediction/tree/main/notebooks" rel="noopener noreferrer">Read the data and setup notes</a></p>
+<p><strong>Companion code:</strong> <a href="https://github.com/adidror005/sequence-models-for-prediction/blob/main/notebooks/local_vs_global_stock_models.ipynb" rel="noopener noreferrer">View the local-versus-global notebook on GitHub</a> · <a href="https://colab.research.google.com/github/adidror005/sequence-models-for-prediction/blob/main/notebooks/local_vs_global_stock_models.ipynb" rel="noopener noreferrer">Open it in Google Colab</a> · <a href="https://github.com/adidror005/sequence-models-for-prediction/tree/main/notebooks" rel="noopener noreferrer">Read the data and setup notes</a></p>
 </blockquote>
-<h2 id="what-was-actually-run">What was actually run</h2>
-<p>The notebook was designed with multi-symbol scaffolding, but its recorded execution loaded only <code>META</code>. The evidence in this article is therefore a <strong>single-symbol case study</strong>, not a multi-asset benchmark.</p>
+<p><img alt="Diagram contrasting separate per-stock models with one shared model trained from symbol-specific datasets and a learned symbol embedding." src="assets/finance-local-vs-global-models.png"/></p>
+<h2 id="the-real-experiment-local-versus-global-learning">The real experiment: local versus global learning</h2>
+<p>“Train on many stocks” is not one experimental condition. At least three versions are needed to learn what is actually helping:</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Condition</th>
+<th>Training data</th>
+<th>Symbol identity</th>
+<th>Question answered</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Local</td>
+<td>One model per stock</td>
+<td>Unnecessary</td>
+<td>How well can a specialized model learn this ticker?</td>
+</tr>
+<tr>
+<td>Pooled, symbol-blind</td>
+<td>One model across all stocks</td>
+<td>Omitted</td>
+<td>Does additional cross-stock data help by itself?</td>
+</tr>
+<tr>
+<td>Pooled, symbol-aware</td>
+<td>One model across all stocks</td>
+<td>Learned embedding</td>
+<td>Does telling the model which stock it sees add value?</td>
+</tr>
+</tbody>
+</table></div>
+<p>The middle condition is essential. If the symbol-aware global model beats a local model, two things changed at once: it received more training examples and it received ticker identity. The symbol-blind pooled model separates those effects.</p>
+<p>This is not ordinary feature engineering. It changes the statistical unit of the model. A local model estimates a different function for each ticker:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>prediction = f_META(sequence)
+</pre></div>
+</code></pre>
+<p>A global model estimates one shared function conditioned on identity:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>prediction = f(sequence, symbol)
+</pre></div>
+</code></pre>
+<p>The shared function can learn patterns such as intraday volume seasonality or short-term reversal once and reuse them. The symbol representation lets it adjust that shared behavior for each stock.</p>
+<h2 id="build-one-sequence-dataset-per-symbol">Build one sequence Dataset per symbol</h2>
+<p>The safest design begins with a separate <code>Dataset</code> object for every ticker. Each object filters one symbol, sorts it chronologically, detects session or timestamp discontinuities, and creates endpoints only inside a continuous run.</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">SymbolSequenceDataset</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">frame</span><span class="p">,</span> <span class="n">symbol</span><span class="p">,</span> <span class="n">feature_cols</span><span class="p">,</span> <span class="n">seq_len</span><span class="p">,</span> <span class="n">symbol_to_id</span><span class="p">):</span>
+        <span class="n">one</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">frame</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">frame</span><span class="o">.</span><span class="n">symbol</span> <span class="o">==</span> <span class="n">symbol</span><span class="p">]</span>
+            <span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">"date"</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">symbol</span> <span class="o">=</span> <span class="n">symbol</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">symbol_id</span> <span class="o">=</span> <span class="n">symbol_to_id</span><span class="p">[</span><span class="n">symbol</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seq_len</span> <span class="o">=</span> <span class="n">seq_len</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">X</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+            <span class="n">one</span><span class="p">[</span><span class="n">feature_cols</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s2">"float32"</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+            <span class="n">one</span><span class="p">[</span><span class="s2">"label01"</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s2">"float32"</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">dates</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">one</span><span class="p">[</span><span class="s2">"date"</span><span class="p">])</span>
+        <span class="n">session_changed</span> <span class="o">=</span> <span class="n">one</span><span class="p">[</span><span class="s2">"session_date"</span><span class="p">]</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="n">one</span><span class="p">[</span><span class="s2">"session_date"</span><span class="p">]</span><span class="o">.</span><span class="n">shift</span><span class="p">())</span>
+        <span class="n">minute_missing</span> <span class="o">=</span> <span class="n">dates</span><span class="o">.</span><span class="n">diff</span><span class="p">()</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run_id</span> <span class="o">=</span> <span class="p">(</span><span class="n">session_changed</span> <span class="o">|</span> <span class="n">minute_missing</span><span class="p">)</span><span class="o">.</span><span class="n">cumsum</span><span class="p">()</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+
+        <span class="n">endpoints</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_id</span><span class="p">):</span>
+            <span class="n">positions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_id</span> <span class="o">==</span> <span class="n">run</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">end</span> <span class="ow">in</span> <span class="n">positions</span><span class="p">[</span><span class="n">seq_len</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:]:</span>
+                <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="n">end</span><span class="p">]):</span>
+                    <span class="n">endpoints</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">end</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">endpoints</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">endpoints</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">endpoints</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">endpoints</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">end</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">seq_len</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_id</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_id</span><span class="p">[</span><span class="n">end</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="n">end</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbol_id</span>
+</pre></div>
+</code></pre>
+<p>The returned example contains three objects:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>sequence:  [78, 31]
+label:     scalar
+symbol_id: scalar integer category
+</pre></div>
+</code></pre>
+<p>Creating the per-symbol object first prevents the worst possible bug: a window ending with the final META bars and continuing with the first MSFT bars merely because both happened to be adjacent in a combined table.</p>
+<p>The <code>run_id</code> check handles another boundary. A sequence cannot cross an overnight market closure or a missing minute and pretend the two observations are consecutive.</p>
+<h2 id="pool-datasets-not-ticker-timelines">Pool datasets, not ticker timelines</h2>
+<p>After each ticker has a safe dataset, PyTorch can expose them through one global index with <code>ConcatDataset</code>:</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="n">symbols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"META"</span><span class="p">,</span> <span class="s2">"MSFT"</span><span class="p">,</span> <span class="s2">"NVDA"</span><span class="p">,</span> <span class="s2">"AMZN"</span><span class="p">]</span>
+<span class="n">symbol_to_id</span> <span class="o">=</span> <span class="p">{</span><span class="n">symbol</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">symbol</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">symbols</span><span class="p">)}</span>
+
+<span class="n">train_ds</span> <span class="o">=</span> <span class="n">ConcatDataset</span><span class="p">([</span>
+    <span class="n">SymbolSequenceDataset</span><span class="p">(</span>
+        <span class="n">train_frame</span><span class="p">,</span>
+        <span class="n">symbol</span><span class="p">,</span>
+        <span class="n">FEATURE_COLS</span><span class="p">,</span>
+        <span class="n">seq_len</span><span class="o">=</span><span class="mi">78</span><span class="p">,</span>
+        <span class="n">symbol_to_id</span><span class="o">=</span><span class="n">symbol_to_id</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="n">symbol</span> <span class="ow">in</span> <span class="n">symbols</span>
+<span class="p">])</span>
+
+<span class="n">train_loader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span>
+    <span class="n">train_ds</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span>
+    <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</code></pre>
+<p>Concatenation does not concatenate the raw time series. It concatenates the collections of valid examples. A batch may contain META, MSFT, and NVDA sequences, but every individual sequence was constructed entirely inside one symbol and one continuous trading session.</p>
+<p>Shuffling the training loader is now safe because the examples were formed causally before batching. Validation and test loaders remain unshuffled so outputs are easy to align with their endpoints.</p>
+<h2 id="a-ticker-is-a-category-not-an-ordinal-number">A ticker is a category, not an ordinal number</h2>
+<p>The integer symbol ID should not enter the network as an ordinary numerical feature. An ID of <code>3</code> is not three times an ID of <code>1</code>, and adjacent IDs do not imply similar stocks.</p>
+<p>Instead, use the ID to select a trainable embedding vector:</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">SymbolAwareClassifier</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">temporal_model</span><span class="p">,</span> <span class="n">num_symbols</span><span class="p">,</span> <span class="n">embedding_dim</span><span class="o">=</span><span class="mi">8</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">temporal_model</span> <span class="o">=</span> <span class="n">temporal_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">symbol_embedding</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span>
+            <span class="n">num_embeddings</span><span class="o">=</span><span class="n">num_symbols</span><span class="p">,</span>
+            <span class="n">embedding_dim</span><span class="o">=</span><span class="n">embedding_dim</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">,</span> <span class="n">symbol_id</span><span class="p">):</span>
+        <span class="c1"># sequence: [batch, time, features]</span>
+        <span class="n">embedding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbol_embedding</span><span class="p">(</span><span class="n">symbol_id</span><span class="p">)</span>       <span class="c1"># [batch, embed]</span>
+        <span class="n">embedding</span> <span class="o">=</span> <span class="n">embedding</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span>
+            <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">sequence</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="p">)</span>                                                  <span class="c1"># [batch, time, embed]</span>
+        <span class="n">enriched</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">sequence</span><span class="p">,</span> <span class="n">embedding</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">temporal_model</span><span class="p">(</span><span class="n">enriched</span><span class="p">)</span>
+</pre></div>
+</code></pre>
+<p>With 31 market features and an eight-dimensional symbol embedding, every time step becomes:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>[31 observed features | 8 learned symbol coordinates] = 39 inputs
+</pre></div>
+</code></pre>
+<p>The LSTM, GRU, CNN, TCN, or Transformer still processes time normally. It simply receives a small learned context vector telling it which stock generated the sequence.</p>
+<p>The embedding is not automatically meaningful. It becomes useful only if the global objective discovers consistent differences between stocks. Those coordinates might encode liquidity, volatility, intraday behavior, or nothing interpretable at all. They are parameters optimized for prediction, not a ready-made map of company fundamentals.</p>
+<h2 id="what-can-a-shared-model-learn">What can a shared model learn?</h2>
+<p>A global model is attractive because many market behaviors recur across assets:</p>
+<ul>
+<li>volume usually follows a strong intraday curve;</li>
+<li>volatility clusters;</li>
+<li>gaps, ranges, and short returns have comparable relative meanings;</li>
+<li>the open and close behave differently from midday;</li>
+<li>the same temporal filter can recognize a pattern in many liquid stocks.</li>
+</ul>
+<p>Pooling lets all symbols contribute gradient updates to the shared encoder. That can regularize stocks with less data and make expensive architectures more practical.</p>
+<p>But global learning can also fail. A high-volume technology stock, a bank, and an energy company do not have identical regimes or microstructure. Large symbols can dominate the loss simply because they provide more eligible sequences. A global model can also memorize symbol-specific history through the embedding instead of learning transferable patterns.</p>
+<p>Useful controls include balanced sampling by ticker, reporting per-symbol metrics as well as a macro-average, and testing performance on symbols or time periods that were not favored during tuning.</p>
+<h2 id="design-the-comparison-before-reading-the-leaderboard">Design the comparison before reading the leaderboard</h2>
+<p>The local, symbol-blind pooled, and symbol-aware pooled runs should share:</p>
+<ul>
+<li>the same symbols and date-based train, validation, and test boundaries;</li>
+<li>the same target definition and movement-filtering rule;</li>
+<li>scalers fitted using training data only;</li>
+<li>identical sequence length and causal feature definitions;</li>
+<li>the same architecture, optimization budget, and seed set;</li>
+<li>both per-symbol metrics and an equal-weight macro-average.</li>
+</ul>
+<p>If pooled training contains ten times more sequences, that is part of the hypothesis—not a nuisance to hide. Report it. A second comparison can control the number of sampled training examples to ask whether improvement comes from diversity or merely volume.</p>
+<p>The strongest experiment matrix is:</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Run</th>
+<th>Symbols</th>
+<th style="text-align:right">Shared encoder</th>
+<th style="text-align:right">Symbol embedding</th>
+<th>Why it exists</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>META only</td>
+<td style="text-align:right">No</td>
+<td style="text-align:right">One constant ID in the saved run</td>
+<td>Single-symbol pipeline control</td>
+</tr>
+<tr>
+<td>B</td>
+<td>Each ticker separately</td>
+<td style="text-align:right">No</td>
+<td style="text-align:right">No</td>
+<td>Local-model benchmark</td>
+</tr>
+<tr>
+<td>C</td>
+<td>All tickers</td>
+<td style="text-align:right">Yes</td>
+<td style="text-align:right">No</td>
+<td>Effect of pooled data</td>
+</tr>
+<tr>
+<td>D</td>
+<td>All tickers</td>
+<td style="text-align:right">Yes</td>
+<td style="text-align:right">Yes</td>
+<td>Added value of symbol identity</td>
+</tr>
+</tbody>
+</table></div>
+<p>With only one ticker, the saved run’s embedding is constant across every example. It cannot represent differences between stocks, although it does add a small learned constant channel and extra parameters. The strict local benchmark in Run B should omit it. An optional fifth run holds the total number of training sequences fixed between B, C, and D, making the representation question cleaner.</p>
+<h2 id="the-saved-control-run-meta-alone">The saved control run: META alone</h2>
+<p>The notebook already contains the multi-symbol machinery above, but its recorded execution loaded only <code>META</code>. The numbers below are therefore evidence for Run A—the local control—not results of Runs B through D.</p>
 <div class="table-scroll"><table>
 <thead>
 <tr>
@@ -242,7 +455,7 @@
 <li>a tiny real-data subset reached 100% training accuracy, showing that the model and loss could memorize when asked to.</li>
 </ol>
 <p>These checks do not prove generalization. They eliminate quieter implementation failures that can make every architecture look equally mediocre.</p>
-<h2 id="the-main-result-0-53-auc-on-stock-price-direction">The main result: 0.53 AUC on stock-price direction</h2>
+<h2 id="what-happened-in-the-meta-control">What happened in the META control</h2>
 <p><img alt="Horizontal bars showing test ROC AUC for CatBoost and six neural models; all scores lie between 0.5077 and 0.5318." src="assets/finance-model-test-auc.png"/></p>
 <div class="table-scroll"><table>
 <thead>
@@ -306,23 +519,15 @@
 </tr>
 </tbody>
 </table></div>
-<h2 id="does-0-53-auc-suck-yes-and-that-is-why-it-is-interesting">Does 0.53 AUC suck? Yes—and that is why it is interesting</h2>
-<p>On a conventional classification benchmark, an AUC of <code>0.53</code> would be a poor result. It means the model ranked a randomly chosen retained up move above a randomly chosen retained down move about 53% of the time. It does <strong>not</strong> mean 53% accuracy, and it definitely does not mean a 3% return.</p>
-<p>But markets are not conventional classification benchmarks. The next minute of a liquid stock is dominated by noise, changing order flow, and information the feature set cannot observe. Easy, persistent patterns are competed away. A small ranking edge that survives a chronological test is therefore more interesting here than the same number would be on a stable, low-noise task.</p>
-<p>There is still an important statistical brake. The 80,598 test sequences overlap heavily, so they are not 80,598 independent experiments. We need walk-forward periods, multiple symbols, repeated seeds, and uncertainty estimates before deciding whether the edge is stable.</p>
-<p>The right reaction is neither “0.53 is useless” nor “we can trade this.” It is:</p>
-<blockquote>
-<p>For next-minute stock direction, 0.53 is strong enough to investigate and far too weak to trust without a cost-aware replication.</p>
-</blockquote>
-<p>Three observations matter more than the exact ranking.</p>
-<p>First, <strong>the signal is small but interesting</strong>. The best test AUC is about <code>0.532</code>, only <code>0.032</code> above chance. The difficulty of the target makes that worth studying, while the market setting makes overconfidence especially dangerous.</p>
+<p>These numbers are a pipeline check and a local-model baseline, not the main local-versus-global answer. Three observations are still useful.</p>
+<p>First, <strong>the retained META signal is small</strong>. The best test AUC is about <code>0.532</code>, only <code>0.032</code> above chance. That establishes a reference point for the pooled experiment without turning the article into a story about one metric.</p>
 <p>Second, <strong>CatBoost narrowly wins the statistical comparison</strong>. Its test AUC exceeds the best neural test score, GRU’s <code>0.530355</code>, by only <code>0.001457</code>. That is a difference of roughly fifteen ten-thousandths—not a chasm. Repeated seeds and additional time periods could change the order.</p>
 <p>Third, <strong>recurrent state and the better long-range encoders cluster together</strong>. GRU, Transformer, TCN, and LSTM all land between <code>0.5286</code> and <code>0.5304</code>. The MLP and CNN1D lag, and their smaller prediction dispersion suggests that they produced less differentiated scores.</p>
-<p>The saved run therefore supports a modest conclusion:</p>
+<p>The saved control supports a modest conclusion:</p>
 <blockquote>
 <p>On this META split and seed, several sequence models extracted a small amount of next-minute ranking signal, but none established a compelling advantage over a well-tuned CatBoost endpoint baseline.</p>
 </blockquote>
-<p>It does not support “Transformers work for trading,” “GRUs are best for stocks,” or “CatBoost always wins.”</p>
+<p>It does not tell us whether pooled training helps, whether symbol embeddings add value, or whether the ranking would survive on other stocks.</p>
 <h2 id="why-the-catboost-result-is-such-a-useful-reality-check">Why the CatBoost result is such a useful reality check</h2>
 <p>CatBoost never sees the complete 78-by-31 sequence. It receives the same eligible endpoints represented by 31 causal features. Those summaries already expose returns, volatility, volume, intraday phase, bar geometry, and moving-average distances.</p>
 <p>That changes the modeling burden:</p>
@@ -379,7 +584,7 @@
 <p>The largest CatBoost importance belongs to <code>close_location</code>: where the close falls between the minute’s low and high. Short-horizon geometry, the two-minute return, the gap from the prior close, volume, and time of day also rank highly. Two price-memory features—the distances from the 20-day and 30-minute moving averages—appear in the top ten.</p>
 <p>This ranking is descriptive, not causal. Correlated predictors can split credit, substitute for each other, or move in importance when another feature is removed. It tells us where the fitted tree ensemble found useful partitions; it does not prove that changing a feature would change the market outcome.</p>
 <p>A follow-up should combine permutation importance on untouched periods with grouped ablations. For example, remove all time-of-day variables together, then all bar-geometry variables, then the complete price-memory group. That is more informative than interpreting one importance number in isolation.</p>
-<h2 id="auc-is-not-profit">AUC is not profit</h2>
+<h2 id="prediction-quality-is-not-profit">Prediction quality is not profit</h2>
 <p>The experiment stops at classification metrics. It does not specify or evaluate a trading rule.</p>
 <p>To move from a score to an economic claim, we would still need:</p>
 <ul>
@@ -391,7 +596,7 @@
 <li>multiple symbols selected without hindsight;</li>
 <li>comparison with “do nothing,” simple momentum/reversal rules, and cost-aware CatBoost baselines.</li>
 </ul>
-<p>At a one-minute horizon, those omissions are decisive. A test AUC near <code>0.53</code> can coexist with negative net returns if the errors occur on expensive trades or the edge is smaller than execution costs. It can also coexist with a usable strategy under a carefully chosen decision rule. The classification table alone cannot tell us which world we are in.</p>
+<p>At a one-minute horizon, those omissions are decisive. A statistically better ranking can coexist with negative net returns if the errors occur on expensive trades or the edge is smaller than execution costs. It can also coexist with a usable strategy under a carefully chosen decision rule. The classification table alone cannot tell us which world we are in.</p>
 <p>So the sad but useful fact is this:</p>
 <blockquote>
 <p>A model can be statistically above chance and still be practically worthless.</p>
@@ -404,7 +609,7 @@
 <tr>
 <th>Question</th>
 <th>Electricity demand</th>
-<th>META one-minute direction</th>
+<th>Multi-symbol financial design</th>
 </tr>
 </thead>
 <tbody>
@@ -416,62 +621,53 @@
 <tr>
 <td>Dominant structure</td>
 <td>Strong daily and weekly rhythm</td>
-<td>Weak, shifting short-horizon dependencies</td>
+<td>Shared market behavior plus symbol-specific differences</td>
 </tr>
 <tr>
-<td>Main metric</td>
-<td>Forecast RMSE</td>
-<td>ROC AUC and balanced accuracy</td>
+<td>Main modeling unit</td>
+<td>One demand series</td>
+<td>Local ticker models or one pooled symbol-aware model</td>
 </tr>
 <tr>
 <td>Strong simple check</td>
 <td>Naive seasonal forecasts; CatBoost as global benchmark</td>
-<td>CatBoost on causal endpoint features</td>
+<td>Per-symbol models, symbol-blind pooling, and CatBoost</td>
 </tr>
 <tr>
 <td>Feature lesson</td>
 <td>Calendar helped most models; engineered history varied by architecture</td>
-<td>Added price memory hurt the tested MLP</td>
+<td>Symbol identity must be separated from the value of extra pooled data</td>
 </tr>
 <tr>
 <td>Biggest interpretation risk</td>
 <td>Unequal raw-history reach</td>
-<td>Confusing statistical ranking with tradable profit</td>
+<td>Accidentally mixing symbols, sessions, or data-volume effects</td>
 </tr>
 </tbody>
 </table></div>
-<p>On electricity, inductive bias helps organize recurring structure. On intraday prices, there may be much less stable structure to organize. More expressive models do not manufacture predictability; they only create more ways to represent what the data actually contains.</p>
+<p>On electricity, the main sequence comes from one source. In finance, the definition of a training example also includes asset identity. More expressive models do not manufacture a universal market pattern; the global experiment must demonstrate that sharing parameters across symbols is actually useful.</p>
 <h2 id="what-i-would-run-next">What I would run next</h2>
 <p>The saved notebook also defines an additional CatBoost technical-analysis feature set, but those cells have no recorded result. It would be misleading to include that variant in the leaderboard.</p>
 <p>The next credible experiment should proceed in this order:</p>
 <ol>
-<li>rerun the neural and CatBoost comparisons across at least five seeds;</li>
-<li>use walk-forward periods rather than one final chronological split;</li>
-<li>run the 25-versus-31-feature ablation for every model family;</li>
-<li>add several liquid symbols and report both per-symbol and macro-average results;</li>
-<li>test the defined technical-analysis feature group as a predeclared CatBoost ablation;</li>
-<li>calibrate scores and declare a trading rule before viewing its final economic test;</li>
-<li>deduct spread, fees, slippage, and a latency assumption;</li>
-<li>report confidence intervals, turnover, drawdown, and sensitivity to thresholds and costs.</li>
+<li>choose several liquid symbols and freeze common walk-forward date boundaries;</li>
+<li>train one independent local model per symbol;</li>
+<li>train one pooled model without any symbol input;</li>
+<li>train the same pooled model with a learned symbol embedding;</li>
+<li>report every ticker separately and use an equal-weight macro-average;</li>
+<li>repeat all conditions across at least five seeds;</li>
+<li>rerun the comparison with an equal number of sampled training sequences;</li>
+<li>only then add feature ablations, technical indicators, and a cost-aware trading rule.</li>
 </ol>
 <p>Only then should this become a claim about financial usefulness.</p>
 <h2 id="the-takeaway">The takeaway</h2>
-<p>This is exactly the kind of result a practical sequence-model series needs.</p>
-<p>GRU, Transformer, TCN, and LSTM found similar, weak next-minute ranking signal. CatBoost extracted slightly more from a compact endpoint representation. Extra price-memory variables hurt the tested MLP. None of those facts establishes a profitable strategy.</p>
-<p>The most general lesson is not which model sits at the top of a third decimal place. It is how to reason when the leaderboard is compressed:</p>
-<ul>
-<li>verify alignment and optimization before interpreting failure;</li>
-<li>keep the chronological contract strict;</li>
-<li>compare architectures with strong tabular baselines;</li>
-<li>ablate feature groups instead of admiring feature importance;</li>
-<li>repeat across seeds, periods, and assets;</li>
-<li>keep statistical prediction separate from economic value.</li>
-</ul>
-<p>In noisy domains, humility is not a disclaimer added after the result. It is part of the modeling method.</p>
-<p>The <a href="https://github.com/adidror005/sequence-models-for-prediction/blob/main/notebooks/meta_minute_direction_case_study.ipynb" rel="noopener noreferrer">public companion notebook</a> contains the complete saved experiment through the reported CatBoost comparison. Bring your own licensed one-minute data; the repository intentionally does not redistribute market bars.</p>
+<p>The main lesson is not a META score. It is that moving from one stock to many changes the model’s data contract.</p>
+<p>Build windows inside one ticker and one continuous session. Pool the finished datasets rather than raw timelines. Carry symbol identity as a categorical ID, convert it to a learned embedding, and compare that model with both local models and a symbol-blind pooled control.</p>
+<p>Only that experiment can tell us whether a sequence architecture has learned reusable market behavior—or simply mixed more data into the same optimizer.</p>
+<p>The <a href="https://github.com/adidror005/sequence-models-for-prediction/blob/main/notebooks/local_vs_global_stock_models.ipynb" rel="noopener noreferrer">public companion notebook</a> contains the full per-symbol dataset and symbol-aware model machinery plus the saved META control. Bring your own licensed one-minute data and switch the experiment mode to run the pooled comparison; the repository intentionally does not redistribute market bars.</p>
 <hr/>
 </article>
-    <aside class="toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#what-was-actually-run">What was actually run</a></li><li><a href="#define-the-target-before-choosing-the-model">Define the target before choosing the model</a></li><li><a href="#keep-the-time-axis-intact">Keep the time axis intact</a></li><li><a href="#what-information-did-the-models-receive">What information did the models receive?</a></li><li><a href="#six-neural-architectures-one-training-protocol">Six neural architectures, one training protocol</a></li><li><a href="#the-main-result-0-53-auc-on-stock-price-direction">The main result: 0.53 AUC on stock-price direction</a></li><li><a href="#does-0-53-auc-suck-yes-and-that-is-why-it-is-interesting">Does 0.53 AUC suck? Yes—and that is why it is interesting</a></li><li><a href="#why-the-catboost-result-is-such-a-useful-reality-check">Why the CatBoost result is such a useful reality check</a></li><li><a href="#did-longer-price-memory-help">Did longer price memory help?</a></li><li><a href="#what-did-catboost-use">What did CatBoost use?</a></li><li><a href="#auc-is-not-profit">AUC is not profit</a></li><li><a href="#what-changes-from-electricity-to-finance">What changes from electricity to finance?</a></li><li><a href="#what-i-would-run-next">What I would run next</a></li><li><a href="#the-takeaway">The takeaway</a></li></ol></aside>
+    <aside class="toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#the-real-experiment-local-versus-global-learning">The real experiment: local versus global learning</a></li><li><a href="#build-one-sequence-dataset-per-symbol">Build one sequence Dataset per symbol</a></li><li><a href="#pool-datasets-not-ticker-timelines">Pool datasets, not ticker timelines</a></li><li><a href="#a-ticker-is-a-category-not-an-ordinal-number">A ticker is a category, not an ordinal number</a></li><li><a href="#what-can-a-shared-model-learn">What can a shared model learn?</a></li><li><a href="#design-the-comparison-before-reading-the-leaderboard">Design the comparison before reading the leaderboard</a></li><li><a href="#the-saved-control-run-meta-alone">The saved control run: META alone</a></li><li><a href="#define-the-target-before-choosing-the-model">Define the target before choosing the model</a></li><li><a href="#keep-the-time-axis-intact">Keep the time axis intact</a></li><li><a href="#what-information-did-the-models-receive">What information did the models receive?</a></li><li><a href="#six-neural-architectures-one-training-protocol">Six neural architectures, one training protocol</a></li><li><a href="#what-happened-in-the-meta-control">What happened in the META control</a></li><li><a href="#why-the-catboost-result-is-such-a-useful-reality-check">Why the CatBoost result is such a useful reality check</a></li><li><a href="#did-longer-price-memory-help">Did longer price memory help?</a></li><li><a href="#what-did-catboost-use">What did CatBoost use?</a></li><li><a href="#prediction-quality-is-not-profit">Prediction quality is not profit</a></li><li><a href="#what-changes-from-electricity-to-finance">What changes from electricity to finance?</a></li><li><a href="#what-i-would-run-next">What I would run next</a></li><li><a href="#the-takeaway">The takeaway</a></li></ol></aside>
   </div>
   <nav class="article-pager" aria-label="Article navigation"><a class="pager-card previous" href="14-designing-a-trustworthy-experiment.html"><span>Previous</span><strong>How to Design a Time-Series Experiment You Can Trust</strong></a><a class="pager-card next" href="future-stock-prediction-roadmap.html"><span>Next application</span><strong>Broader stock-prediction roadmap</strong></a></nav>
 </main>

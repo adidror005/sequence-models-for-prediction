@@ -232,4 +232,4 @@ It is this:
 
 ---
 
-**Series navigation:** [Series index](README.md) · [Previous: Calendar and lagged features](13-calendar-and-lagged-features.md) · [Next: One-minute META direction case study](15-finance-direction-case-study.md)
+**Series navigation:** [Series index](README.md) · [Previous: Calendar and lagged features](13-calendar-and-lagged-features.md) · [Next: Local versus global stock models](15-finance-direction-case-study.md)

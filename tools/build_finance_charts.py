@@ -6,6 +6,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,6 +29,102 @@ def finish(figure: plt.Figure, name: str) -> None:
         facecolor=figure.get_facecolor(),
     )
     plt.close(figure)
+
+
+def architecture_box(axis, x, y, width, height, text, facecolor, textcolor=INK, fontsize=11):
+    box = FancyBboxPatch(
+        (x, y),
+        width,
+        height,
+        boxstyle="round,pad=0.018,rounding_size=0.025",
+        linewidth=1.2,
+        edgecolor=INK,
+        facecolor=facecolor,
+    )
+    axis.add_patch(box)
+    axis.text(
+        x + width / 2,
+        y + height / 2,
+        text,
+        ha="center",
+        va="center",
+        color=textcolor,
+        fontsize=fontsize,
+        fontweight="bold",
+    )
+
+
+def architecture_arrow(axis, start, end):
+    axis.add_patch(
+        FancyArrowPatch(
+            start,
+            end,
+            arrowstyle="-|>",
+            mutation_scale=13,
+            linewidth=1.5,
+            color=MUTED,
+        )
+    )
+
+
+def local_vs_global_chart() -> None:
+    figure, axes = plt.subplots(1, 2, figsize=(13.2, 6.8), facecolor=PAPER)
+    for axis in axes:
+        axis.set_xlim(0, 1)
+        axis.set_ylim(0, 1)
+        axis.axis("off")
+
+    local, global_axis = axes
+    local.set_title("LOCAL: one model per stock", loc="left", color=INK, fontsize=17, fontweight="bold", pad=16)
+    local.text(
+        0,
+        0.95,
+        "No parameter sharing",
+        color=MUTED,
+        fontsize=11,
+        transform=local.transAxes,
+    )
+    rows = [("META bars", "META model"), ("MSFT bars", "MSFT model"), ("NVDA bars", "NVDA model")]
+    for y, (data_label, model_label) in zip((0.70, 0.43, 0.16), rows, strict=True):
+        architecture_box(local, 0.02, y, 0.27, 0.14, data_label, CREAM)
+        architecture_arrow(local, (0.31, y + 0.07), (0.47, y + 0.07))
+        architecture_box(local, 0.49, y, 0.30, 0.14, model_label, "#ddec72")
+        architecture_arrow(local, (0.81, y + 0.07), (0.96, y + 0.07))
+
+    global_axis.set_title("GLOBAL: one shared model", loc="left", color=INK, fontsize=17, fontweight="bold", pad=16)
+    global_axis.text(
+        0,
+        0.95,
+        "Shared temporal patterns + learned symbol identity",
+        color=MUTED,
+        fontsize=11,
+        transform=global_axis.transAxes,
+    )
+    for y, label in zip((0.70, 0.48, 0.26), ("META Dataset", "MSFT Dataset", "NVDA Dataset"), strict=True):
+        architecture_box(global_axis, 0.02, y, 0.26, 0.13, label, CREAM, fontsize=10)
+        architecture_arrow(global_axis, (0.30, y + 0.065), (0.42, 0.545))
+    architecture_box(global_axis, 0.43, 0.44, 0.22, 0.21, "ConcatDataset\n+ symbol ID", "#f4c7b7", fontsize=10)
+    architecture_arrow(global_axis, (0.67, 0.545), (0.75, 0.545))
+    architecture_box(global_axis, 0.76, 0.42, 0.22, 0.25, "Shared model\n+ embedding", "#ddec72", fontsize=11)
+
+    figure.suptitle(
+        "The financial modeling question is local vs. global",
+        x=0.07,
+        y=1.02,
+        ha="left",
+        color=INK,
+        fontsize=23,
+        fontweight="bold",
+    )
+    figure.text(
+        0.07,
+        0.01,
+        "The single-symbol META run is the control. The pooled experiment tests whether shared structure outweighs cross-stock differences.",
+        color=MUTED,
+        fontsize=10,
+    )
+    figure.subplots_adjust(left=0.06, right=0.98, top=0.84, bottom=0.10, wspace=0.14)
+    finish(figure, "finance-local-vs-global-models.png")
 
 
 def model_auc_chart() -> None:
@@ -203,10 +300,11 @@ def importance_chart() -> None:
 
 
 def main() -> None:
+    local_vs_global_chart()
     model_auc_chart()
     ablation_chart()
     importance_chart()
-    print("Built 3 finance case-study charts")
+    print("Built 4 finance case-study charts")
 
 
 if __name__ == "__main__":

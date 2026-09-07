@@ -19,7 +19,7 @@ Medium supports scheduling in the writer’s local timezone. Choose one publicat
 | 5 | Part 9: Transformer | Part 10: Patch Transformer | Contrast time-step attention with temporal tokens. |
 | 6 | Part 11: N-BEATS-style | Part 12: Choosing a model | Finish the algorithms and synthesize the design choices. |
 | 7 | Part 13: Electricity comparison | Part 14: Calendar and lag features | Move from controlled model comparison to input representation. |
-| 8 | Part 15: Trustworthy experiments | Part 16: META direction case study | Move from reusable protocol to a high-noise financial stress test. |
+| 8 | Part 15: Trustworthy experiments | Part 16: Local vs. global stock models | Move from reusable protocol to per-symbol datasets and pooled financial learning. |
 
 If one post receives unusually strong discussion, delaying the next release by one or two days is reasonable. Preserve the order; the conceptual progression matters more than hitting an exact date.
 
@@ -96,7 +96,7 @@ Avoid announcing every post as “Part N is live.” Lead with the claim or ques
 | Electricity results | “Nine architectures received the same raw week. Seven finished within roughly 0.009 kW RMSE.” |
 | Feature comparison | “A causal lag can still make an ablation unfair by quietly doubling historical reach.” |
 | Experimental design | “A feature changes data, representation, and information path at the same time.” |
-| Finance case study | “AUC 0.53 sounds terrible—until the target is next-minute stock direction. Six neural models found a small signal, and CatBoost still finished narrowly ahead.” |
+| Finance case study | “Should every stock get its own sequence model—or should one shared model learn across the market using a ticker embedding?” |
 
 ## Live URL registry
 

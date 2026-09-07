@@ -1,25 +1,217 @@
-# Can Sequence Models Predict Stock-Price Direction? A 0.53 AUC META Case Study
+# One Model Per Stock or One Model for the Market?
 
-*An AUC near 0.53 looks bad on an ordinary benchmark. For next-minute stock-price direction, it is weak—but genuinely interesting.*
+*How per-symbol datasets, pooled training, and learned ticker embeddings change a financial sequence model*
 
 **Series:** Sequence Models for Prediction, Part 16 of 16
 **Suggested Medium tags:** Time Series, PyTorch, Quantitative Finance, Machine Learning, CatBoost
 
-The electricity experiment gave our models a generous structural advantage: household demand contains recurring daily and weekly rhythms. Financial prices are less accommodating. Patterns are weaker, regimes move, and even a statistically detectable edge may disappear after costs.
+Suppose you have one-minute data for META, MSFT, NVDA, AMZN, and dozens of other stocks. Before choosing an LSTM, TCN, or Transformer, you face a more fundamental modeling decision:
 
-This case study asks a narrower question than “Can deep learning beat the market?”
+> Should every stock get its own model, or should one global model learn across all stocks and receive the symbol as an input?
 
-> Given the last 78 one-minute META bars, can a model rank the direction of the next close-to-close move better than chance?
+A local model can specialize in one stock’s behavior, but it throws away the training examples available in every other stock. A global model gains far more data and can learn reusable market patterns, but it also needs a way to distinguish META from MSFT. Otherwise it is asked to treat genuinely different processes as interchangeable.
 
-Six neural architectures and one CatBoost baseline were evaluated on the saved output of a single experiment. By ordinary machine-learning standards, the scores look unimpressive. But the target is next-minute stock-price direction, where stable signal is scarce and competition is intense. In that setting, an out-of-time AUC around `0.53` is weak, but it is not automatically meaningless.
+This article develops that local-versus-global design. It shows how to build an independent sequence dataset for each ticker, combine those datasets without joining their timelines, carry a symbol ID through the `DataLoader`, and turn the ID into a learned embedding that any sequence architecture can use.
 
-That is not a trading strategy. It is a careful classification result—and a useful stress test for the architectural ideas in this series.
+META is not the subject of the whole article. The saved notebook happened to execute with only META available, so that run is the **single-symbol control**. Its results show that the pipeline works in local mode. The more important next comparison is local models versus a pooled model across many symbols, with and without symbol identity.
 
-> **Companion code:** [View the complete notebook on GitHub](https://github.com/adidror005/sequence-models-for-prediction/blob/main/notebooks/meta_minute_direction_case_study.ipynb) · [Open it in Google Colab](https://colab.research.google.com/github/adidror005/sequence-models-for-prediction/blob/main/notebooks/meta_minute_direction_case_study.ipynb) · [Read the data and setup notes](https://github.com/adidror005/sequence-models-for-prediction/tree/main/notebooks)
+> **Companion code:** [View the local-versus-global notebook on GitHub](https://github.com/adidror005/sequence-models-for-prediction/blob/main/notebooks/local_vs_global_stock_models.ipynb) · [Open it in Google Colab](https://colab.research.google.com/github/adidror005/sequence-models-for-prediction/blob/main/notebooks/local_vs_global_stock_models.ipynb) · [Read the data and setup notes](https://github.com/adidror005/sequence-models-for-prediction/tree/main/notebooks)
 
-## What was actually run
+![Diagram contrasting separate per-stock models with one shared model trained from symbol-specific datasets and a learned symbol embedding.](assets/finance-local-vs-global-models.png)
 
-The notebook was designed with multi-symbol scaffolding, but its recorded execution loaded only `META`. The evidence in this article is therefore a **single-symbol case study**, not a multi-asset benchmark.
+## The real experiment: local versus global learning
+
+“Train on many stocks” is not one experimental condition. At least three versions are needed to learn what is actually helping:
+
+| Condition | Training data | Symbol identity | Question answered |
+|---|---|---|---|
+| Local | One model per stock | Unnecessary | How well can a specialized model learn this ticker? |
+| Pooled, symbol-blind | One model across all stocks | Omitted | Does additional cross-stock data help by itself? |
+| Pooled, symbol-aware | One model across all stocks | Learned embedding | Does telling the model which stock it sees add value? |
+
+The middle condition is essential. If the symbol-aware global model beats a local model, two things changed at once: it received more training examples and it received ticker identity. The symbol-blind pooled model separates those effects.
+
+This is not ordinary feature engineering. It changes the statistical unit of the model. A local model estimates a different function for each ticker:
+
+```text
+prediction = f_META(sequence)
+```
+
+A global model estimates one shared function conditioned on identity:
+
+```text
+prediction = f(sequence, symbol)
+```
+
+The shared function can learn patterns such as intraday volume seasonality or short-term reversal once and reuse them. The symbol representation lets it adjust that shared behavior for each stock.
+
+## Build one sequence Dataset per symbol
+
+The safest design begins with a separate `Dataset` object for every ticker. Each object filters one symbol, sorts it chronologically, detects session or timestamp discontinuities, and creates endpoints only inside a continuous run.
+
+```python
+class SymbolSequenceDataset(Dataset):
+    def __init__(self, frame, symbol, feature_cols, seq_len, symbol_to_id):
+        one = (
+            frame.loc[frame.symbol == symbol]
+            .sort_values("date")
+            .reset_index(drop=True)
+        )
+        self.symbol = symbol
+        self.symbol_id = symbol_to_id[symbol]
+        self.seq_len = seq_len
+
+        self.X = torch.tensor(
+            one[feature_cols].to_numpy(dtype="float32")
+        )
+        self.y = torch.tensor(
+            one["label01"].to_numpy(dtype="float32")
+        )
+
+        dates = pd.to_datetime(one["date"])
+        session_changed = one["session_date"].ne(one["session_date"].shift())
+        minute_missing = dates.diff().ne(pd.Timedelta(minutes=1))
+        self.run_id = (session_changed | minute_missing).cumsum().to_numpy()
+
+        endpoints = []
+        for run in np.unique(self.run_id):
+            positions = np.flatnonzero(self.run_id == run)
+            for end in positions[seq_len - 1:]:
+                if torch.isfinite(self.y[end]):
+                    endpoints.append(end)
+        self.endpoints = np.asarray(endpoints)
+
+    def __len__(self):
+        return len(self.endpoints)
+
+    def __getitem__(self, index):
+        end = int(self.endpoints[index])
+        start = end - self.seq_len + 1
+        assert self.run_id[start] == self.run_id[end]
+        return self.X[start:end + 1], self.y[end], self.symbol_id
+```
+
+The returned example contains three objects:
+
+```text
+sequence:  [78, 31]
+label:     scalar
+symbol_id: scalar integer category
+```
+
+Creating the per-symbol object first prevents the worst possible bug: a window ending with the final META bars and continuing with the first MSFT bars merely because both happened to be adjacent in a combined table.
+
+The `run_id` check handles another boundary. A sequence cannot cross an overnight market closure or a missing minute and pretend the two observations are consecutive.
+
+## Pool datasets, not ticker timelines
+
+After each ticker has a safe dataset, PyTorch can expose them through one global index with `ConcatDataset`:
+
+```python
+symbols = ["META", "MSFT", "NVDA", "AMZN"]
+symbol_to_id = {symbol: i for i, symbol in enumerate(symbols)}
+
+train_ds = ConcatDataset([
+    SymbolSequenceDataset(
+        train_frame,
+        symbol,
+        FEATURE_COLS,
+        seq_len=78,
+        symbol_to_id=symbol_to_id,
+    )
+    for symbol in symbols
+])
+
+train_loader = DataLoader(
+    train_ds,
+    batch_size=512,
+    shuffle=True,
+)
+```
+
+Concatenation does not concatenate the raw time series. It concatenates the collections of valid examples. A batch may contain META, MSFT, and NVDA sequences, but every individual sequence was constructed entirely inside one symbol and one continuous trading session.
+
+Shuffling the training loader is now safe because the examples were formed causally before batching. Validation and test loaders remain unshuffled so outputs are easy to align with their endpoints.
+
+## A ticker is a category, not an ordinal number
+
+The integer symbol ID should not enter the network as an ordinary numerical feature. An ID of `3` is not three times an ID of `1`, and adjacent IDs do not imply similar stocks.
+
+Instead, use the ID to select a trainable embedding vector:
+
+```python
+class SymbolAwareClassifier(nn.Module):
+    def __init__(self, temporal_model, num_symbols, embedding_dim=8):
+        super().__init__()
+        self.temporal_model = temporal_model
+        self.symbol_embedding = nn.Embedding(
+            num_embeddings=num_symbols,
+            embedding_dim=embedding_dim,
+        )
+
+    def forward(self, sequence, symbol_id):
+        # sequence: [batch, time, features]
+        embedding = self.symbol_embedding(symbol_id)       # [batch, embed]
+        embedding = embedding[:, None, :].expand(
+            -1, sequence.size(1), -1
+        )                                                  # [batch, time, embed]
+        enriched = torch.cat([sequence, embedding], dim=-1)
+        return self.temporal_model(enriched)
+```
+
+With 31 market features and an eight-dimensional symbol embedding, every time step becomes:
+
+```text
+[31 observed features | 8 learned symbol coordinates] = 39 inputs
+```
+
+The LSTM, GRU, CNN, TCN, or Transformer still processes time normally. It simply receives a small learned context vector telling it which stock generated the sequence.
+
+The embedding is not automatically meaningful. It becomes useful only if the global objective discovers consistent differences between stocks. Those coordinates might encode liquidity, volatility, intraday behavior, or nothing interpretable at all. They are parameters optimized for prediction, not a ready-made map of company fundamentals.
+
+## What can a shared model learn?
+
+A global model is attractive because many market behaviors recur across assets:
+
+- volume usually follows a strong intraday curve;
+- volatility clusters;
+- gaps, ranges, and short returns have comparable relative meanings;
+- the open and close behave differently from midday;
+- the same temporal filter can recognize a pattern in many liquid stocks.
+
+Pooling lets all symbols contribute gradient updates to the shared encoder. That can regularize stocks with less data and make expensive architectures more practical.
+
+But global learning can also fail. A high-volume technology stock, a bank, and an energy company do not have identical regimes or microstructure. Large symbols can dominate the loss simply because they provide more eligible sequences. A global model can also memorize symbol-specific history through the embedding instead of learning transferable patterns.
+
+Useful controls include balanced sampling by ticker, reporting per-symbol metrics as well as a macro-average, and testing performance on symbols or time periods that were not favored during tuning.
+
+## Design the comparison before reading the leaderboard
+
+The local, symbol-blind pooled, and symbol-aware pooled runs should share:
+
+- the same symbols and date-based train, validation, and test boundaries;
+- the same target definition and movement-filtering rule;
+- scalers fitted using training data only;
+- identical sequence length and causal feature definitions;
+- the same architecture, optimization budget, and seed set;
+- both per-symbol metrics and an equal-weight macro-average.
+
+If pooled training contains ten times more sequences, that is part of the hypothesis—not a nuisance to hide. Report it. A second comparison can control the number of sampled training examples to ask whether improvement comes from diversity or merely volume.
+
+The strongest experiment matrix is:
+
+| Run | Symbols | Shared encoder | Symbol embedding | Why it exists |
+|---|---|---:|---:|---|
+| A | META only | No | One constant ID in the saved run | Single-symbol pipeline control |
+| B | Each ticker separately | No | No | Local-model benchmark |
+| C | All tickers | Yes | No | Effect of pooled data |
+| D | All tickers | Yes | Yes | Added value of symbol identity |
+
+With only one ticker, the saved run’s embedding is constant across every example. It cannot represent differences between stocks, although it does add a small learned constant channel and extra parameters. The strict local benchmark in Run B should omit it. An optional fifth run holds the total number of training sequences fixed between B, C, and D, making the representation question cleaner.
+
+## The saved control run: META alone
+
+The notebook already contains the multi-symbol machinery above, but its recorded execution loaded only `META`. The numbers below are therefore evidence for Run A—the local control—not results of Runs B through D.
 
 | Item | Saved experiment |
 |---|---|
@@ -153,7 +345,7 @@ Before the full run, two fail-fast tests passed:
 
 These checks do not prove generalization. They eliminate quieter implementation failures that can make every architecture look equally mediocre.
 
-## The main result: 0.53 AUC on stock-price direction
+## What happened in the META control
 
 ![Horizontal bars showing test ROC AUC for CatBoost and six neural models; all scores lie between 0.5077 and 0.5318.](assets/finance-model-test-auc.png)
 
@@ -167,31 +359,19 @@ These checks do not prove generalization. They eliminate quieter implementation 
 | MLP | 0.514169 | 0.513493 | 0.509812 | 0.015184 |
 | CNN1D | 0.511011 | 0.507748 | 0.506471 | 0.009829 |
 
-## Does 0.53 AUC suck? Yes—and that is why it is interesting
+These numbers are a pipeline check and a local-model baseline, not the main local-versus-global answer. Three observations are still useful.
 
-On a conventional classification benchmark, an AUC of `0.53` would be a poor result. It means the model ranked a randomly chosen retained up move above a randomly chosen retained down move about 53% of the time. It does **not** mean 53% accuracy, and it definitely does not mean a 3% return.
-
-But markets are not conventional classification benchmarks. The next minute of a liquid stock is dominated by noise, changing order flow, and information the feature set cannot observe. Easy, persistent patterns are competed away. A small ranking edge that survives a chronological test is therefore more interesting here than the same number would be on a stable, low-noise task.
-
-There is still an important statistical brake. The 80,598 test sequences overlap heavily, so they are not 80,598 independent experiments. We need walk-forward periods, multiple symbols, repeated seeds, and uncertainty estimates before deciding whether the edge is stable.
-
-The right reaction is neither “0.53 is useless” nor “we can trade this.” It is:
-
-> For next-minute stock direction, 0.53 is strong enough to investigate and far too weak to trust without a cost-aware replication.
-
-Three observations matter more than the exact ranking.
-
-First, **the signal is small but interesting**. The best test AUC is about `0.532`, only `0.032` above chance. The difficulty of the target makes that worth studying, while the market setting makes overconfidence especially dangerous.
+First, **the retained META signal is small**. The best test AUC is about `0.532`, only `0.032` above chance. That establishes a reference point for the pooled experiment without turning the article into a story about one metric.
 
 Second, **CatBoost narrowly wins the statistical comparison**. Its test AUC exceeds the best neural test score, GRU’s `0.530355`, by only `0.001457`. That is a difference of roughly fifteen ten-thousandths—not a chasm. Repeated seeds and additional time periods could change the order.
 
 Third, **recurrent state and the better long-range encoders cluster together**. GRU, Transformer, TCN, and LSTM all land between `0.5286` and `0.5304`. The MLP and CNN1D lag, and their smaller prediction dispersion suggests that they produced less differentiated scores.
 
-The saved run therefore supports a modest conclusion:
+The saved control supports a modest conclusion:
 
 > On this META split and seed, several sequence models extracted a small amount of next-minute ranking signal, but none established a compelling advantage over a well-tuned CatBoost endpoint baseline.
 
-It does not support “Transformers work for trading,” “GRUs are best for stocks,” or “CatBoost always wins.”
+It does not tell us whether pooled training helps, whether symbol embeddings add value, or whether the ranking would survive on other stocks.
 
 ## Why the CatBoost result is such a useful reality check
 
@@ -244,7 +424,7 @@ This ranking is descriptive, not causal. Correlated predictors can split credit,
 
 A follow-up should combine permutation importance on untouched periods with grouped ablations. For example, remove all time-of-day variables together, then all bar-geometry variables, then the complete price-memory group. That is more informative than interpreting one importance number in isolation.
 
-## AUC is not profit
+## Prediction quality is not profit
 
 The experiment stops at classification metrics. It does not specify or evaluate a trading rule.
 
@@ -258,7 +438,7 @@ To move from a score to an economic claim, we would still need:
 - multiple symbols selected without hindsight;
 - comparison with “do nothing,” simple momentum/reversal rules, and cost-aware CatBoost baselines.
 
-At a one-minute horizon, those omissions are decisive. A test AUC near `0.53` can coexist with negative net returns if the errors occur on expensive trades or the edge is smaller than execution costs. It can also coexist with a usable strategy under a carefully chosen decision rule. The classification table alone cannot tell us which world we are in.
+At a one-minute horizon, those omissions are decisive. A statistically better ranking can coexist with negative net returns if the errors occur on expensive trades or the edge is smaller than execution costs. It can also coexist with a usable strategy under a carefully chosen decision rule. The classification table alone cannot tell us which world we are in.
 
 So the sad but useful fact is this:
 
@@ -270,16 +450,16 @@ That sentence is not pessimism. It is the boundary between a machine-learning ex
 
 The two case studies now expose very different kinds of sequence structure.
 
-| Question | Electricity demand | META one-minute direction |
+| Question | Electricity demand | Multi-symbol financial design |
 |---|---|---|
 | Target | Next 24 demand values | Next-minute direction after excluding small moves |
-| Dominant structure | Strong daily and weekly rhythm | Weak, shifting short-horizon dependencies |
-| Main metric | Forecast RMSE | ROC AUC and balanced accuracy |
-| Strong simple check | Naive seasonal forecasts; CatBoost as global benchmark | CatBoost on causal endpoint features |
-| Feature lesson | Calendar helped most models; engineered history varied by architecture | Added price memory hurt the tested MLP |
-| Biggest interpretation risk | Unequal raw-history reach | Confusing statistical ranking with tradable profit |
+| Dominant structure | Strong daily and weekly rhythm | Shared market behavior plus symbol-specific differences |
+| Main modeling unit | One demand series | Local ticker models or one pooled symbol-aware model |
+| Strong simple check | Naive seasonal forecasts; CatBoost as global benchmark | Per-symbol models, symbol-blind pooling, and CatBoost |
+| Feature lesson | Calendar helped most models; engineered history varied by architecture | Symbol identity must be separated from the value of extra pooled data |
+| Biggest interpretation risk | Unequal raw-history reach | Accidentally mixing symbols, sessions, or data-volume effects |
 
-On electricity, inductive bias helps organize recurring structure. On intraday prices, there may be much less stable structure to organize. More expressive models do not manufacture predictability; they only create more ways to represent what the data actually contains.
+On electricity, the main sequence comes from one source. In finance, the definition of a training example also includes asset identity. More expressive models do not manufacture a universal market pattern; the global experiment must demonstrate that sharing parameters across symbols is actually useful.
 
 ## What I would run next
 
@@ -287,35 +467,26 @@ The saved notebook also defines an additional CatBoost technical-analysis featur
 
 The next credible experiment should proceed in this order:
 
-1. rerun the neural and CatBoost comparisons across at least five seeds;
-2. use walk-forward periods rather than one final chronological split;
-3. run the 25-versus-31-feature ablation for every model family;
-4. add several liquid symbols and report both per-symbol and macro-average results;
-5. test the defined technical-analysis feature group as a predeclared CatBoost ablation;
-6. calibrate scores and declare a trading rule before viewing its final economic test;
-7. deduct spread, fees, slippage, and a latency assumption;
-8. report confidence intervals, turnover, drawdown, and sensitivity to thresholds and costs.
+1. choose several liquid symbols and freeze common walk-forward date boundaries;
+2. train one independent local model per symbol;
+3. train one pooled model without any symbol input;
+4. train the same pooled model with a learned symbol embedding;
+5. report every ticker separately and use an equal-weight macro-average;
+6. repeat all conditions across at least five seeds;
+7. rerun the comparison with an equal number of sampled training sequences;
+8. only then add feature ablations, technical indicators, and a cost-aware trading rule.
 
 Only then should this become a claim about financial usefulness.
 
 ## The takeaway
 
-This is exactly the kind of result a practical sequence-model series needs.
+The main lesson is not a META score. It is that moving from one stock to many changes the model’s data contract.
 
-GRU, Transformer, TCN, and LSTM found similar, weak next-minute ranking signal. CatBoost extracted slightly more from a compact endpoint representation. Extra price-memory variables hurt the tested MLP. None of those facts establishes a profitable strategy.
+Build windows inside one ticker and one continuous session. Pool the finished datasets rather than raw timelines. Carry symbol identity as a categorical ID, convert it to a learned embedding, and compare that model with both local models and a symbol-blind pooled control.
 
-The most general lesson is not which model sits at the top of a third decimal place. It is how to reason when the leaderboard is compressed:
+Only that experiment can tell us whether a sequence architecture has learned reusable market behavior—or simply mixed more data into the same optimizer.
 
-- verify alignment and optimization before interpreting failure;
-- keep the chronological contract strict;
-- compare architectures with strong tabular baselines;
-- ablate feature groups instead of admiring feature importance;
-- repeat across seeds, periods, and assets;
-- keep statistical prediction separate from economic value.
-
-In noisy domains, humility is not a disclaimer added after the result. It is part of the modeling method.
-
-The [public companion notebook](https://github.com/adidror005/sequence-models-for-prediction/blob/main/notebooks/meta_minute_direction_case_study.ipynb) contains the complete saved experiment through the reported CatBoost comparison. Bring your own licensed one-minute data; the repository intentionally does not redistribute market bars.
+The [public companion notebook](https://github.com/adidror005/sequence-models-for-prediction/blob/main/notebooks/local_vs_global_stock_models.ipynb) contains the full per-symbol dataset and symbol-aware model machinery plus the saved META control. Bring your own licensed one-minute data and switch the experiment mode to run the pooled comparison; the repository intentionally does not redistribute market bars.
 
 ---
 

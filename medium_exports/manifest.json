@@ -204,29 +204,34 @@
   },
   {
     "part": 16,
-    "title": "Can Sequence Models Predict Stock-Price Direction? A 0.53 AUC META Case Study",
+    "title": "One Model Per Stock or One Model for the Market?",
     "source": "15-finance-direction-case-study.md",
     "html": "15-finance-direction-case-study.html",
     "suggested_tags": "Time Series, PyTorch, Quantitative Finance, Machine Learning, CatBoost",
-    "code_blocks": 10,
+    "code_blocks": 24,
     "table_images": [
       "table_images/15-finance-direction-case-study-table-1.png",
       "table_images/15-finance-direction-case-study-table-2.png",
       "table_images/15-finance-direction-case-study-table-3.png",
       "table_images/15-finance-direction-case-study-table-4.png",
       "table_images/15-finance-direction-case-study-table-5.png",
-      "table_images/15-finance-direction-case-study-table-6.png"
+      "table_images/15-finance-direction-case-study-table-6.png",
+      "table_images/15-finance-direction-case-study-table-7.png",
+      "table_images/15-finance-direction-case-study-table-8.png"
     ],
     "images": [
+      "assets/finance-local-vs-global-models.png",
       "table_images/15-finance-direction-case-study-table-1.png",
       "table_images/15-finance-direction-case-study-table-2.png",
       "table_images/15-finance-direction-case-study-table-3.png",
-      "assets/finance-model-test-auc.png",
       "table_images/15-finance-direction-case-study-table-4.png",
-      "assets/finance-mlp-price-memory-ablation.png",
       "table_images/15-finance-direction-case-study-table-5.png",
+      "assets/finance-model-test-auc.png",
+      "table_images/15-finance-direction-case-study-table-6.png",
+      "assets/finance-mlp-price-memory-ablation.png",
+      "table_images/15-finance-direction-case-study-table-7.png",
       "assets/finance-catboost-feature-importance.png",
-      "table_images/15-finance-direction-case-study-table-6.png"
+      "table_images/15-finance-direction-case-study-table-8.png"
     ],
     "local_links_to_replace": 3
   }

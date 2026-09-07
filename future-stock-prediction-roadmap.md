@@ -2,16 +2,16 @@
 
 *How to extend the first META result into a multi-asset, walk-forward, cost-aware experiment*
 
-**Status:** Future experiment roadmap following the [one-minute META case study](15-finance-direction-case-study.md)
+**Status:** Future experiment roadmap following the [local-versus-global stock-model tutorial](15-finance-direction-case-study.md)
 **Suggested Medium tags:** Stock Market, Time Series, Forecasting, Deep Learning, Quantitative Finance
 
 Electricity demand is rhythmic. Stock prices are adversarial.
 
-Part 16 now provides a first financial stress test: six neural models and CatBoost predict one-minute META direction from 2013–2026 data. The best saved test AUC is `0.531812` from CatBoost, GRU and Transformer are close behind, and an MLP price-memory ablation gets worse. Those are classification results from one symbol, one chronological split, and one seed—not a profit result.
+Part 16 now establishes the multi-symbol data design: construct sequences inside one ticker and session, combine the finished per-symbol datasets, and optionally condition one shared temporal encoder on a learned ticker embedding. Its saved META output is the single-symbol control; the local-versus-global comparison remains to be run across multiple stocks.
 
 Household power consumption repeats daily and weekly behaviors that remain visible in a short chart. Markets adapt, regimes shift, and easy patterns attract capital until they weaken. A model that performs well on electricity therefore deserves a second test where predictability is smaller and evaluation traps are larger.
 
-This roadmap defines the broader test that should come next. It keeps the earlier daily-horizon design because that experiment asks a different, complementary question from the one-minute case study.
+This roadmap defines the broader test that should come next. It keeps the earlier daily-horizon design because that experiment asks a different, complementary question from the one-minute local-versus-global tutorial.
 
 The goal is not to ask which network predicts the highest stock price. It is to ask:
 

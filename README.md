@@ -37,9 +37,9 @@ Part 14 then changes the inputs. It tests historical calendar variables and engi
 
 This article turns the lessons into a reusable protocol for evaluating any sequence-prediction system without temporal leakage or misleading comparisons.
 
-### Part 16: finance case study
+### Part 16: local versus global financial models
 
-The final article stress-tests six neural architectures and a CatBoost endpoint baseline on next-minute META direction. It also examines whether six longer price-memory features help an MLP and explains why ROC AUC is not a profitability result.
+The final article shows how to build per-symbol sequence datasets, pool them safely, and condition a shared neural model on a learned ticker embedding. The saved META run is retained as the single-symbol control, not presented as the article's main subject.
 
 ## Publication order
 
@@ -60,7 +60,7 @@ The final article stress-tests six neural architectures and a CatBoost endpoint 
 | 13 | Comparing Sequence Models on Electricity Prediction | Which models perform best when all receive the same raw week? |
 | 14 | Do Calendar and Lagged Features Help Sequence Models? | When do extra temporal inputs help, duplicate, or shortcut learned memory? |
 | 15 | How to Design a Time-Series Experiment You Can Trust | How do we separate architecture, information, representation, and variance? |
-| 16 | Can Sequence Models Predict Stock-Price Direction? | Is 0.53 AUC meaningless—or interesting because the target is next-minute stock direction? |
+| 16 | One Model Per Stock or One Model for the Market? | When should we train local models versus one pooled, symbol-aware sequence model? |
 
 ## Release strategy
 
@@ -85,7 +85,7 @@ Each source draft includes local navigation. Before copying a post to Medium, re
 - [Part 13 — Electricity model comparison](12-electricity-results-and-interpretation.md)
 - [Part 14 — Calendar and lagged features](13-calendar-and-lagged-features.md)
 - [Part 15 — Trustworthy experiments](14-designing-a-trustworthy-experiment.md)
-- [Part 16 — One-minute META direction case study](15-finance-direction-case-study.md)
+- [Part 16 — Local versus global stock models](15-finance-direction-case-study.md)
 
 ## Companion code
 
@@ -96,13 +96,13 @@ Parts 3–11 each contain a complete, standalone PyTorch model definition and an
 - [chronological training and evaluation pipeline](code/training_pipeline.py);
 - [causal direct multi-horizon CatBoost benchmark](code/catboost_baseline.py);
 - [companion-code usage guide](code/README.md).
-- [complete META direction case-study notebook](notebooks/meta_minute_direction_case_study.ipynb) and its [data/setup guide](notebooks/README.md).
+- [local-versus-global stock-model notebook](notebooks/local_vs_global_stock_models.ipynb) and its [data/setup guide](notebooks/README.md).
 
 Keeping the training pipeline shared prevents each Medium article from repeating the same dataset, early-stopping, and evaluation code while still making every architecture implementation complete.
 
 ## Finance case study and future extension
 
-The completed first finance application is [Part 16 — Can Sequence Models Predict Stock-Price Direction?](15-finance-direction-case-study.md). It compares six neural architectures with CatBoost on next-minute META direction, explains why 0.53 AUC is weak but still interesting in this domain, and includes a controlled MLP price-memory ablation.
+The completed first finance application is [Part 16 — One Model Per Stock or One Model for the Market?](15-finance-direction-case-study.md). It explains per-symbol datasets, symbol-safe pooling, symbol IDs, learned embeddings, and the experiment needed to compare local, symbol-blind pooled, and symbol-aware pooled models. A saved META run supplies the local control.
 
 The broader [Future stock-prediction roadmap](future-stock-prediction-roadmap.md) remains intentionally separate. It specifies the multi-asset, walk-forward, cost-aware work required before making a financial-usefulness claim.
 
@@ -121,6 +121,7 @@ The broader [Future stock-prediction roadmap](future-stock-prediction-roadmap.md
 | `finance-model-test-auc.png` | Part 16 | Test ROC AUC for CatBoost and six neural models on META next-minute direction. |
 | `finance-mlp-price-memory-ablation.png` | Part 16 | Validation and test AUC for the MLP with base versus added price-memory features. |
 | `finance-catboost-feature-importance.png` | Part 16 | CatBoost's ten highest endpoint-feature importances. |
+| `finance-local-vs-global-models.png` | Part 16 | Local per-stock models compared with a shared model trained from per-symbol datasets and a learned ticker embedding. |
 
 ## Editorial safeguards
 
@@ -133,7 +134,7 @@ The broader [Future stock-prediction roadmap](future-stock-prediction-roadmap.md
 - Call the residual dense model **N-BEATS-style**, not a universal N-BEATS implementation.
 - Do not claim that the engineered representation contains only the same 168 raw observations; `lag_168` extends its raw reach to 336 hours.
 - Do not generalize one electricity run into a claim that an architecture always does or does not need engineered features.
-- Describe Part 16 as a single-symbol, single-seed classification case study; the saved notebook run contains only META despite its multi-symbol scaffolding.
+- Describe the saved META output as the single-symbol control; the notebook contains multi-symbol scaffolding, but no pooled multi-symbol result has yet been recorded.
 - Do not interpret ROC AUC or balanced accuracy as evidence of trading profitability.
 - Do not report the notebook's CatBoost-plus-technical-analysis variant because its saved cells contain no executed result.
 - Keep the broader stock roadmap separate until its multi-asset, walk-forward, cost-aware experiment has actually run.
