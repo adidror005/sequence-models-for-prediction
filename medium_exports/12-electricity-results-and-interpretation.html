@@ -138,7 +138,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <main class="article-shell">
   <article class="article-content"><h1>Comparing Sequence Models on Electricity Prediction</h1>
 <p><em>What happens when nine very different architectures receive exactly the same week of raw demand history?</em></p>
-<p><strong>Series:</strong> Sequence Models for Prediction, Part 13 of 16</p>
+<p><strong>Series:</strong> Sequence Models for Prediction, Part 15 of 18</p>
 <p>The previous articles studied sequence models one at a time. That was deliberate: an architecture is easier to understand when its mechanics are not buried inside a leaderboard.</p>
 <p>Now we can ask the practical question.</p>
 <blockquote>
@@ -232,7 +232,7 @@ y: [batch, 24]
 <p>It does <strong>not</strong> establish that GRU is universally best for electricity, that Transformers are poor forecasters, or that differences smaller than one percent are stable. A stronger benchmark would add boosted trees, multiple seeds, rolling forecast periods, credible tuning budgets, and matched architectural capacity.</p>
 <p>Most importantly, this comparison answers only the raw-history question. Real forecasting systems often know more than the past target values. They know the hour, weekday, holidays, weather forecasts, prices, or operational schedules. Practitioners also add explicit daily and weekly lags or rolling summaries.</p>
 <p>Those additions change the problem. They may provide genuinely new future-known information, re-express information already present, or quietly extend the amount of history a model can access.</p>
-<p>Part 14 asks that separate question: <strong>when do calendar variables and engineered lagged features actually help these sequence models?</strong></p>
+<p>Part 16 asks that separate question: <strong>when do calendar variables and engineered lagged features actually help these sequence models?</strong></p>
 <hr/>
 <p><strong>Series navigation:</strong> <a class="needs-live-url" href="index.html">Series index</a> · <a class="needs-live-url" href="11-choosing-a-sequence-model.html">Previous: Choosing a model</a> · <a class="needs-live-url" href="13-calendar-and-lagged-features.html">Next: Calendar and lagged features</a></p>
 </article>

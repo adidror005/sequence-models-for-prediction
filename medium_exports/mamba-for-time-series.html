@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mamba for Time-Series Forecasting: Selective State-Space Memory — Medium export</title>
+<style>
+:root { color-scheme: light; }
+body { margin: 0; color: #242424; background: #f5f5f2; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.toolbar { position: sticky; top: 0; z-index: 5; padding: 14px 20px; color: #fff; background: #17324d; box-shadow: 0 2px 8px #0002; }
+.toolbar-inner { max-width: 1080px; margin: auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.toolbar strong { margin-right: auto; }
+button, .toolbar a { border: 1px solid #ffffff77; border-radius: 999px; padding: 8px 14px; color: white; background: transparent; font-weight: 600; text-decoration: none; cursor: pointer; }
+button.primary { color: #17324d; background: white; }
+.copy-status { width: 100%; color: #d9e6f2; font-size: 13px; }
+.instructions { max-width: 920px; margin: 28px auto 0; padding: 18px 24px; border-radius: 12px; background: #fff7d6; line-height: 1.5; }
+.instructions h2 { margin-top: 0; font-size: 20px; }
+.instructions code { background: #ffffff99; padding: 2px 5px; }
+.article-shell { max-width: 820px; margin: 28px auto 80px; padding: 56px 64px; background: white; box-shadow: 0 1px 8px #00000012; }
+.article-content { font-family: Georgia, Cambria, "Times New Roman", serif; font-size: 21px; line-height: 1.62; }
+.article-content h1 { margin: 0 0 12px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 46px; line-height: 1.12; letter-spacing: -0.025em; }
+.article-content h2 { margin: 50px 0 14px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 30px; line-height: 1.22; }
+.article-content h3 { margin: 34px 0 10px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 24px; line-height: 1.3; }
+.article-content p { margin: 0 0 24px; }
+.article-content ul, .article-content ol { margin: 0 0 24px; padding-left: 30px; }
+.article-content li { margin: 7px 0; }
+.article-content blockquote { margin: 32px 0; padding: 4px 0 4px 24px; border-left: 4px solid #242424; font-size: 25px; font-style: italic; }
+.article-content a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.article-content a.needs-live-url { text-decoration-color: #d93025; text-decoration-style: wavy; }
+.article-content img { display: block; max-width: 100%; height: auto; margin: 36px auto 10px; }
+.article-content figure { margin: 38px 0; }
+.article-content figcaption { color: #6b6b6b; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; text-align: center; }
+.article-content pre, .highlight { overflow-x: auto; margin: 28px 0; padding: 20px; border-radius: 6px; background: #f5f5f5; font-size: 15px; line-height: 1.5; }
+.article-content code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+.article-content :not(pre) > code { padding: 2px 5px; border-radius: 3px; background: #f2f2f2; font-size: 0.82em; }
+.article-content hr { margin: 48px 0; border: 0; text-align: center; }
+.article-content hr::after { content: "···"; letter-spacing: 14px; }
+pre { line-height: 125%; }
+td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+.highlight .hll { background-color: #ffffcc }
+.highlight { background: #f8f8f8; }
+.highlight .c { color: #3D7B7B; font-style: italic } /* Comment */
+.highlight .err { border: 1px solid #F00 } /* Error */
+.highlight .k { color: #008000; font-weight: bold } /* Keyword */
+.highlight .o { color: #666 } /* Operator */
+.highlight .ch { color: #3D7B7B; font-style: italic } /* Comment.Hashbang */
+.highlight .cm { color: #3D7B7B; font-style: italic } /* Comment.Multiline */
+.highlight .cp { color: #9C6500 } /* Comment.Preproc */
+.highlight .cpf { color: #3D7B7B; font-style: italic } /* Comment.PreprocFile */
+.highlight .c1 { color: #3D7B7B; font-style: italic } /* Comment.Single */
+.highlight .cs { color: #3D7B7B; font-style: italic } /* Comment.Special */
+.highlight .gd { color: #A00000 } /* Generic.Deleted */
+.highlight .ge { font-style: italic } /* Generic.Emph */
+.highlight .ges { font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.highlight .gr { color: #E40000 } /* Generic.Error */
+.highlight .gh { color: #000080; font-weight: bold } /* Generic.Heading */
+.highlight .gi { color: #008400 } /* Generic.Inserted */
+.highlight .go { color: #717171 } /* Generic.Output */
+.highlight .gp { color: #000080; font-weight: bold } /* Generic.Prompt */
+.highlight .gs { font-weight: bold } /* Generic.Strong */
+.highlight .gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+.highlight .gt { color: #04D } /* Generic.Traceback */
+.highlight .kc { color: #008000; font-weight: bold } /* Keyword.Constant */
+.highlight .kd { color: #008000; font-weight: bold } /* Keyword.Declaration */
+.highlight .kn { color: #008000; font-weight: bold } /* Keyword.Namespace */
+.highlight .kp { color: #008000 } /* Keyword.Pseudo */
+.highlight .kr { color: #008000; font-weight: bold } /* Keyword.Reserved */
+.highlight .kt { color: #B00040 } /* Keyword.Type */
+.highlight .m { color: #666 } /* Literal.Number */
+.highlight .s { color: #BA2121 } /* Literal.String */
+.highlight .na { color: #687822 } /* Name.Attribute */
+.highlight .nb { color: #008000 } /* Name.Builtin */
+.highlight .nc { color: #00F; font-weight: bold } /* Name.Class */
+.highlight .no { color: #800 } /* Name.Constant */
+.highlight .nd { color: #A2F } /* Name.Decorator */
+.highlight .ni { color: #717171; font-weight: bold } /* Name.Entity */
+.highlight .ne { color: #CB3F38; font-weight: bold } /* Name.Exception */
+.highlight .nf { color: #00F } /* Name.Function */
+.highlight .nl { color: #767600 } /* Name.Label */
+.highlight .nn { color: #00F; font-weight: bold } /* Name.Namespace */
+.highlight .nt { color: #008000; font-weight: bold } /* Name.Tag */
+.highlight .nv { color: #19177C } /* Name.Variable */
+.highlight .ow { color: #A2F; font-weight: bold } /* Operator.Word */
+.highlight .w { color: #BBB } /* Text.Whitespace */
+.highlight .mb { color: #666 } /* Literal.Number.Bin */
+.highlight .mf { color: #666 } /* Literal.Number.Float */
+.highlight .mh { color: #666 } /* Literal.Number.Hex */
+.highlight .mi { color: #666 } /* Literal.Number.Integer */
+.highlight .mo { color: #666 } /* Literal.Number.Oct */
+.highlight .sa { color: #BA2121 } /* Literal.String.Affix */
+.highlight .sb { color: #BA2121 } /* Literal.String.Backtick */
+.highlight .sc { color: #BA2121 } /* Literal.String.Char */
+.highlight .dl { color: #BA2121 } /* Literal.String.Delimiter */
+.highlight .sd { color: #BA2121; font-style: italic } /* Literal.String.Doc */
+.highlight .s2 { color: #BA2121 } /* Literal.String.Double */
+.highlight .se { color: #AA5D1F; font-weight: bold } /* Literal.String.Escape */
+.highlight .sh { color: #BA2121 } /* Literal.String.Heredoc */
+.highlight .si { color: #A45A77; font-weight: bold } /* Literal.String.Interpol */
+.highlight .sx { color: #008000 } /* Literal.String.Other */
+.highlight .sr { color: #A45A77 } /* Literal.String.Regex */
+.highlight .s1 { color: #BA2121 } /* Literal.String.Single */
+.highlight .ss { color: #19177C } /* Literal.String.Symbol */
+.highlight .bp { color: #008000 } /* Name.Builtin.Pseudo */
+.highlight .fm { color: #00F } /* Name.Function.Magic */
+.highlight .vc { color: #19177C } /* Name.Variable.Class */
+.highlight .vg { color: #19177C } /* Name.Variable.Global */
+.highlight .vi { color: #19177C } /* Name.Variable.Instance */
+.highlight .vm { color: #19177C } /* Name.Variable.Magic */
+.highlight .il { color: #666 } /* Literal.Number.Integer.Long */
+@media (max-width: 760px) {
+  .article-shell { margin: 0; padding: 36px 22px 60px; box-shadow: none; }
+  .article-content { font-size: 19px; }
+  .article-content h1 { font-size: 36px; }
+  .instructions { margin: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <strong>Medium export · mamba-for-time-series.md</strong>
+    <button class="primary" onclick="copyRichArticle()">Copy rich article</button>
+    <button onclick="selectArticle()">Select article</button>
+    <a href="index.html">Export index</a>
+    <span id="copy-status" class="copy-status" aria-live="polite"></span>
+  </div>
+</div>
+<aside class="instructions">
+  <h2>Transfer notes</h2>
+  <p><strong>Replace 4 local series link(s) with live Medium URLs before publishing.</strong></p>
+  <p><strong>Suggested Medium tags:</strong> Mamba, State Space Models, Time Series, PyTorch, Deep Learning</p>
+  <p>This preview contains 18 code block(s) and 1 rendered table image(s). After pasting, recreate code using Medium’s native code-block control and upload every image from the export package.</p>
+  <details><summary>Images required by this article</summary><ul><li><a href="assets/mamba-selective-state-space.png" target="_blank">assets/mamba-selective-state-space.png</a></li><li><a href="table_images/mamba-for-time-series-table-1.png" target="_blank">table_images/mamba-for-time-series-table-1.png</a></li></ul></details>
+</aside>
+<main class="article-shell">
+  <article class="article-content"><h1>Mamba for Time-Series Forecasting: Selective State-Space Memory</h1>
+<p><em>How input-dependent dynamics decide what to retain—and a complete educational Mamba-style forecaster in PyTorch</em></p>
+<p><strong>Series:</strong> Sequence Models for Prediction, Part 13 of 18</p>
+<p>A conventional state-space model carries history in a compact latent state. It can remember for a long time without comparing every pair of timestamps.</p>
+<p>But its memory rule is fixed. The same dynamics process a quiet hour, a holiday transition, a sensor failure, and a demand spike.</p>
+<p>Mamba changes that.</p>
+<blockquote>
+<p>The current input helps decide what the model writes, what it keeps, and what it reads from the state.</p>
+</blockquote>
+<p>This is <strong>selectivity</strong>. It gives a state-space recurrence some of the content-dependent behavior that makes attention powerful, while retaining a recurrent computation whose work grows linearly with sequence length.</p>
+<p><img alt="Comparison of a fixed state-space model with a Mamba-style selective state-space update." src="assets/mamba-selective-state-space.png"/></p>
+<h2>The problem with fixed memory</h2>
+<p>The discrete state-space recurrence from Part 12 is:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>h_t = A_bar h_(t-1) + B_bar u_t
+y_t = C h_t + D u_t
+</pre></div>
+</code></pre>
+<p>The parameters are shared across the entire sequence. This time invariance is efficient and mathematically convenient, but it means the model cannot change its state-update policy based on the current observation.</p>
+<p>Imagine a stream containing thousands of routine values and a few meaningful events. A fixed state-space system can learn several decay scales, but it cannot explicitly say, “this observation changes the situation; preserve it,” while treating nearby routine values differently.</p>
+<p>Attention handles content-dependent retrieval by comparing tokens. Mamba instead makes parts of the recurrence depend on the input.</p>
+<h2>What becomes selective?</h2>
+<p>In a simplified selective state-space layer, the current representation <code>u_t</code> generates:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>delta_t = softplus(W_delta u_t)
+B_t     = W_B u_t
+C_t     = W_C u_t
+</pre></div>
+</code></pre>
+<p>These quantities have intuitive roles:</p>
+<ul>
+<li><code>delta_t</code> changes the effective amount of state evolution and forgetting;</li>
+<li><code>B_t</code> changes how the current input writes into the state;</li>
+<li><code>C_t</code> changes how the current state is read.</li>
+</ul>
+<p>The underlying continuous transition <code>A</code> remains learned and stable. Its discretized value now varies with the current input:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>A_bar_t = exp(delta_t A)
+B_bar_t = ((exp(delta_t A) - 1) / A) B_t
+
+h_t = A_bar_t h_(t-1) + B_bar_t u_t
+y_t = C_t h_t + D u_t
+</pre></div>
+</code></pre>
+<p>Large <code>delta_t</code> produces more decay in modes where <code>A</code> is negative. Small <code>delta_t</code> leaves more of the previous state intact. Together with <code>B_t</code> and <code>C_t</code>, the model can choose a different memory behavior at every step.</p>
+<p>“Selective” does not mean a human-readable binary switch. These are learned continuous functions. The model may use them in ways that do not map neatly onto our story of important and unimportant events.</p>
+<h2>Why not just use an LSTM?</h2>
+<p>An LSTM is also input-dependent. Its forget, input, and output gates change at every step.</p>
+<p>The difference is architectural, not magical. Mamba belongs to the modern structured state-space line: it combines state-space dynamics, an input-dependent selective scan, local convolution, multiplicative gating, residual connections, and hardware-aware implementations designed for high sequence throughput.</p>
+<p>The comparison is therefore:</p>
+<figure><img alt="Table with columns: Model, Memory mechanism, Content-dependent?, Pairwise token interactions?" src="table_images/mamba-for-time-series-table-1.png"/><figcaption>Table 1. Model · Memory mechanism · Content-dependent? · Pairwise token interactions?</figcaption></figure>
+<p>Mamba does not make recurrent reasoning new. Its contribution is a particular route to content-dependent state-space modeling plus an implementation strategy that makes the selective recurrence efficient on modern hardware.</p>
+<h2>The surrounding Mamba-style block</h2>
+<p>The selective scan is the conceptual center, but it is not the entire block. A compact Mamba-style block contains:</p>
+<ol>
+<li><strong>Layer normalization</strong> before the transformation.</li>
+<li><strong>Input projection</strong> into a content branch and a gate branch.</li>
+<li><strong>Depthwise causal convolution</strong> to mix nearby time steps.</li>
+<li><strong>Selective state-space scan</strong> for recurrent memory.</li>
+<li><strong>Multiplicative gate</strong> to control the transformed output.</li>
+<li><strong>Output projection and residual connection</strong> back to <code>d_model</code>.</li>
+</ol>
+<p>The local convolution and state-space scan solve different problems. The convolution extracts short local patterns. The state carries information across the sequence. The gate modulates what the block sends onward.</p>
+<p>The original Mamba architecture uses carefully designed projections and fused kernels. The implementation below preserves the conceptual pieces in ordinary PyTorch so the data flow is visible.</p>
+<h2>Tensor shapes</h2>
+<p>The forecaster still accepts the shared series interface:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>x: [batch, lookback, n_features]
+</pre></div>
+</code></pre>
+<p>The first projection creates <code>d_model</code> channels. Inside a block, expansion creates <code>d_inner = expansion * d_model</code> channels:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>[batch, lookback, d_model]
+    -&gt; [batch, lookback, 2 * d_inner]
+    -&gt; content branch + gate branch
+</pre></div>
+</code></pre>
+<p>The selective state has shape:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>[batch, d_inner, d_state]
+</pre></div>
+</code></pre>
+<p>Notice that this state does not grow with <code>lookback</code>. The recurrence compresses the past into fixed-size memory. That is fundamentally different from full self-attention, which retains a representation for each token and forms a pairwise attention matrix during training.</p>
+<p>After one or more residual blocks, the final time-step representation maps directly to the horizon:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>[batch, d_model] -&gt; [batch, horizon]
+</pre></div>
+</code></pre>
+<h2>Complete educational PyTorch implementation</h2>
+<p>This implementation is intentionally self-contained. It is suitable for learning, testing shapes, and small experiments.</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">SelectiveSSMLayer</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""A clarity-first selective state-space scan."""</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">d_state</span><span class="o">=</span><span class="mi">16</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="n">rates</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span>
+            <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">d_state</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">A_log</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">rates</span><span class="o">.</span><span class="n">log</span><span class="p">()</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">delta_projection</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span>
+            <span class="n">d_model</span><span class="p">,</span> <span class="n">d_model</span>
+        <span class="p">)</span>
+        <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">normal_</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">delta_projection</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="mf">0.02</span>
+        <span class="p">)</span>
+        <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">delta_projection</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.0</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">B_projection</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span>
+            <span class="n">d_model</span><span class="p">,</span> <span class="n">d_state</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">C_projection</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span>
+            <span class="n">d_model</span><span class="p">,</span> <span class="n">d_state</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">d_model</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">):</span>
+        <span class="n">batch</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">d_model</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">d_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">A_log</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span>
+            <span class="n">batch</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">d_state</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Stable continuous dynamics.</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">A_log</span><span class="p">)</span>
+        <span class="n">outputs</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">length</span><span class="p">):</span>
+            <span class="n">input_t</span> <span class="o">=</span> <span class="n">u</span><span class="p">[:,</span> <span class="n">step</span><span class="p">,</span> <span class="p">:]</span>
+
+            <span class="c1"># The current input selects how the state</span>
+            <span class="c1"># evolves, what is written, and what is read.</span>
+            <span class="n">delta_t</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">softplus</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">delta_projection</span><span class="p">(</span><span class="n">input_t</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">B_t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">B_projection</span><span class="p">(</span><span class="n">input_t</span><span class="p">)</span>
+            <span class="n">C_t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">C_projection</span><span class="p">(</span><span class="n">input_t</span><span class="p">)</span>
+
+            <span class="n">A_bar</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+                <span class="n">delta_t</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                <span class="o">*</span> <span class="n">A</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">B_bar</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="p">(</span><span class="n">A_bar</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span>
+                <span class="o">/</span> <span class="n">A</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">B_bar</span> <span class="o">=</span> <span class="n">B_bar</span> <span class="o">*</span> <span class="n">B_t</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="n">state</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">A_bar</span> <span class="o">*</span> <span class="n">state</span>
+                <span class="o">+</span> <span class="n">B_bar</span> <span class="o">*</span> <span class="n">input_t</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">output_t</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">state</span> <span class="o">*</span> <span class="n">C_t</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">output_t</span> <span class="o">=</span> <span class="n">output_t</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">D</span> <span class="o">*</span> <span class="n">input_t</span>
+            <span class="n">outputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">output_t</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MambaBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">d_model</span><span class="p">,</span>
+        <span class="n">d_state</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+        <span class="n">expansion</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="n">conv_kernel</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+        <span class="n">dropout</span><span class="o">=</span><span class="mf">0.10</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">d_inner</span> <span class="o">=</span> <span class="n">expansion</span> <span class="o">*</span> <span class="n">d_model</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">norm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_projection</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span>
+            <span class="n">d_model</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">d_inner</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Depthwise convolution: each expanded channel</span>
+        <span class="c1"># gets its own short local filter.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">depthwise_conv</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv1d</span><span class="p">(</span>
+            <span class="n">d_inner</span><span class="p">,</span>
+            <span class="n">d_inner</span><span class="p">,</span>
+            <span class="n">kernel_size</span><span class="o">=</span><span class="n">conv_kernel</span><span class="p">,</span>
+            <span class="n">padding</span><span class="o">=</span><span class="n">conv_kernel</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">groups</span><span class="o">=</span><span class="n">d_inner</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ssm</span> <span class="o">=</span> <span class="n">SelectiveSSMLayer</span><span class="p">(</span>
+            <span class="n">d_inner</span><span class="p">,</span> <span class="n">d_state</span><span class="o">=</span><span class="n">d_state</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_projection</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span>
+            <span class="n">d_inner</span><span class="p">,</span> <span class="n">d_model</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">residual</span> <span class="o">=</span> <span class="n">x</span>
+
+        <span class="n">content</span><span class="p">,</span> <span class="n">gate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_projection</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Conv1d expects [batch, channels, time].</span>
+        <span class="n">length</span> <span class="o">=</span> <span class="n">content</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">depthwise_conv</span><span class="p">(</span>
+            <span class="n">content</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Right-crop the padded output so position t</span>
+        <span class="c1"># never receives information from the future.</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">content</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:</span><span class="n">length</span><span class="p">]</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">content</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">silu</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+
+        <span class="n">content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ssm</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">content</span>
+            <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">silu</span><span class="p">(</span><span class="n">gate</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_projection</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">residual</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MambaStyleForecaster</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">n_features</span><span class="p">,</span>
+        <span class="n">horizon</span><span class="p">,</span>
+        <span class="n">d_model</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+        <span class="n">d_state</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+        <span class="n">n_blocks</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="n">expansion</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="n">conv_kernel</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+        <span class="n">dropout</span><span class="o">=</span><span class="mf">0.10</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_projection</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span>
+            <span class="n">n_features</span><span class="p">,</span> <span class="n">d_model</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">([</span>
+            <span class="n">MambaBlock</span><span class="p">(</span>
+                <span class="n">d_model</span><span class="o">=</span><span class="n">d_model</span><span class="p">,</span>
+                <span class="n">d_state</span><span class="o">=</span><span class="n">d_state</span><span class="p">,</span>
+                <span class="n">expansion</span><span class="o">=</span><span class="n">expansion</span><span class="p">,</span>
+                <span class="n">conv_kernel</span><span class="o">=</span><span class="n">conv_kernel</span><span class="p">,</span>
+                <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_blocks</span><span class="p">)</span>
+        <span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">norm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">horizon</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">sequence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_projection</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="p">:</span>
+            <span class="n">sequence</span> <span class="o">=</span> <span class="n">block</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
+
+        <span class="n">final_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span>
+            <span class="n">sequence</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">final_state</span><span class="p">)</span>
+
+
+<span class="n">LOOKBACK</span> <span class="o">=</span> <span class="mi">168</span>
+<span class="n">N_FEATURES</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">HORIZON</span> <span class="o">=</span> <span class="mi">24</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">MambaStyleForecaster</span><span class="p">(</span>
+    <span class="n">n_features</span><span class="o">=</span><span class="n">N_FEATURES</span><span class="p">,</span>
+    <span class="n">horizon</span><span class="o">=</span><span class="n">HORIZON</span><span class="p">,</span>
+    <span class="n">d_model</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+    <span class="n">d_state</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+    <span class="n">n_blocks</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">LOOKBACK</span><span class="p">,</span> <span class="n">N_FEATURES</span><span class="p">)</span>
+<span class="n">y_hat</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="k">assert</span> <span class="n">y_hat</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">HORIZON</span><span class="p">)</span>
+
+<span class="n">loss</span> <span class="o">=</span> <span class="n">y_hat</span><span class="o">.</span><span class="n">square</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+<span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+<span class="k">assert</span> <span class="nb">all</span><span class="p">(</span>
+    <span class="n">parameter</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span>
+<span class="p">)</span>
+</pre></div>
+</code></pre>
+<p>The same code is available in the <a href="code/sequence_models.py">companion model module</a>. The <a class="needs-live-url" href="pytorch-data-pipeline-and-training-loop.html">shared PyTorch training companion</a> supplies the chronological windows, <code>Dataset</code>, <code>DataLoader</code>, training loop, early stopping, and evaluation code.</p>
+<h2>The honest label: Mamba-style, not optimized Mamba</h2>
+<p>This code demonstrates the key ideas:</p>
+<ul>
+<li>stable state-space dynamics;</li>
+<li>input-dependent <code>delta_t</code>, <code>B_t</code>, and <code>C_t</code>;</li>
+<li>a causal depthwise convolution;</li>
+<li>a gated branch;</li>
+<li>residual Mamba-style blocks;</li>
+<li>linear recurrent work in the number of time steps.</li>
+</ul>
+<p>It does <strong>not</strong> reproduce the official fused selective-scan kernel, projection layout, initialization scheme, or every implementation detail. Its Python loop will be much slower than an optimized kernel, especially on a GPU. It should not be used to make speed or accuracy claims about the official architecture.</p>
+<p>That distinction matters. “I wrote a selective recurrence inspired by Mamba” and “I benchmarked Mamba” are not the same statement.</p>
+<h2>Using the official implementation</h2>
+<p>For a real Mamba benchmark, use the maintained <a href="https://github.com/state-spaces/mamba"><code>state-spaces/mamba</code> package</a> and follow its current installation requirements. The original Mamba block keeps the sequence shape unchanged:</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mamba_ssm</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mamba</span>
+
+<span class="n">batch</span> <span class="o">=</span> <span class="mi">32</span>
+<span class="n">length</span> <span class="o">=</span> <span class="mi">168</span>
+<span class="n">d_model</span> <span class="o">=</span> <span class="mi">64</span>
+<span class="n">device</span> <span class="o">=</span> <span class="s2">"cuda"</span>
+
+<span class="n">layer</span> <span class="o">=</span> <span class="n">Mamba</span><span class="p">(</span>
+    <span class="n">d_model</span><span class="o">=</span><span class="n">d_model</span><span class="p">,</span>
+    <span class="n">d_state</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+    <span class="n">d_conv</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+    <span class="n">expand</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span>
+    <span class="n">batch</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span>
+<span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">layer</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+</code></pre>
+<p>A forecasting model still needs an input projection and a horizon head around that block. It also needs the same chronological validation protocol as every other model. A faster kernel does not remove leakage, insufficient data, or a poorly defined target.</p>
+<p>The official repository now covers later members of the Mamba family as well. This article stays with the original selective-SSM idea because it is the conceptual step that belongs in this series.</p>
+<h2>Complexity: linear is not automatically fast</h2>
+<p>Full self-attention forms pairwise interactions among <code>L</code> tokens, so its attention work and memory grow roughly with <code>L²</code>. A recurrent selective scan processes <code>L</code> updates, so its sequence scaling is linear.</p>
+<p>That asymptotic advantage matters for long sequences. It does not guarantee that every Mamba implementation is faster at every length.</p>
+<p>Real speed depends on:</p>
+<ul>
+<li>kernel fusion and memory movement;</li>
+<li>sequence length and batch size;</li>
+<li>channel and state dimensions;</li>
+<li>hardware;</li>
+<li>whether the implementation executes a Python loop;</li>
+<li>the cost of surrounding projections and convolutions.</li>
+</ul>
+<p>For a 168-hour electricity window, quadratic attention may be perfectly manageable. Mamba's strongest computational case appears when sequences become much longer. At short lengths, choose from measured validation quality and end-to-end latency—not big-O notation alone.</p>
+<h2>Time-series-specific design questions</h2>
+<p>Mamba does not decide the forecasting interface for us.</p>
+<h3>How should the future be produced?</h3>
+<p>The tutorial uses the final representation to predict all horizons directly. Alternatives include an autoregressive decoder, horizon queries, or future-known covariates supplied to a separate head.</p>
+<h3>Are the channels tokens or features?</h3>
+<p>Here, one timestamp is one token and all variables at that time form its feature vector. Other designs process channels independently or mix variables in separate blocks. This choice matters for multivariate forecasting.</p>
+<h3>What happens at missing timestamps?</h3>
+<p>A recurrence assumes an ordered sequence. If the sampling interval changes, the model should receive a time-gap feature or use a discretization that explicitly incorporates elapsed time. Silently treating a three-hour gap as one hourly step changes the dynamics.</p>
+<h3>Does the final state preserve exact seasonal position?</h3>
+<p>A fixed-size state can compress long context efficiently, but compression can discard details. Explicit calendar covariates, seasonal lags, skip connections, or pooling across outputs may still help. That remains an empirical question for the later feature-ablation article.</p>
+<h2>Strengths</h2>
+<p>A Mamba-style forecaster offers:</p>
+<ul>
+<li>content-dependent recurrent memory;</li>
+<li>linear sequence scaling in the scan;</li>
+<li>a fixed-size state for streaming;</li>
+<li>local pattern extraction through causal convolution;</li>
+<li>no need to construct a pairwise attention matrix;</li>
+<li>a natural route to much longer contexts.</li>
+</ul>
+<p>It is compelling when context is long, useful events are sparse or content-dependent, and recurrent deployment is attractive.</p>
+<h2>Limitations and common failure modes</h2>
+<p>Mamba is more complex than a GRU, TCN, or fixed SSM. That complexity creates more places for an implementation or experiment to go wrong.</p>
+<p>Watch for:</p>
+<ul>
+<li>a slow Python scan mistaken for optimized Mamba performance;</li>
+<li>noncausal convolutional padding that leaks future steps;</li>
+<li>numerical problems from unconstrained dynamics;</li>
+<li>excessive state or channel width on a small dataset;</li>
+<li>a final-state bottleneck that hides useful intermediate outputs;</li>
+<li>confusing long theoretical context with demonstrably useful context;</li>
+<li>benchmarking a simplified Mamba-style block under the official name.</li>
+</ul>
+<p>Selective parameters also complicate interpretation. The state is content-dependent, but it is not an attention map. Inspecting <code>delta_t</code> alone does not tell the full story because writing and reading also depend on <code>B_t</code> and <code>C_t</code>.</p>
+<h2>When to choose Mamba</h2>
+<p>Choose Mamba when sequences are long enough that attention cost matters, content-dependent retention is plausible, and you can use a tested optimized implementation.</p>
+<p>For ordinary forecasting windows, compare it against a GRU, a deliberately sized TCN, a Transformer, and a fixed state-space model. Match parameter counts where possible. Report both predictive accuracy and measured throughput.</p>
+<p>Most importantly, do not assume that a newer sequence architecture fixes a weak experiment. The target, data volume, split design, baselines, and information available at the forecast origin still dominate the credibility of the result.</p>
+<p>Part 14 compares all eleven model families by memory, access pattern, computation, and practical use. The electricity leaderboard that follows remains the original nine-model experiment; state-space and Mamba results will be added only after they are run under the same protocol.</p>
+<h2>Further reading</h2>
+<ul>
+<li><a href="https://arxiv.org/abs/2312.00752">Gu and Dao, “Mamba: Linear-Time Sequence Modeling with Selective State Spaces”</a></li>
+<li><a href="https://github.com/state-spaces/mamba">Official state-spaces/mamba implementation</a></li>
+<li><a href="https://arxiv.org/abs/2111.00396">Gu, Goel, and Ré, “Efficiently Modeling Long Sequences with Structured State Spaces” (S4)</a></li>
+</ul>
+<hr/>
+<p><strong>Series navigation:</strong> <a class="needs-live-url" href="index.html">Series index</a> · <a class="needs-live-url" href="state-space-models-for-forecasting.html">Previous: State-space models</a> · <a class="needs-live-url" href="11-choosing-a-sequence-model.html">Next: Choosing a model</a></p>
+</article>
+</main>
+<script>
+async function copyRichArticle() {
+  const source = document.querySelector('.article-content');
+  const clone = source.cloneNode(true);
+  const status = document.getElementById('copy-status');
+  clone.querySelectorAll('img').forEach((img) => img.src = new URL(img.getAttribute('src'), location.href).href);
+  clone.querySelectorAll('a').forEach((a) => a.href = new URL(a.getAttribute('href'), location.href).href);
+  const rich = new Blob([clone.innerHTML], {type: 'text/html'});
+  const plain = new Blob([source.innerText], {type: 'text/plain'});
+  try {
+    await navigator.clipboard.write([new ClipboardItem({'text/html': rich, 'text/plain': plain})]);
+    status.textContent = 'Copied as rich text. Paste it into a new Medium draft.';
+  } catch (error) {
+    selectArticle();
+    const copied = document.execCommand('copy');
+    status.textContent = copied
+      ? 'Copied using the compatibility fallback. Paste it into Medium.'
+      : 'Clipboard access was blocked. The article is selected; press Command/Ctrl+C.';
+  }
+}
+function selectArticle() {
+  const range = document.createRange();
+  range.selectNodeContents(document.querySelector('.article-content'));
+  const selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+  document.getElementById('copy-status').textContent = 'Article selected. Press Command/Ctrl+C to copy it.';
+}
+</script>
+</body>
+</html>

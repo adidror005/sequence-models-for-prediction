@@ -2,7 +2,7 @@
 
 *How per-symbol datasets, pooled training, and learned ticker embeddings change a financial sequence model*
 
-**Series:** Sequence Models for Prediction, Part 16 of 16
+**Series:** Sequence Models for Prediction, Part 18 of 18
 **Suggested Medium tags:** Time Series, PyTorch, Quantitative Finance, Machine Learning, CatBoost
 
 Suppose you have one-minute data for META, MSFT, NVDA, AMZN, and dozens of other stocks. Before choosing an LSTM, TCN, or Transformer, you face a more fundamental modeling decision:

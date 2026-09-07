@@ -8,7 +8,7 @@
     "code_blocks": 14,
     "table_images": [],
     "images": [],
-    "local_links_to_replace": 18
+    "local_links_to_replace": 20
   },
   {
     "part": 2,
@@ -134,6 +134,35 @@
   },
   {
     "part": 12,
+    "title": "State-Space Models for Forecasting: A Learnable Dynamical System",
+    "source": "state-space-models-for-forecasting.md",
+    "html": "state-space-models-for-forecasting.html",
+    "suggested_tags": "State Space Models, Time Series, Forecasting, PyTorch, Deep Learning",
+    "code_blocks": 22,
+    "table_images": [],
+    "images": [
+      "assets/state-space-recurrence.png"
+    ],
+    "local_links_to_replace": 4
+  },
+  {
+    "part": 13,
+    "title": "Mamba for Time-Series Forecasting: Selective State-Space Memory",
+    "source": "mamba-for-time-series.md",
+    "html": "mamba-for-time-series.html",
+    "suggested_tags": "Mamba, State Space Models, Time Series, PyTorch, Deep Learning",
+    "code_blocks": 18,
+    "table_images": [
+      "table_images/mamba-for-time-series-table-1.png"
+    ],
+    "images": [
+      "assets/mamba-selective-state-space.png",
+      "table_images/mamba-for-time-series-table-1.png"
+    ],
+    "local_links_to_replace": 4
+  },
+  {
+    "part": 14,
     "title": "Which Time-Series Model Should You Use?",
     "source": "11-choosing-a-sequence-model.md",
     "html": "11-choosing-a-sequence-model.html",
@@ -148,7 +177,7 @@
     "local_links_to_replace": 3
   },
   {
-    "part": 13,
+    "part": 15,
     "title": "Comparing Sequence Models on Electricity Prediction",
     "source": "12-electricity-results-and-interpretation.md",
     "html": "12-electricity-results-and-interpretation.html",
@@ -169,7 +198,7 @@
     "local_links_to_replace": 3
   },
   {
-    "part": 14,
+    "part": 16,
     "title": "Do Calendar and Lagged Features Help Sequence Models?",
     "source": "13-calendar-and-lagged-features.md",
     "html": "13-calendar-and-lagged-features.html",
@@ -188,7 +217,7 @@
     "local_links_to_replace": 3
   },
   {
-    "part": 15,
+    "part": 17,
     "title": "How to Design a Time-Series Experiment You Can Trust",
     "source": "14-designing-a-trustworthy-experiment.md",
     "html": "14-designing-a-trustworthy-experiment.html",
@@ -203,7 +232,7 @@
     "local_links_to_replace": 3
   },
   {
-    "part": 16,
+    "part": 18,
     "title": "One Model Per Stock or One Model for the Market?",
     "source": "15-finance-direction-case-study.md",
     "html": "15-finance-direction-case-study.html",

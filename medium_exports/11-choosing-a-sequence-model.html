@@ -138,13 +138,13 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <main class="article-shell">
   <article class="article-content"><h1>Which Time-Series Model Should You Use?</h1>
 <p><em>A practical comparison of access, memory, computation, and inductive bias</em></p>
-<p><strong>Series:</strong> Sequence Models for Prediction, Part 12 of 16</p>
+<p><strong>Series:</strong> Sequence Models for Prediction, Part 14 of 18</p>
 <p>There is no universally best sequence model.</p>
 <p>The useful question is not “Are Transformers better than LSTMs?” It is:</p>
 <blockquote>
 <p>Which way of processing history matches the structure, scale, and constraints of this forecasting problem?</p>
 </blockquote>
-<p>Linear models, recurrent networks, convolutions, attention, patching, and residual basis models differ mainly in how information travels from the observed window to the future. Understanding those paths gives us a better starting point than choosing whichever architecture is currently fashionable.</p>
+<p>Linear models, recurrent networks, convolutions, attention, patching, residual basis models, state-space dynamics, and selective scans differ mainly in how information travels from the observed window to the future. Understanding those paths gives us a better starting point than choosing whichever architecture is currently fashionable.</p>
 <h2>The comparison at a glance</h2>
 <figure><img alt="Table with columns: Model, How it processes history, Natural strength, Main limitation" src="table_images/11-choosing-a-sequence-model-table-1.png"/><figcaption>Table 1. Model · How it processes history · Natural strength · Main limitation</figcaption></figure>
 <p>This table is a map, not a ranking.</p>
@@ -345,6 +345,13 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <p>Choose an LSTM when the extra gate and separate cell state are affordable and potentially useful. Choose a GRU when a smaller, simpler recurrent model is attractive.</p>
 <p>Neither should be selected through folklore. Compare them at equivalent training budgets, report parameter count, and test several hidden widths. The difference between them is often smaller than the difference caused by preprocessing or evaluation design.</p>
 <p>Recurrent models are particularly convenient for streaming because a hidden state can be updated as data arrive. That serving pattern must match training; carrying state indefinitely is not equivalent to evaluating independent fixed windows.</p>
+<h2>Choose a state-space model for structured long memory</h2>
+<p>A state-space model represents history as a latent dynamical system with learnable decay modes. It is recurrent during streaming, but the fixed linear recurrence also implies a long convolution that specialized implementations can evaluate efficiently.</p>
+<p>Choose it when long context and compact state matter, and when a mixture of stable memory scales is a reasonable inductive bias. Compare a specialized implementation with a GRU and deliberately sized TCN; the clarity-first Python scan in Part 12 is educational code, not a throughput benchmark.</p>
+<h2>Choose Mamba when memory should depend on content</h2>
+<p>Mamba makes key state-space read, write, and discretization terms depend on the current input. It can preserve a fixed-size recurrent state while responding differently to routine and consequential observations.</p>
+<p>Choose it when sequences are long enough for linear scaling to matter, content-dependent retention is plausible, and a tested optimized implementation is available. On short or medium windows, measured accuracy and latency matter more than asymptotic complexity.</p>
+<p>The series' portable <code>MambaStyleForecaster</code> explains the mechanics but does not reproduce the official fused selective-scan kernel. Benchmark the official package before drawing conclusions about Mamba itself.</p>
 <h2>Choose a CNN when local motifs repeat</h2>
 <p>A 1D CNN applies the same detector everywhere in the window. This is powerful when local shapes recur at different times: ramps, spikes, oscillations, bursts, or short transitions.</p>
 <p>Kernel size and depth define the local receptive field. Pooling decides whether exact position survives. A shallow CNN with global average pooling mainly learns whether a motif occurred, not necessarily when it occurred.</p>
@@ -399,11 +406,13 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <li>Add a Transformer only when global retrieval or richer covariate handling is justified.</li>
 <li>Test patching when context length makes point-wise attention expensive.</li>
 <li>Include N-BEATS when univariate direct forecasting is central.</li>
+<li>Try a state-space model when compact long memory or streaming state matters.</li>
+<li>Try Mamba when the sequence is long and memory should be content-dependent.</li>
 <li>Compare across time folds and random seeds.</li>
 <li>Prefer the least complicated model whose advantage is stable and operationally meaningful.</li>
 </ol>
 <p>The final choice is evidence plus constraints—not architecture mythology.</p>
-<p>Part 13 puts the algorithms into a shared electricity-prediction experiment using raw history only.</p>
+<p>Part 15 puts the original nine algorithms into a shared electricity-prediction experiment using raw history only. State-space and Mamba results remain follow-up experiments until they are run under that same protocol.</p>
 <h2>Further reading</h2>
 <ul>
 <li><a href="https://doi.org/10.1162/neco.1997.9.8.1735">Long Short-Term Memory</a></li>
@@ -412,9 +421,11 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <li><a href="https://papers.neurips.cc/paper_files/paper/2017/hash/3f5ee243547dee91fbd053c1c4a845aa-Abstract.html">Attention Is All You Need</a></li>
 <li><a href="https://openreview.net/pdf?id=Jbdc0vTOcol">A Time Series Is Worth 64 Words</a></li>
 <li><a href="https://openreview.net/pdf?id=r1ecqn4YwB">N-BEATS</a></li>
+<li><a href="https://arxiv.org/abs/2111.00396">Efficiently Modeling Long Sequences with Structured State Spaces (S4)</a></li>
+<li><a href="https://arxiv.org/abs/2312.00752">Mamba: Linear-Time Sequence Modeling with Selective State Spaces</a></li>
 </ul>
 <hr/>
-<p><strong>Series navigation:</strong> <a class="needs-live-url" href="index.html">Series index</a> · <a class="needs-live-url" href="10-nbeats-style-forecaster.html">Previous: N-BEATS-style forecasting</a> · <a class="needs-live-url" href="12-electricity-results-and-interpretation.html">Next: Electricity model comparison</a></p>
+<p><strong>Series navigation:</strong> <a class="needs-live-url" href="index.html">Series index</a> · <a class="needs-live-url" href="mamba-for-time-series.html">Previous: Mamba for time-series forecasting</a> · <a class="needs-live-url" href="12-electricity-results-and-interpretation.html">Next: Electricity model comparison</a></p>
 </article>
 </main>
 <script>

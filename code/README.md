@@ -1,12 +1,12 @@
 # Runnable companion code
 
-The code in this folder mirrors the complete PyTorch implementations embedded in Parts 2–10.
+The code in this folder mirrors the complete PyTorch implementations embedded in Parts 2–13.
 
 ## Files
 
 The electricity-oriented reusable modules in this directory are complemented by the [local-versus-global stock-model notebook](../notebooks/local_vs_global_stock_models.ipynb), which includes per-symbol datasets, a learned ticker embedding, classification models, the saved single-symbol control, and [setup notes](../notebooks/README.md).
 
-- [`sequence_models.py`](sequence_models.py) contains all nine forecasting architectures and a shape smoke test.
+- [`sequence_models.py`](sequence_models.py) contains all eleven forecasting architectures and a shape smoke test.
 - [`training_pipeline.py`](training_pipeline.py) contains chronological window construction, data loaders, training-only early stopping, prediction, inverse-scale metrics, and parameter counting.
 - [`catboost_baseline.py`](catboost_baseline.py) contains the proposed causal tabular benchmark with one explicitly validated model per forecast horizon. It was not run in the supplied notebook.
 

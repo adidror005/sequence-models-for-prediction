@@ -2,7 +2,7 @@
 
 *A practical comparison of access, memory, computation, and inductive bias*
 
-**Series:** Sequence Models for Prediction, Part 12 of 16
+**Series:** Sequence Models for Prediction, Part 14 of 18
 **Suggested Medium tags:** Time Series, Neural Networks, LSTM, Transformer, Forecasting
 
 There is no universally best sequence model.
@@ -11,7 +11,7 @@ The useful question is not “Are Transformers better than LSTMs?” It is:
 
 > Which way of processing history matches the structure, scale, and constraints of this forecasting problem?
 
-Linear models, recurrent networks, convolutions, attention, patching, and residual basis models differ mainly in how information travels from the observed window to the future. Understanding those paths gives us a better starting point than choosing whichever architecture is currently fashionable.
+Linear models, recurrent networks, convolutions, attention, patching, residual basis models, state-space dynamics, and selective scans differ mainly in how information travels from the observed window to the future. Understanding those paths gives us a better starting point than choosing whichever architecture is currently fashionable.
 
 ## The comparison at a glance
 
@@ -26,6 +26,8 @@ Linear models, recurrent networks, convolutions, attention, patching, and residu
 | Transformer | Uses content-dependent global attention | Direct long-range interactions | Quadratic attention cost and high flexibility |
 | Patch Transformer | Attends over short segments | Efficient long-context representation | Patch boundaries and lost fine detail |
 | N-BEATS | Refines backcast residuals and adds forecasts | Direct univariate multi-horizon prediction | Dense scaling with context and channels |
+| State-space model | Evolves a structured latent dynamical state | Stable multi-scale memory and streaming | Fixed linear memory policy can be rigid |
+| Mamba | Runs an input-dependent selective state-space scan | Content-dependent memory with linear sequence scaling | More complex; optimized kernels matter |
 
 This table is a map, not a ranking.
 
@@ -248,6 +250,20 @@ Neither should be selected through folklore. Compare them at equivalent training
 
 Recurrent models are particularly convenient for streaming because a hidden state can be updated as data arrive. That serving pattern must match training; carrying state indefinitely is not equivalent to evaluating independent fixed windows.
 
+## Choose a state-space model for structured long memory
+
+A state-space model represents history as a latent dynamical system with learnable decay modes. It is recurrent during streaming, but the fixed linear recurrence also implies a long convolution that specialized implementations can evaluate efficiently.
+
+Choose it when long context and compact state matter, and when a mixture of stable memory scales is a reasonable inductive bias. Compare a specialized implementation with a GRU and deliberately sized TCN; the clarity-first Python scan in Part 12 is educational code, not a throughput benchmark.
+
+## Choose Mamba when memory should depend on content
+
+Mamba makes key state-space read, write, and discretization terms depend on the current input. It can preserve a fixed-size recurrent state while responding differently to routine and consequential observations.
+
+Choose it when sequences are long enough for linear scaling to matter, content-dependent retention is plausible, and a tested optimized implementation is available. On short or medium windows, measured accuracy and latency matter more than asymptotic complexity.
+
+The series' portable `MambaStyleForecaster` explains the mechanics but does not reproduce the official fused selective-scan kernel. Benchmark the official package before drawing conclusions about Mamba itself.
+
 ## Choose a CNN when local motifs repeat
 
 A 1D CNN applies the same detector everywhere in the window. This is powerful when local shapes recur at different times: ramps, spikes, oscillations, bursts, or short transitions.
@@ -334,12 +350,14 @@ For a new forecasting problem:
 7. Add a Transformer only when global retrieval or richer covariate handling is justified.
 8. Test patching when context length makes point-wise attention expensive.
 9. Include N-BEATS when univariate direct forecasting is central.
-10. Compare across time folds and random seeds.
-11. Prefer the least complicated model whose advantage is stable and operationally meaningful.
+10. Try a state-space model when compact long memory or streaming state matters.
+11. Try Mamba when the sequence is long and memory should be content-dependent.
+12. Compare across time folds and random seeds.
+13. Prefer the least complicated model whose advantage is stable and operationally meaningful.
 
 The final choice is evidence plus constraints—not architecture mythology.
 
-Part 13 puts the algorithms into a shared electricity-prediction experiment using raw history only.
+Part 15 puts the original nine algorithms into a shared electricity-prediction experiment using raw history only. State-space and Mamba results remain follow-up experiments until they are run under that same protocol.
 
 ## Further reading
 
@@ -349,7 +367,9 @@ Part 13 puts the algorithms into a shared electricity-prediction experiment usin
 - [Attention Is All You Need](https://papers.neurips.cc/paper_files/paper/2017/hash/3f5ee243547dee91fbd053c1c4a845aa-Abstract.html)
 - [A Time Series Is Worth 64 Words](https://openreview.net/pdf?id=Jbdc0vTOcol)
 - [N-BEATS](https://openreview.net/pdf?id=r1ecqn4YwB)
+- [Efficiently Modeling Long Sequences with Structured State Spaces (S4)](https://arxiv.org/abs/2111.00396)
+- [Mamba: Linear-Time Sequence Modeling with Selective State Spaces](https://arxiv.org/abs/2312.00752)
 
 ---
 
-**Series navigation:** [Series index](README.md) · [Previous: N-BEATS-style forecasting](10-nbeats-style-forecaster.md) · [Next: Electricity model comparison](12-electricity-results-and-interpretation.md)
+**Series navigation:** [Series index](README.md) · [Previous: Mamba for time-series forecasting](mamba-for-time-series.md) · [Next: Electricity model comparison](12-electricity-results-and-interpretation.md)

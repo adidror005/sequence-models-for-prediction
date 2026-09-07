@@ -33,11 +33,13 @@ SERIES = [
     (9, "08-transformer-forecaster.md", "Models"),
     (10, "09-patch-transformer-forecaster.md", "Models"),
     (11, "10-nbeats-style-forecaster.md", "Models"),
-    (12, "11-choosing-a-sequence-model.md", "Synthesis"),
-    (13, "12-electricity-results-and-interpretation.md", "Case study"),
-    (14, "13-calendar-and-lagged-features.md", "Case study"),
-    (15, "14-designing-a-trustworthy-experiment.md", "Practice"),
-    (16, "15-finance-direction-case-study.md", "Case study"),
+    (12, "state-space-models-for-forecasting.md", "Models"),
+    (13, "mamba-for-time-series.md", "Models"),
+    (14, "11-choosing-a-sequence-model.md", "Synthesis"),
+    (15, "12-electricity-results-and-interpretation.md", "Case study"),
+    (16, "13-calendar-and-lagged-features.md", "Case study"),
+    (17, "14-designing-a-trustworthy-experiment.md", "Practice"),
+    (18, "15-finance-direction-case-study.md", "Case study"),
 ]
 
 
@@ -261,7 +263,7 @@ def index_page(articles: list[dict[str, object]]) -> str:
     for article in articles:
         notebook_link = (
             '<a class="read-link code-link" href="https://github.com/adidror005/sequence-models-for-prediction/blob/main/notebooks/local_vs_global_stock_models.ipynb">View notebook <span aria-hidden="true">↗</span></a>'
-            if int(article["part"]) == 16
+            if int(article["part"]) == 18
             else ""
         )
         cards.append(
@@ -296,7 +298,7 @@ def index_page(articles: list[dict[str, object]]) -> str:
     <div class="hero-copy">
       <p class="eyebrow">A practical forecasting series</p>
       <h1>Sequence models,<br><em>without the mystique.</em></h1>
-      <p class="hero-dek">From linear windows and recurrent memory to convolutions, Transformers, and N-BEATS—built in PyTorch, tested on electricity demand and one-minute META direction, and judged against strong simple baselines.</p>
+      <p class="hero-dek">From linear windows and recurrent memory to convolutions, Transformers, state-space models, Mamba, and N-BEATS—built in PyTorch, tested on electricity demand and one-minute financial direction, and judged against strong simple baselines.</p>
       <div class="hero-actions"><a class="button primary-button" href="{articles[0]['html']}">Start with Part 1</a><a class="button text-button" href="#series">Browse the series ↓</a></div>
     </div>
     <div class="sequence-visual" aria-hidden="true">
@@ -307,7 +309,7 @@ def index_page(articles: list[dict[str, object]]) -> str:
       <div class="visual-label future-label">forecast</div>
     </div>
   </section>
-  <section class="proof-strip" aria-label="Series highlights"><div><strong>{len(articles)}</strong><span>focused parts</span></div><div><strong>9</strong><span>model families</span></div><div><strong>2</strong><span>real-data case studies</span></div><div><strong>1</strong><span>honest CatBoost check</span></div></section>
+  <section class="proof-strip" aria-label="Series highlights"><div><strong>{len(articles)}</strong><span>focused parts</span></div><div><strong>11</strong><span>model families</span></div><div><strong>2</strong><span>real-data case studies</span></div><div><strong>1</strong><span>honest CatBoost check</span></div></section>
   <section id="about" class="about-section">
     <p class="eyebrow">The central question</p>
     <h2>What should a forecasting model learn—and what should we hand it?</h2>
@@ -318,7 +320,7 @@ def index_page(articles: list[dict[str, object]]) -> str:
     <div class="series-grid">{''.join(cards)}</div>
   </section>
   <section class="coming-next">
-    <div><p class="eyebrow">Beyond the first finance case</p><h2>Stock prediction—with stricter rules.</h2><p>Part 16 reports the saved one-minute META experiment. The broader roadmap adds multiple assets, walk-forward evaluation, realistic baselines, transaction assumptions, and economic tests.</p></div>
+    <div><p class="eyebrow">Beyond the first finance case</p><h2>Stock prediction—with stricter rules.</h2><p>Part 18 develops local versus global stock modeling and uses the saved one-minute META run as its single-symbol control. The broader roadmap adds multi-asset results, walk-forward evaluation, realistic baselines, transaction assumptions, and economic tests.</p></div>
     <a class="button light-button" href="future-stock-prediction-roadmap.html">See what comes next →</a>
   </section>
 </main>

@@ -2,7 +2,7 @@
 
 *The reusable plumbing behind every model in the series—from chronological forecast origins to early stopping and original-scale metrics*
 
-**Series:** Sequence Models for Prediction, Part 2 of 16
+**Series:** Sequence Models for Prediction, Part 2 of 18
 **Suggested Medium tags:** PyTorch, Time Series, Deep Learning, Data Engineering, Machine Learning
 
 An architecture definition is only part of a forecasting system.

@@ -2,7 +2,7 @@
 
 *Backcast residuals, forecast additions, and a fully connected route to multi-horizon prediction*
 
-**Series:** Sequence Models for Prediction, Part 11 of 16
+**Series:** Sequence Models for Prediction, Part 11 of 18
 **Suggested Medium tags:** N-BEATS, Time Series, Forecasting, Neural Networks, Deep Learning
 
 N-BEATS approaches forecasting with an elegant iterative idea:
@@ -219,7 +219,7 @@ Choose it when direct multi-horizon univariate prediction is central, global win
 
 Be cautious when feature count and context length make the dense backcast heads enormous. Report parameter count beside accuracy.
 
-We now have a direct explanation of every model in the series. Part 12 compares them as architectural choices before any dataset-specific leaderboard enters the discussion.
+The next two articles extend the map from dense residual forecasting to dynamical systems. Part 12 introduces a stable state-space forecaster; Part 13 makes that memory selective with a Mamba-style block.
 
 ## Further reading
 
@@ -227,4 +227,4 @@ We now have a direct explanation of every model in the series. Part 12 compares 
 
 ---
 
-**Series navigation:** [Series index](README.md) · [Previous: Patch Transformer forecasting](09-patch-transformer-forecaster.md) · [Next: Choosing a model](11-choosing-a-sequence-model.md)
+**Series navigation:** [Series index](README.md) · [Previous: Patch Transformer forecasting](09-patch-transformer-forecaster.md) · [Next: State-space models](state-space-models-for-forecasting.md)

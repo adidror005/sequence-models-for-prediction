@@ -340,6 +340,193 @@ class NBEATSForecaster(nn.Module):
         return forecast
 
 
+class DiagonalSSMLayer(nn.Module):
+    """A clarity-first diagonal linear state-space layer.
+
+    The continuous dynamics use a negative diagonal A matrix, then apply an
+    exact zero-order-hold discretization before scanning over the sequence.
+    """
+
+    def __init__(self, d_model: int, d_state: int = 16) -> None:
+        super().__init__()
+        rates = torch.logspace(-1, 1, d_state, dtype=torch.float32)
+        self.A_log = nn.Parameter(rates.log().repeat(d_model, 1))
+        self.B = nn.Parameter(torch.randn(d_model, d_state) / d_state**0.5)
+        self.C = nn.Parameter(torch.randn(d_model, d_state) / d_state**0.5)
+        self.D = nn.Parameter(torch.ones(d_model))
+        self.log_dt = nn.Parameter(torch.full((d_model,), -3.0))
+
+    def forward(self, u: torch.Tensor) -> torch.Tensor:
+        batch, length, d_model = u.shape
+        d_state = self.A_log.size(1)
+        state = u.new_zeros(batch, d_model, d_state)
+
+        # A is always negative, so every continuous mode is stable.
+        A = -torch.exp(self.A_log)
+        dt = torch.nn.functional.softplus(self.log_dt)
+        A_bar = torch.exp(dt[:, None] * A)
+        B_bar = ((A_bar - 1.0) / A) * self.B
+
+        outputs = []
+        for step in range(length):
+            input_t = u[:, step, :]
+            state = A_bar.unsqueeze(0) * state
+            state = state + B_bar.unsqueeze(0) * input_t.unsqueeze(-1)
+            output_t = (state * self.C.unsqueeze(0)).sum(dim=-1)
+            output_t = output_t + self.D * input_t
+            outputs.append(output_t)
+
+        return torch.stack(outputs, dim=1)
+
+
+class StateSpaceForecaster(nn.Module):
+    """A fixed-dynamics state-space forecaster for [B, L, F] inputs."""
+
+    def __init__(
+        self,
+        n_features: int,
+        horizon: int,
+        d_model: int = 64,
+        d_state: int = 16,
+        dropout: float = 0.10,
+    ) -> None:
+        super().__init__()
+        self.input_projection = nn.Linear(n_features, d_model)
+        self.ssm = DiagonalSSMLayer(d_model, d_state=d_state)
+        self.norm = nn.LayerNorm(d_model)
+        self.dropout = nn.Dropout(dropout)
+        self.head = nn.Linear(d_model, horizon)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        sequence = self.ssm(self.input_projection(x))
+        final_state = self.norm(sequence[:, -1, :])
+        return self.head(self.dropout(final_state))
+
+
+class SelectiveSSMLayer(nn.Module):
+    """An educational selective scan inspired by the original Mamba paper."""
+
+    def __init__(self, d_model: int, d_state: int = 16) -> None:
+        super().__init__()
+        rates = torch.logspace(-1, 1, d_state, dtype=torch.float32)
+        self.A_log = nn.Parameter(rates.log().repeat(d_model, 1))
+        self.delta_projection = nn.Linear(d_model, d_model)
+        nn.init.normal_(self.delta_projection.weight, std=0.02)
+        nn.init.constant_(self.delta_projection.bias, -3.0)
+        self.B_projection = nn.Linear(d_model, d_state)
+        self.C_projection = nn.Linear(d_model, d_state)
+        self.D = nn.Parameter(torch.ones(d_model))
+
+    def forward(self, u: torch.Tensor) -> torch.Tensor:
+        batch, length, d_model = u.shape
+        d_state = self.A_log.size(1)
+        state = u.new_zeros(batch, d_model, d_state)
+        A = -torch.exp(self.A_log)
+        outputs = []
+
+        for step in range(length):
+            input_t = u[:, step, :]
+
+            # Unlike the fixed SSM, these discretization and read/write terms
+            # depend on the current token (time step).
+            delta_t = torch.nn.functional.softplus(
+                self.delta_projection(input_t)
+            )
+            B_t = self.B_projection(input_t)
+            C_t = self.C_projection(input_t)
+
+            A_bar = torch.exp(delta_t.unsqueeze(-1) * A.unsqueeze(0))
+            B_bar = ((A_bar - 1.0) / A.unsqueeze(0))
+            B_bar = B_bar * B_t.unsqueeze(1)
+
+            state = A_bar * state + B_bar * input_t.unsqueeze(-1)
+            output_t = (state * C_t.unsqueeze(1)).sum(dim=-1)
+            output_t = output_t + self.D * input_t
+            outputs.append(output_t)
+
+        return torch.stack(outputs, dim=1)
+
+
+class MambaBlock(nn.Module):
+    """A portable Mamba-style block with convolution, selection, and gating."""
+
+    def __init__(
+        self,
+        d_model: int,
+        d_state: int = 16,
+        expansion: int = 2,
+        conv_kernel: int = 4,
+        dropout: float = 0.10,
+    ) -> None:
+        super().__init__()
+        d_inner = expansion * d_model
+        self.norm = nn.LayerNorm(d_model)
+        self.input_projection = nn.Linear(d_model, 2 * d_inner)
+        self.depthwise_conv = nn.Conv1d(
+            d_inner,
+            d_inner,
+            kernel_size=conv_kernel,
+            padding=conv_kernel - 1,
+            groups=d_inner,
+        )
+        self.ssm = SelectiveSSMLayer(d_inner, d_state=d_state)
+        self.output_projection = nn.Linear(d_inner, d_model)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        residual = x
+        content, gate = self.input_projection(self.norm(x)).chunk(2, dim=-1)
+
+        length = content.size(1)
+        content = self.depthwise_conv(content.transpose(1, 2))
+        content = content[:, :, :length].transpose(1, 2)
+        content = torch.nn.functional.silu(content)
+
+        content = self.ssm(content)
+        content = content * torch.nn.functional.silu(gate)
+        content = self.output_projection(content)
+        return residual + self.dropout(content)
+
+
+class MambaStyleForecaster(nn.Module):
+    """A dependency-free, educational Mamba-style direct forecaster."""
+
+    def __init__(
+        self,
+        n_features: int,
+        horizon: int,
+        d_model: int = 64,
+        d_state: int = 16,
+        n_blocks: int = 2,
+        expansion: int = 2,
+        conv_kernel: int = 4,
+        dropout: float = 0.10,
+    ) -> None:
+        super().__init__()
+        self.input_projection = nn.Linear(n_features, d_model)
+        self.blocks = nn.ModuleList(
+            [
+                MambaBlock(
+                    d_model=d_model,
+                    d_state=d_state,
+                    expansion=expansion,
+                    conv_kernel=conv_kernel,
+                    dropout=dropout,
+                )
+                for _ in range(n_blocks)
+            ]
+        )
+        self.norm = nn.LayerNorm(d_model)
+        self.head = nn.Linear(d_model, horizon)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        sequence = self.input_projection(x)
+        for block in self.blocks:
+            sequence = block(sequence)
+        final_state = self.norm(sequence[:, -1, :])
+        return self.head(final_state)
+
+
 def smoke_test() -> None:
     batch, lookback, n_features, horizon = 2, 168, 1, 24
     x = torch.randn(batch, lookback, n_features)
@@ -355,6 +542,8 @@ def smoke_test() -> None:
             lookback, n_features, horizon
         ),
         "nbeats_style": NBEATSForecaster(lookback, n_features, horizon),
+        "state_space": StateSpaceForecaster(n_features, horizon),
+        "mamba_style": MambaStyleForecaster(n_features, horizon),
     }
 
     for name, model in models.items():

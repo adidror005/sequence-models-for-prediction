@@ -2,10 +2,10 @@
 
 *When extra inputs add signal, supply a shortcut, or merely duplicate what the model already sees*
 
-**Series:** Sequence Models for Prediction, Part 14 of 16
+**Series:** Sequence Models for Prediction, Part 16 of 18
 **Suggested Medium tags:** Feature Engineering, Time Series, Data Leakage, Forecasting, Python
 
-Part 13 compared nine architectures using the same single input: one week of raw electricity demand. That isolated the model question.
+Part 15 compared nine architectures using the same single input: one week of raw electricity demand. That isolated the model question.
 
 Now we can change the representation.
 
@@ -333,7 +333,7 @@ It supports a more practical rule:
 
 Calendar features and lagged features should also remain conceptually separate. Calendar variables describe temporal identity and may be known into the future. Lags, differences, and rolling moments transform observed target history. They answer different questions and should be tested in different steps.
 
-Part 15 develops a protocol for separating model capacity, receptive field, raw-history budget, representation, and training variance. Part 16 then applies that discipline to a much noisier one-minute financial-direction case study.
+Part 17 develops a protocol for separating model capacity, receptive field, raw-history budget, representation, and training variance. Part 18 then applies that discipline to a much noisier one-minute financial-direction case study.
 
 ---
 

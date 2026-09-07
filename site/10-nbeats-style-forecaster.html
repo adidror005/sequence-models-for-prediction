@@ -24,11 +24,11 @@
   <a class="brand" href="index.html"><span class="brand-mark">S</span><span>Sequence Models<br><small>for Prediction</small></span></a>
   <nav aria-label="Primary navigation"><a href="index.html#series">All articles</a><a href="index.html#about">About</a><a class="github-link" href="https://github.com/adidror005/sequence-models-for-prediction">View source</a></nav>
 </header>
-<div class="reading-progress" style="--progress: 68.75%"></div>
+<div class="reading-progress" style="--progress: 61.11%"></div>
 <main>
   <header class="article-hero">
     <a class="back-link" href="index.html">← Series home</a>
-    <p class="eyebrow">Part 11 of 16 · Models</p>
+    <p class="eyebrow">Part 11 of 18 · Models</p>
     <h1>N-BEATS-Style Forecasting: Explaining the Past to Build the Future</h1>
     <p class="dek">Backcast residuals, forecast additions, and a fully connected route to multi-horizon prediction</p>
   </header>
@@ -226,7 +226,7 @@ forecast_total = forecast_total + forecast_k
 <h2 id="when-to-choose-n-beats">When to choose N-BEATS</h2>
 <p>Choose it when direct multi-horizon univariate prediction is central, global window access matters, and residual decomposition is attractive.</p>
 <p>Be cautious when feature count and context length make the dense backcast heads enormous. Report parameter count beside accuracy.</p>
-<p>We now have a direct explanation of every model in the series. Part 12 compares them as architectural choices before any dataset-specific leaderboard enters the discussion.</p>
+<p>The next two articles extend the map from dense residual forecasting to dynamical systems. Part 12 introduces a stable state-space forecaster; Part 13 makes that memory selective with a Mamba-style block.</p>
 <h2 id="further-reading">Further reading</h2>
 <ul>
 <li><a href="https://openreview.net/pdf?id=r1ecqn4YwB" rel="noopener noreferrer">Oreshkin et al., “N-BEATS: Neural Basis Expansion Analysis for Interpretable Time Series Forecasting”</a></li>
@@ -235,7 +235,7 @@ forecast_total = forecast_total + forecast_k
 </article>
     <aside class="toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#backcast-and-forecast">Backcast and forecast</a></li><li><a href="#generic-and-interpretable-variants">Generic and interpretable variants</a></li><li><a href="#flattening-gives-global-access">Flattening gives global access</a></li><li><a href="#what-the-residual-stack-can-learn">What the residual stack can learn</a></li><li><a href="#how-the-blocks-are-trained">How the blocks are trained</a></li><li><a href="#complete-pytorch-implementation">Complete PyTorch implementation</a></li><li><a href="#strengths">Strengths</a></li><li><a href="#limitations">Limitations</a></li><li><a href="#common-failure-modes">Common failure modes</a></li><li><a href="#when-to-choose-n-beats">When to choose N-BEATS</a></li><li><a href="#further-reading">Further reading</a></li></ol></aside>
   </div>
-  <nav class="article-pager" aria-label="Article navigation"><a class="pager-card previous" href="09-patch-transformer-forecaster.html"><span>Previous</span><strong>Patch Transformer Forecasting: Turning Time Steps into Temporal Tokens</strong></a><a class="pager-card next" href="11-choosing-a-sequence-model.html"><span>Next</span><strong>Which Time-Series Model Should You Use?</strong></a></nav>
+  <nav class="article-pager" aria-label="Article navigation"><a class="pager-card previous" href="09-patch-transformer-forecaster.html"><span>Previous</span><strong>Patch Transformer Forecasting: Turning Time Steps into Temporal Tokens</strong></a><a class="pager-card next" href="state-space-models-for-forecasting.html"><span>Next</span><strong>State-Space Models for Forecasting: A Learnable Dynamical System</strong></a></nav>
 </main>
 <footer class="site-footer"><p>Sequence Models for Prediction · Open code, reproducible experiments, honest baselines.</p><a href="index.html">Series index</a></footer>
 </body>

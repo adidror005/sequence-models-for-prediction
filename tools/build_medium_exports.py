@@ -23,6 +23,27 @@ TABLE_ROOT = OUTPUT_ROOT / "table_images"
 ASSET_ROOT = OUTPUT_ROOT / "assets"
 CODE_ROOT = OUTPUT_ROOT / "code"
 
+SOURCE_ORDER = [
+    "01-sequence-models-for-prediction.md",
+    "pytorch-data-pipeline-and-training-loop.md",
+    "02-linear-forecaster.md",
+    "03-mlp-forecaster.md",
+    "04-lstm-forecaster.md",
+    "05-gru-forecaster.md",
+    "06-cnn1d-forecaster.md",
+    "07-tcn-forecaster.md",
+    "08-transformer-forecaster.md",
+    "09-patch-transformer-forecaster.md",
+    "10-nbeats-style-forecaster.md",
+    "state-space-models-for-forecasting.md",
+    "mamba-for-time-series.md",
+    "11-choosing-a-sequence-model.md",
+    "12-electricity-results-and-interpretation.md",
+    "13-calendar-and-lagged-features.md",
+    "14-designing-a-trustworthy-experiment.md",
+    "15-finance-direction-case-study.md",
+]
+
 BODY_FONT_PATHS = [
     Path("/System/Library/Fonts/Supplemental/Arial.ttf"),
     Path("/System/Library/Fonts/Supplemental/Helvetica.ttf"),
@@ -400,9 +421,7 @@ def main() -> None:
     shutil.copytree(SERIES_ROOT / "assets", ASSET_ROOT, dirs_exist_ok=True)
     shutil.copytree(SERIES_ROOT / "code", CODE_ROOT, dirs_exist_ok=True)
 
-    numbered = sorted(SERIES_ROOT.glob("[0-9][0-9]-*.md"))
-    companion = SERIES_ROOT / "pytorch-data-pipeline-and-training-loop.md"
-    sources = [numbered[0], companion, *numbered[1:]]
+    sources = [SERIES_ROOT / source_name for source_name in SOURCE_ORDER]
     manifest = [
         process_article(source, part)
         for part, source in enumerate(sources, start=1)

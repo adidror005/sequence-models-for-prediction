@@ -138,7 +138,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <main class="article-shell">
   <article class="article-content"><h1>N-BEATS-Style Forecasting: Explaining the Past to Build the Future</h1>
 <p><em>Backcast residuals, forecast additions, and a fully connected route to multi-horizon prediction</em></p>
-<p><strong>Series:</strong> Sequence Models for Prediction, Part 11 of 16</p>
+<p><strong>Series:</strong> Sequence Models for Prediction, Part 11 of 18</p>
 <p>N-BEATS approaches forecasting with an elegant iterative idea:</p>
 <blockquote>
 <p>Let one block explain part of the observed window, remove that explanation, and let later blocks work on what remains. Add every block’s forecast contribution to form the future.</p>
@@ -305,13 +305,13 @@ forecast_total = forecast_total + forecast_k
 <h2>When to choose N-BEATS</h2>
 <p>Choose it when direct multi-horizon univariate prediction is central, global window access matters, and residual decomposition is attractive.</p>
 <p>Be cautious when feature count and context length make the dense backcast heads enormous. Report parameter count beside accuracy.</p>
-<p>We now have a direct explanation of every model in the series. Part 12 compares them as architectural choices before any dataset-specific leaderboard enters the discussion.</p>
+<p>The next two articles extend the map from dense residual forecasting to dynamical systems. Part 12 introduces a stable state-space forecaster; Part 13 makes that memory selective with a Mamba-style block.</p>
 <h2>Further reading</h2>
 <ul>
 <li><a href="https://openreview.net/pdf?id=r1ecqn4YwB">Oreshkin et al., “N-BEATS: Neural Basis Expansion Analysis for Interpretable Time Series Forecasting”</a></li>
 </ul>
 <hr/>
-<p><strong>Series navigation:</strong> <a class="needs-live-url" href="index.html">Series index</a> · <a class="needs-live-url" href="09-patch-transformer-forecaster.html">Previous: Patch Transformer forecasting</a> · <a class="needs-live-url" href="11-choosing-a-sequence-model.html">Next: Choosing a model</a></p>
+<p><strong>Series navigation:</strong> <a class="needs-live-url" href="index.html">Series index</a> · <a class="needs-live-url" href="09-patch-transformer-forecaster.html">Previous: Patch Transformer forecasting</a> · <a class="needs-live-url" href="state-space-models-for-forecasting.html">Next: State-space models</a></p>
 </article>
 </main>
 <script>

@@ -29,7 +29,7 @@
     <div class="hero-copy">
       <p class="eyebrow">A practical forecasting series</p>
       <h1>Sequence models,<br><em>without the mystique.</em></h1>
-      <p class="hero-dek">From linear windows and recurrent memory to convolutions, Transformers, and N-BEATS—built in PyTorch, tested on electricity demand and one-minute META direction, and judged against strong simple baselines.</p>
+      <p class="hero-dek">From linear windows and recurrent memory to convolutions, Transformers, state-space models, Mamba, and N-BEATS—built in PyTorch, tested on electricity demand and one-minute financial direction, and judged against strong simple baselines.</p>
       <div class="hero-actions"><a class="button primary-button" href="01-sequence-models-for-prediction.html">Start with Part 1</a><a class="button text-button" href="#series">Browse the series ↓</a></div>
     </div>
     <div class="sequence-visual" aria-hidden="true">
@@ -40,7 +40,7 @@
       <div class="visual-label future-label">forecast</div>
     </div>
   </section>
-  <section class="proof-strip" aria-label="Series highlights"><div><strong>16</strong><span>focused parts</span></div><div><strong>9</strong><span>model families</span></div><div><strong>2</strong><span>real-data case studies</span></div><div><strong>1</strong><span>honest CatBoost check</span></div></section>
+  <section class="proof-strip" aria-label="Series highlights"><div><strong>18</strong><span>focused parts</span></div><div><strong>11</strong><span>model families</span></div><div><strong>2</strong><span>real-data case studies</span></div><div><strong>1</strong><span>honest CatBoost check</span></div></section>
   <section id="about" class="about-section">
     <p class="eyebrow">The central question</p>
     <h2>What should a forecasting model learn—and what should we hand it?</h2>
@@ -104,34 +104,44 @@
   <p>Backcast residuals, forecast additions, and a fully connected route to multi-horizon prediction</p>
   <div class="card-actions"><a class="read-link" href="10-nbeats-style-forecaster.html">Read article <span aria-hidden="true">→</span></a></div>
 </article><article class="series-card">
-  <div class="card-meta"><span>Part 12</span><span>Synthesis</span></div>
+  <div class="card-meta"><span>Part 12</span><span>Models</span></div>
+  <h2><a href="state-space-models-for-forecasting.html">State-Space Models for Forecasting: A Learnable Dynamical System</a></h2>
+  <p>Stable latent dynamics, long memory, and a complete diagonal state-space forecaster in PyTorch</p>
+  <div class="card-actions"><a class="read-link" href="state-space-models-for-forecasting.html">Read article <span aria-hidden="true">→</span></a></div>
+</article><article class="series-card">
+  <div class="card-meta"><span>Part 13</span><span>Models</span></div>
+  <h2><a href="mamba-for-time-series.html">Mamba for Time-Series Forecasting: Selective State-Space Memory</a></h2>
+  <p>How input-dependent dynamics decide what to retain—and a complete educational Mamba-style forecaster in PyTorch</p>
+  <div class="card-actions"><a class="read-link" href="mamba-for-time-series.html">Read article <span aria-hidden="true">→</span></a></div>
+</article><article class="series-card">
+  <div class="card-meta"><span>Part 14</span><span>Synthesis</span></div>
   <h2><a href="11-choosing-a-sequence-model.html">Which Time-Series Model Should You Use?</a></h2>
   <p>A practical comparison of access, memory, computation, and inductive bias</p>
   <div class="card-actions"><a class="read-link" href="11-choosing-a-sequence-model.html">Read article <span aria-hidden="true">→</span></a></div>
 </article><article class="series-card">
-  <div class="card-meta"><span>Part 13</span><span>Case study</span></div>
+  <div class="card-meta"><span>Part 15</span><span>Case study</span></div>
   <h2><a href="12-electricity-results-and-interpretation.html">Comparing Sequence Models on Electricity Prediction</a></h2>
   <p>What happens when nine very different architectures receive exactly the same week of raw demand history?</p>
   <div class="card-actions"><a class="read-link" href="12-electricity-results-and-interpretation.html">Read article <span aria-hidden="true">→</span></a></div>
 </article><article class="series-card">
-  <div class="card-meta"><span>Part 14</span><span>Case study</span></div>
+  <div class="card-meta"><span>Part 16</span><span>Case study</span></div>
   <h2><a href="13-calendar-and-lagged-features.html">Do Calendar and Lagged Features Help Sequence Models?</a></h2>
   <p>When extra inputs add signal, supply a shortcut, or merely duplicate what the model already sees</p>
   <div class="card-actions"><a class="read-link" href="13-calendar-and-lagged-features.html">Read article <span aria-hidden="true">→</span></a></div>
 </article><article class="series-card">
-  <div class="card-meta"><span>Part 15</span><span>Practice</span></div>
+  <div class="card-meta"><span>Part 17</span><span>Practice</span></div>
   <h2><a href="14-designing-a-trustworthy-experiment.html">How to Design a Time-Series Experiment You Can Trust</a></h2>
   <p>A rigorous protocol for comparing models, features, and forecasting decisions</p>
   <div class="card-actions"><a class="read-link" href="14-designing-a-trustworthy-experiment.html">Read article <span aria-hidden="true">→</span></a></div>
 </article><article class="series-card">
-  <div class="card-meta"><span>Part 16</span><span>Case study</span></div>
+  <div class="card-meta"><span>Part 18</span><span>Case study</span></div>
   <h2><a href="15-finance-direction-case-study.html">One Model Per Stock or One Model for the Market?</a></h2>
   <p>How per-symbol datasets, pooled training, and learned ticker embeddings change a financial sequence model</p>
   <div class="card-actions"><a class="read-link" href="15-finance-direction-case-study.html">Read article <span aria-hidden="true">→</span></a><a class="read-link code-link" href="https://github.com/adidror005/sequence-models-for-prediction/blob/main/notebooks/local_vs_global_stock_models.ipynb">View notebook <span aria-hidden="true">↗</span></a></div>
 </article></div>
   </section>
   <section class="coming-next">
-    <div><p class="eyebrow">Beyond the first finance case</p><h2>Stock prediction—with stricter rules.</h2><p>Part 16 reports the saved one-minute META experiment. The broader roadmap adds multiple assets, walk-forward evaluation, realistic baselines, transaction assumptions, and economic tests.</p></div>
+    <div><p class="eyebrow">Beyond the first finance case</p><h2>Stock prediction—with stricter rules.</h2><p>Part 18 develops local versus global stock modeling and uses the saved one-minute META run as its single-symbol control. The broader roadmap adds multi-asset results, walk-forward evaluation, realistic baselines, transaction assumptions, and economic tests.</p></div>
     <a class="button light-button" href="future-stock-prediction-roadmap.html">See what comes next →</a>
   </section>
 </main>

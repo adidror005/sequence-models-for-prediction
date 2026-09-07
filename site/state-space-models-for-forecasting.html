@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>State-Space Models for Forecasting: A Learnable Dynamical System — Sequence Models for Prediction</title>
+<meta name="description" content="Stable latent dynamics, long memory, and a complete diagonal state-space forecaster in PyTorch">
+<link rel="canonical" href="https://adidror005.github.io/sequence-models-for-prediction/state-space-models-for-forecasting.html">
+<link rel="stylesheet" href="styles.css">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="State-Space Models for Forecasting: A Learnable Dynamical System">
+<meta property="og:description" content="Stable latent dynamics, long memory, and a complete diagonal state-space forecaster in PyTorch">
+<meta property="og:url" content="https://adidror005.github.io/sequence-models-for-prediction/state-space-models-for-forecasting.html">
+<meta name="twitter:title" content="State-Space Models for Forecasting: A Learnable Dynamical System">
+<meta name="twitter:description" content="Stable latent dynamics, long memory, and a complete diagonal state-space forecaster in PyTorch">
+
+<meta property="og:image" content="https://adidror005.github.io/sequence-models-for-prediction/assets/state-space-recurrence.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://adidror005.github.io/sequence-models-for-prediction/assets/state-space-recurrence.png">
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="index.html"><span class="brand-mark">S</span><span>Sequence Models<br><small>for Prediction</small></span></a>
+  <nav aria-label="Primary navigation"><a href="index.html#series">All articles</a><a href="index.html#about">About</a><a class="github-link" href="https://github.com/adidror005/sequence-models-for-prediction">View source</a></nav>
+</header>
+<div class="reading-progress" style="--progress: 66.67%"></div>
+<main>
+  <header class="article-hero">
+    <a class="back-link" href="index.html">← Series home</a>
+    <p class="eyebrow">Part 12 of 18 · Models</p>
+    <h1>State-Space Models for Forecasting: A Learnable Dynamical System</h1>
+    <p class="dek">Stable latent dynamics, long memory, and a complete diagonal state-space forecaster in PyTorch</p>
+  </header>
+  <div class="reading-layout">
+    <article class="article-content">
+
+<p>A recurrent neural network asks a learned nonlinear function to update its hidden state at every time step. A state-space model starts from a more structured question:</p>
+<blockquote>
+<p>Can the observed sequence be explained by a compact hidden dynamical system that evolves through time?</p>
+</blockquote>
+<p>The hidden state might represent unobserved demand level, momentum, seasonal phase, equipment condition, or simply whatever compressed memory helps prediction. Each new observation writes into that state. The state evolves. A readout turns it into an output.</p>
+<p>This is an old and powerful idea. What is new in modern sequence modeling is the scale and parameterization: structured state-space models make these dynamics trainable inside deep networks and useful for long sequences.</p>
+<p><img alt="A state-space recurrence in which the current input and previous latent state produce a new latent state and output." src="assets/state-space-recurrence.png"/></p>
+<h2 id="the-four-pieces-of-a-state-space-model">The four pieces of a state-space model</h2>
+<p>A continuous-time linear state-space model is commonly written as:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>dh(t) / dt = A h(t) + B u(t)
+y(t)      = C h(t) + D u(t)
+</pre></div>
+</code></pre>
+<p>The symbols have distinct jobs:</p>
+<ul>
+<li><code>u(t)</code> is the observed input at time <code>t</code>;</li>
+<li><code>h(t)</code> is the latent state—the model's memory;</li>
+<li><code>A</code> controls how that memory evolves on its own;</li>
+<li><code>B</code> controls how the current input writes into memory;</li>
+<li><code>C</code> controls how memory is read;</li>
+<li><code>D</code> is a direct path from the current input to the output.</li>
+</ul>
+<p>For sampled time series, we need a discrete recurrence:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>h_t = A_bar h_(t-1) + B_bar u_t
+y_t = C h_t + D u_t
+</pre></div>
+</code></pre>
+<p>That looks like a recurrent network, because it is recurrent. The crucial distinction is the structure of the transition. A basic state-space layer uses linear dynamics with parameters shared across time. An LSTM or GRU learns a nonlinear gated update whose gates change with each input.</p>
+<p>The state-space restriction is not merely a limitation. It is an inductive bias: assume that useful memory can be represented as a mixture of stable dynamical modes.</p>
+<h2 id="decay-modes-are-learnable-memory-scales">Decay modes are learnable memory scales</h2>
+<p>Suppose one component of the state follows:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>h_t = a h_(t-1) + b u_t
+</pre></div>
+</code></pre>
+<p>If <code>a</code> is near zero, old information disappears quickly. If <code>a</code> is positive and close to one, that component remembers for many steps. Several state dimensions with different values of <code>a</code> create several memory scales.</p>
+<p>This gives a useful mental model for a diagonal state-space layer:</p>
+<ul>
+<li>fast modes react to short-lived changes;</li>
+<li>medium modes track local trends or cycles;</li>
+<li>slow modes preserve long-lived context.</li>
+</ul>
+<p>The model learns how strongly each input channel excites each mode and how strongly each mode contributes to the output.</p>
+<p>Stability matters. A discrete mode with absolute value greater than one can grow exponentially. The implementation below avoids that by learning a continuous parameter <code>A</code> that is always negative:</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="n">A</span> <span class="o">=</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">A_log</span><span class="p">)</span>
+</pre></div>
+</code></pre>
+<p>After discretization, <code>A_bar = exp(dt * A)</code> lies between zero and one. The unforced state therefore decays rather than explodes.</p>
+<h2 id="why-start-in-continuous-time">Why start in continuous time?</h2>
+<p>The observations are discrete, so it is reasonable to ask why the model begins with a differential equation.</p>
+<p>Continuous time separates the underlying dynamics from the sampling interval. If <code>A</code> describes a decay rate and <code>dt</code> describes the elapsed time, the discrete transition can be derived instead of guessed.</p>
+<p>Under a zero-order hold—the input is treated as constant between observations—the exact diagonal discretization is:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>A_bar = exp(dt A)
+B_bar = ((exp(dt A) - 1) / A) B
+</pre></div>
+</code></pre>
+<p>Because the tutorial layer uses a diagonal <code>A</code>, these operations are elementwise. We never build or exponentiate a large dense matrix.</p>
+<p>This is one reason structured parameterizations matter. A completely unrestricted state transition can be expensive, unstable, and difficult to train. Diagonal or specially structured forms make the dynamics tractable.</p>
+<h2 id="the-recurrent-view-and-the-convolution-view">The recurrent view and the convolution view</h2>
+<p>Unrolling the discrete recurrence reveals what the current state contains:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>h_t = B_bar u_t
+    + A_bar B_bar u_(t-1)
+    + A_bar^2 B_bar u_(t-2)
+    + ...
+</pre></div>
+</code></pre>
+<p>The output is therefore a weighted sum of the current and previous inputs. The weights are powers of the transition. That is a convolution kernel generated by the state-space parameters.</p>
+<p>The same model has two useful computational views:</p>
+<ul>
+<li><strong>recurrent view:</strong> update a fixed-size state one step at a time;</li>
+<li><strong>convolution view:</strong> apply the implied long filter across a complete sequence.</li>
+</ul>
+<p>The recurrent view is natural for streaming inference and easy to understand. The convolution view can train in parallel. Architectures such as S4 build structured parameterizations and algorithms around this duality so they can model very long dependencies efficiently.</p>
+<p>Our tutorial code uses the explicit recurrent scan. It prioritizes transparency and portability, not the highly optimized long-sequence machinery of S4.</p>
+<h2 id="tensor-shapes-in-the-forecasting-model">Tensor shapes in the forecasting model</h2>
+<p>The shared data pipeline yields:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>x: [batch, lookback, n_features]
+</pre></div>
+</code></pre>
+<p>An input projection maps every observation to <code>d_model</code> channels:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>[batch, lookback, n_features]
+    -&gt; [batch, lookback, d_model]
+</pre></div>
+</code></pre>
+<p>Each channel has <code>d_state</code> decay modes, so the internal recurrent state has shape:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>[batch, d_model, d_state]
+</pre></div>
+</code></pre>
+<p>The state-space layer emits one <code>d_model</code>-dimensional representation per time step. We normalize the final representation and map it directly to the complete forecast horizon:</p>
+<pre><code class="language-text"><div class="highlight"><pre><span></span>[batch, d_model] -&gt; [batch, horizon]
+</pre></div>
+</code></pre>
+<p>That last-state head matches the LSTM and GRU articles and keeps the architectural comparison clean. It is not the only choice. A model can pool all outputs, use horizon-specific queries, or place the state-space layer inside an encoder-decoder.</p>
+<h2 id="complete-pytorch-implementation">Complete PyTorch implementation</h2>
+<p>The following implementation is a full, trainable diagonal state-space forecaster. It has no dependency beyond PyTorch.</p>
+<pre><code class="language-python"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">DiagonalSSMLayer</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""A clarity-first diagonal linear state-space layer."""</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">d_state</span><span class="o">=</span><span class="mi">16</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="c1"># Several initial time scales for every model channel.</span>
+        <span class="n">rates</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span>
+            <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">d_state</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">A_log</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">rates</span><span class="o">.</span><span class="n">log</span><span class="p">()</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">B</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">d_state</span><span class="p">)</span>
+            <span class="o">/</span> <span class="n">d_state</span><span class="o">**</span><span class="mf">0.5</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">C</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">d_state</span><span class="p">)</span>
+            <span class="o">/</span> <span class="n">d_state</span><span class="o">**</span><span class="mf">0.5</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">d_model</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_dt</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">d_model</span><span class="p">,),</span> <span class="o">-</span><span class="mf">3.0</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">):</span>
+        <span class="n">batch</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">d_model</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">d_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">A_log</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span>
+            <span class="n">batch</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">d_state</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Negative continuous dynamics become stable</span>
+        <span class="c1"># discrete decay factors between zero and one.</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">A_log</span><span class="p">)</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">softplus</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log_dt</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Exact zero-order-hold discretization for</span>
+        <span class="c1"># a diagonal A matrix.</span>
+        <span class="n">A_bar</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">dt</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">A</span><span class="p">)</span>
+        <span class="n">B_bar</span> <span class="o">=</span> <span class="p">((</span><span class="n">A_bar</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">/</span> <span class="n">A</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">B</span>
+
+        <span class="n">outputs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">length</span><span class="p">):</span>
+            <span class="n">input_t</span> <span class="o">=</span> <span class="n">u</span><span class="p">[:,</span> <span class="n">step</span><span class="p">,</span> <span class="p">:]</span>
+
+            <span class="n">state</span> <span class="o">=</span> <span class="n">A_bar</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">state</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="n">state</span> <span class="o">+</span> <span class="p">(</span>
+                <span class="n">B_bar</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="o">*</span> <span class="n">input_t</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="p">)</span>
+
+            <span class="n">output_t</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">state</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">C</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">output_t</span> <span class="o">=</span> <span class="n">output_t</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">D</span> <span class="o">*</span> <span class="n">input_t</span>
+            <span class="n">outputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">output_t</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">StateSpaceForecaster</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">n_features</span><span class="p">,</span>
+        <span class="n">horizon</span><span class="p">,</span>
+        <span class="n">d_model</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+        <span class="n">d_state</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+        <span class="n">dropout</span><span class="o">=</span><span class="mf">0.10</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_projection</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span>
+            <span class="n">n_features</span><span class="p">,</span> <span class="n">d_model</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ssm</span> <span class="o">=</span> <span class="n">DiagonalSSMLayer</span><span class="p">(</span>
+            <span class="n">d_model</span><span class="p">,</span> <span class="n">d_state</span><span class="o">=</span><span class="n">d_state</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">norm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">horizon</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">sequence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_projection</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">sequence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ssm</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
+        <span class="n">final_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">sequence</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:])</span>
+        <span class="n">final_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">final_state</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">final_state</span><span class="p">)</span>
+
+
+<span class="n">LOOKBACK</span> <span class="o">=</span> <span class="mi">168</span>
+<span class="n">N_FEATURES</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">HORIZON</span> <span class="o">=</span> <span class="mi">24</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">StateSpaceForecaster</span><span class="p">(</span>
+    <span class="n">n_features</span><span class="o">=</span><span class="n">N_FEATURES</span><span class="p">,</span>
+    <span class="n">horizon</span><span class="o">=</span><span class="n">HORIZON</span><span class="p">,</span>
+    <span class="n">d_model</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+    <span class="n">d_state</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">LOOKBACK</span><span class="p">,</span> <span class="n">N_FEATURES</span><span class="p">)</span>
+<span class="n">y_hat</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="k">assert</span> <span class="n">y_hat</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">HORIZON</span><span class="p">)</span>
+
+<span class="c1"># A backward pass verifies that the scan remains</span>
+<span class="c1"># connected to trainable parameters.</span>
+<span class="n">loss</span> <span class="o">=</span> <span class="n">y_hat</span><span class="o">.</span><span class="n">square</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+<span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+<span class="k">assert</span> <span class="nb">all</span><span class="p">(</span>
+    <span class="n">parameter</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span>
+<span class="p">)</span>
+</pre></div>
+</code></pre>
+<p>The same implementation is in the <a href="code/sequence_models.py">companion model module</a>. It plugs directly into the <code>Dataset</code>, <code>DataLoader</code>, fit loop, validation loop, early stopping, and inverse-scaling workflow from the <a href="pytorch-data-pipeline-and-training-loop.html">shared PyTorch training companion</a>.</p>
+<h2 id="what-this-implementation-is-and-is-not">What this implementation is—and is not</h2>
+<p>This is a real state-space layer. It learns stable continuous dynamics, discretizes them, maintains a multidimensional latent state, and produces a differentiable forecast.</p>
+<p>It is deliberately not presented as S4. S4 uses a particular structured state matrix and specialized algorithms designed to preserve long-range memory while remaining computationally practical. Reproducing its complete parameterization and kernels would obscure the basic mechanism this article is trying to teach.</p>
+<p>The Python loop is also not the fastest way to train. It creates <code>lookback</code> sequential operations in Python. For long sequences, use a tested implementation with parallel scans, convolutional evaluation, or fused kernels.</p>
+<p>The educational value is that every line corresponds to one piece of the state-space equations.</p>
+<h2 id="what-changes-when-features-are-added">What changes when features are added?</h2>
+<p>The input projection accepts any number of channels, so demand, calendar signals, weather variables, or market measurements can all enter as <code>u_t</code>.</p>
+<p>But adding a feature does not automatically add a separate memory. The input projection first mixes the raw channels into <code>d_model</code> coordinates. Those coordinates then drive the state-space modes.</p>
+<p>If a variable is known in the future—hour of day, a scheduled price, a planned intervention—an encoder that sees only historical inputs still cannot use its future values directly. Known-future covariates require a decoder or another forecast head that receives the future covariate path.</p>
+<p>That is a modeling-interface question, not an SSM-specific trick.</p>
+<h2 id="strengths">Strengths</h2>
+<p>A state-space forecaster offers:</p>
+<ul>
+<li>a compact recurrent state for streaming inference;</li>
+<li>explicit, learnable memory scales;</li>
+<li>stable dynamics when parameterized carefully;</li>
+<li>parameter sharing across time;</li>
+<li>linear growth in recurrent work as sequence length increases;</li>
+<li>a mathematical bridge between recurrence and convolution.</li>
+</ul>
+<p>It is especially attractive when long memory is plausible but full pairwise attention is unnecessary.</p>
+<h2 id="limitations-and-common-failure-modes">Limitations and common failure modes</h2>
+<p>A fixed linear transition treats every input using the same memory policy. A routine observation and a structural break both pass through the same <code>A_bar</code>, <code>B_bar</code>, and <code>C</code>. That can be too rigid when the relevance of history depends strongly on the current content.</p>
+<p>Other practical failures include:</p>
+<ul>
+<li>unstable parameterizations that permit growing modes;</li>
+<li>state dimensions that are too small to hold the useful dynamics;</li>
+<li>an overly restrictive final-state forecast head;</li>
+<li>slow training from a naive Python scan;</li>
+<li>claiming an optimized architecture name for a simplified implementation;</li>
+<li>assuming that a long theoretical memory guarantees useful learned memory.</li>
+</ul>
+<p>Always inspect validation behavior as context length changes. If a model receives 10,000 steps but performs no better than it does with 200, the extra reach may be unused.</p>
+<h2 id="when-to-choose-a-state-space-model">When to choose a state-space model</h2>
+<p>Choose a state-space model when an evolving latent system is a sensible story, long context matters, streaming inference is valuable, or attention would be unnecessarily expensive.</p>
+<p>Start with a small stable model and compare it with a GRU and TCN at similar parameter counts. If a specialized SSM wins, verify that its advantage survives multiple time folds, seeds, and context lengths.</p>
+<p>The fixed dynamics leave one important weakness: the transition does not decide that one observation should be remembered and another ignored. Part 13 introduces Mamba, which makes the state-space update selective.</p>
+<h2 id="further-reading">Further reading</h2>
+<ul>
+<li><a href="https://arxiv.org/abs/2111.00396" rel="noopener noreferrer">Gu, Goel, and Ré, “Efficiently Modeling Long Sequences with Structured State Spaces” (S4)</a></li>
+<li><a href="https://arxiv.org/abs/2312.00752" rel="noopener noreferrer">Gu and Dao, “Mamba: Linear-Time Sequence Modeling with Selective State Spaces”</a></li>
+</ul>
+<hr/>
+</article>
+    <aside class="toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#the-four-pieces-of-a-state-space-model">The four pieces of a state-space model</a></li><li><a href="#decay-modes-are-learnable-memory-scales">Decay modes are learnable memory scales</a></li><li><a href="#why-start-in-continuous-time">Why start in continuous time?</a></li><li><a href="#the-recurrent-view-and-the-convolution-view">The recurrent view and the convolution view</a></li><li><a href="#tensor-shapes-in-the-forecasting-model">Tensor shapes in the forecasting model</a></li><li><a href="#complete-pytorch-implementation">Complete PyTorch implementation</a></li><li><a href="#what-this-implementation-is-and-is-not">What this implementation is—and is not</a></li><li><a href="#what-changes-when-features-are-added">What changes when features are added?</a></li><li><a href="#strengths">Strengths</a></li><li><a href="#limitations-and-common-failure-modes">Limitations and common failure modes</a></li><li><a href="#when-to-choose-a-state-space-model">When to choose a state-space model</a></li><li><a href="#further-reading">Further reading</a></li></ol></aside>
+  </div>
+  <nav class="article-pager" aria-label="Article navigation"><a class="pager-card previous" href="10-nbeats-style-forecaster.html"><span>Previous</span><strong>N-BEATS-Style Forecasting: Explaining the Past to Build the Future</strong></a><a class="pager-card next" href="mamba-for-time-series.html"><span>Next</span><strong>Mamba for Time-Series Forecasting: Selective State-Space Memory</strong></a></nav>
+</main>
+<footer class="site-footer"><p>Sequence Models for Prediction · Open code, reproducible experiments, honest baselines.</p><a href="index.html">Series index</a></footer>
+</body>
+</html>

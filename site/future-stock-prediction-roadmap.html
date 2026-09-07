@@ -13,7 +13,7 @@
 <p><strong>Status:</strong> Future experiment roadmap following the <a href="15-finance-direction-case-study.html">local-versus-global stock-model tutorial</a>
 <strong>Suggested Medium tags:</strong> Stock Market, Time Series, Forecasting, Deep Learning, Quantitative Finance</p>
 <p>Electricity demand is rhythmic. Stock prices are adversarial.</p>
-<p>Part 16 now establishes the multi-symbol data design: construct sequences inside one ticker and session, combine the finished per-symbol datasets, and optionally condition one shared temporal encoder on a learned ticker embedding. Its saved META output is the single-symbol control; the local-versus-global comparison remains to be run across multiple stocks.</p>
+<p>Part 18 now establishes the multi-symbol data design: construct sequences inside one ticker and session, combine the finished per-symbol datasets, and optionally condition one shared temporal encoder on a learned ticker embedding. Its saved META output is the single-symbol control; the local-versus-global comparison remains to be run across multiple stocks.</p>
 <p>Household power consumption repeats daily and weekly behaviors that remain visible in a short chart. Markets adapt, regimes shift, and easy patterns attract capital until they weaken. A model that performs well on electricity therefore deserves a second test where predictability is smaller and evaluation traps are larger.</p>
 <p>This roadmap defines the broader test that should come next. It keeps the earlier daily-horizon design because that experiment asks a different, complementary question from the one-minute local-versus-global tutorial.</p>
 <p>The goal is not to ask which network predicts the highest stock price. It is to ask:</p>
@@ -84,7 +84,7 @@ targets:          normalized price path and log return
 </ul>
 <p>All rolling and normalization operations must use information available before the forecast origin. Every scaler is fitted inside the training portion of each fold.</p>
 <h2>Keep the raw information budget equal</h2>
-<p>Part 14 showed how a lag channel can secretly extend historical reach. The stock experiment will avoid that ambiguity.</p>
+<p>Part 16 showed how a lag channel can secretly extend historical reach. The stock experiment will avoid that ambiguity.</p>
 <p>Every derived feature must be computed from the same permitted 168 raw trading days. If a 63-day statistic is attached to every row, early rows would require data outside the window. We will use one of two clean designs:</p>
 <ol>
 <li>provide 231 raw days to every representation so the earliest 63-day feature has an equal source history; or</li>

@@ -2,7 +2,7 @@
 
 *How update and reset gates create a compact alternative to the LSTM*
 
-**Series:** Sequence Models for Prediction, Part 6 of 16
+**Series:** Sequence Models for Prediction, Part 6 of 18
 **Suggested Medium tags:** GRU, Recurrent Neural Networks, Time Series, Forecasting, Deep Learning
 
 The gated recurrent unit, or GRU, starts from the same premise as the LSTM: a recurrent network needs learned control over what it remembers.

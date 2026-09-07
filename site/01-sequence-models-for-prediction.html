@@ -24,11 +24,11 @@
   <a class="brand" href="index.html"><span class="brand-mark">S</span><span>Sequence Models<br><small>for Prediction</small></span></a>
   <nav aria-label="Primary navigation"><a href="index.html#series">All articles</a><a href="index.html#about">About</a><a class="github-link" href="https://github.com/adidror005/sequence-models-for-prediction">View source</a></nav>
 </header>
-<div class="reading-progress" style="--progress: 6.25%"></div>
+<div class="reading-progress" style="--progress: 5.56%"></div>
 <main>
   <header class="article-hero">
     <a class="back-link" href="index.html">← Series home</a>
-    <p class="eyebrow">Part 1 of 16 · Foundations</p>
+    <p class="eyebrow">Part 1 of 18 · Foundations</p>
     <h1>Sequence Models for Prediction: A Practical Map</h1>
     <p class="dek">How inputs, outputs, memory, and model families fit together before we write any architecture code</p>
   </header>
@@ -37,8 +37,8 @@
 
 <p>A sequence is an ordered collection in which position and context matter.</p>
 <p>It might contain words, sensor measurements, transactions, medical events, audio samples, video frames, or market observations. Nearby elements may be related, patterns may repeat at several scales, and the meaning of one element can depend on what came before it.</p>
-<p>Before comparing LSTMs, convolutional networks, Transformers, and N-BEATS, we need a shared language for sequence prediction. Otherwise architecture names conceal differences in data, targets, and evaluation.</p>
-<p>This article builds that language. Part 2 builds the shared PyTorch data pipeline, Parts 3–11 explain the algorithms one at a time, and Part 12 compares them as design choices. Electricity forecasting and one-minute financial direction appear later as case studies rather than the premise of the series.</p>
+<p>Before comparing LSTMs, convolutional networks, Transformers, state-space models, Mamba, and N-BEATS, we need a shared language for sequence prediction. Otherwise architecture names conceal differences in data, targets, and evaluation.</p>
+<p>This article builds that language. Part 2 builds the shared PyTorch data pipeline, Parts 3–13 explain the algorithms one at a time, and Part 14 compares them as design choices. Electricity forecasting and one-minute financial direction appear later as case studies rather than the premise of the series.</p>
 <h2 id="the-series-roadmap">The series roadmap</h2>
 <p>This article also serves as the evolving table of contents:</p>
 <ol>
@@ -53,6 +53,8 @@
 <li><a href="08-transformer-forecaster.html">Transformer Forecasting</a> — content-dependent global access.</li>
 <li><a href="09-patch-transformer-forecaster.html">Patch Transformer Forecasting</a> — local segments as attention tokens.</li>
 <li><a href="10-nbeats-style-forecaster.html">N-BEATS-Style Forecasting</a> — backcast and forecast residual refinement.</li>
+<li><a href="state-space-models-for-forecasting.html">State-Space Models for Forecasting</a> — stable latent dynamics and learnable memory scales.</li>
+<li><a href="mamba-for-time-series.html">Mamba for Time-Series Forecasting</a> — input-dependent selective state-space memory.</li>
 <li><a href="11-choosing-a-sequence-model.html">Which Time-Series Model Should You Use?</a> — a practical selection framework.</li>
 <li><a href="12-electricity-results-and-interpretation.html">Comparing Sequence Models on Electricity Prediction</a> — raw-history results.</li>
 <li><a href="13-calendar-and-lagged-features.html">Do Calendar and Lagged Features Help?</a> — the later representation experiment.</li>
@@ -128,7 +130,7 @@ y: [batch, 24]
 <h3>Static variables</h3>
 <p>These do not change within the sequence: location, customer type, device category, or asset identity.</p>
 <h3>Derived historical variables</h3>
-<p>Lags, differences, rolling means, and rolling volatility summarize observed history. They can be useful, redundant, or misleading depending on how they are constructed. Part 14 treats that as its own question.</p>
+<p>Lags, differences, rolling means, and rolling volatility summarize observed history. They can be useful, redundant, or misleading depending on how they are constructed. Part 16 treats that as its own question.</p>
 <p>The algorithm articles do not assume a particular feature recipe. Each model can receive one channel or many.</p>
 <h2 id="why-time-order-changes-evaluation">Why time order changes evaluation</h2>
 <p>Ordinary random train/test splitting is usually wrong for forecasting. It allows later periods to influence training while earlier periods appear in validation, reversing the real prediction direction.</p>
@@ -167,7 +169,7 @@ y: [batch, 24]
 <p>This is not an unfair comparison. The practitioner’s goal is accurate, reliable prediction, not proving that a preferred neural architecture can win. Every serious sequence-model experiment in this series should therefore include a boosted-tree benchmark using the same forecast origins and permitted information.</p>
 <p>If CatBoost wins, the lesson is not that sequence models are useless. It is that this dataset rewards explicit tabular structure more than the tested networks’ learned representations—and that is exactly the kind of result a benchmark should reveal.</p>
 <h2 id="the-model-families-in-this-series">The model families in this series</h2>
-<p>The next nine articles form a progression of inductive biases.</p>
+<p>The next eleven algorithm articles form a progression of inductive biases.</p>
 <h3>Linear forecaster</h3>
 <p>Every historical coordinate connects directly to every future horizon through one weighted sum. It is transparent, global, and rigid.</p>
 <h3>Multilayer perceptron</h3>
@@ -186,6 +188,10 @@ y: [batch, 24]
 <p>Short segments become tokens, reducing attention cost and learning representations of local shapes.</p>
 <h3>N-BEATS</h3>
 <p>Fully connected residual blocks repeatedly explain the historical window and add contributions to the forecast.</p>
+<h3>State-space model</h3>
+<p>A structured linear dynamical system carries several stable decay modes through time. Its recurrence and its implied long convolution are two views of the same model.</p>
+<h3>Mamba</h3>
+<p>A selective state-space model lets the current input change how memory is updated and read, adding content dependence without constructing a pairwise attention matrix.</p>
 <p>The goal is not to rank them in the abstract. Each architecture makes a different assumption about how temporal information should be reused, compressed, and retrieved.</p>
 <h2 id="point-forecasts-are-only-one-output">Point forecasts are only one output</h2>
 <p>The examples begin with a single predicted value per horizon. Real decisions often require uncertainty.</p>
@@ -214,7 +220,7 @@ y: [batch, 24]
 </article>
     <aside class="toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#the-series-roadmap">The series roadmap</a></li><li><a href="#the-main-sequence-prediction-tasks">The main sequence-prediction tasks</a></li><li><a href="#time-series-forecasting-begins-at-an-origin">Time-series forecasting begins at an origin</a></li><li><a href="#four-ways-to-produce-the-future">Four ways to produce the future</a></li><li><a href="#what-counts-as-an-input-feature">What counts as an input feature?</a></li><li><a href="#why-time-order-changes-evaluation">Why time order changes evaluation</a></li><li><a href="#overlapping-windows-are-not-independent-observations">Overlapping windows are not independent observations</a></li><li><a href="#always-begin-with-naive-baselines">Always begin with naive baselines</a></li><li><a href="#the-uncomfortable-strong-baseline-gradient-boosting">The uncomfortable strong baseline: gradient boosting</a></li><li><a href="#the-model-families-in-this-series">The model families in this series</a></li><li><a href="#point-forecasts-are-only-one-output">Point forecasts are only one output</a></li><li><a href="#a-checklist-before-choosing-an-algorithm">A checklist before choosing an algorithm</a></li></ol></aside>
   </div>
-  <nav class="article-pager" aria-label="Article navigation"><a class="pager-card previous" href="index.html"><span>Series home</span><strong>Explore all 16 parts</strong></a><a class="pager-card next" href="pytorch-data-pipeline-and-training-loop.html"><span>Next</span><strong>A Leak-Free PyTorch Dataset, DataLoader, and Training Loop for Sequence Prediction</strong></a></nav>
+  <nav class="article-pager" aria-label="Article navigation"><a class="pager-card previous" href="index.html"><span>Series home</span><strong>Explore all 18 parts</strong></a><a class="pager-card next" href="pytorch-data-pipeline-and-training-loop.html"><span>Next</span><strong>A Leak-Free PyTorch Dataset, DataLoader, and Training Loop for Sequence Prediction</strong></a></nav>
 </main>
 <footer class="site-footer"><p>Sequence Models for Prediction · Open code, reproducible experiments, honest baselines.</p><a href="index.html">Series index</a></footer>
 </body>

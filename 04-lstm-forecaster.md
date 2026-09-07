@@ -2,7 +2,7 @@
 
 *An intuitive guide to gates, cell state, and direct multi-horizon prediction*
 
-**Series:** Sequence Models for Prediction, Part 5 of 16
+**Series:** Sequence Models for Prediction, Part 5 of 18
 **Suggested Medium tags:** LSTM, Recurrent Neural Networks, Time Series, Forecasting, Deep Learning
 
 An LSTM reads a time series the way we often describe ourselves reading a story: one step at a time, carrying forward a changing memory of what mattered.

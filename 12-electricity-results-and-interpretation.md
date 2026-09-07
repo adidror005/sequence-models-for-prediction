@@ -2,7 +2,7 @@
 
 *What happens when nine very different architectures receive exactly the same week of raw demand history?*
 
-**Series:** Sequence Models for Prediction, Part 13 of 16
+**Series:** Sequence Models for Prediction, Part 15 of 18
 **Suggested Medium tags:** Time Series, Deep Learning, Forecasting, Model Evaluation, Data Science
 
 The previous articles studied sequence models one at a time. That was deliberate: an architecture is easier to understand when its mechanics are not buried inside a leaderboard.
@@ -175,7 +175,7 @@ Most importantly, this comparison answers only the raw-history question. Real fo
 
 Those additions change the problem. They may provide genuinely new future-known information, re-express information already present, or quietly extend the amount of history a model can access.
 
-Part 14 asks that separate question: **when do calendar variables and engineered lagged features actually help these sequence models?**
+Part 16 asks that separate question: **when do calendar variables and engineered lagged features actually help these sequence models?**
 
 ---
 

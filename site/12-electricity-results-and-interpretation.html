@@ -24,11 +24,11 @@
   <a class="brand" href="index.html"><span class="brand-mark">S</span><span>Sequence Models<br><small>for Prediction</small></span></a>
   <nav aria-label="Primary navigation"><a href="index.html#series">All articles</a><a href="index.html#about">About</a><a class="github-link" href="https://github.com/adidror005/sequence-models-for-prediction">View source</a></nav>
 </header>
-<div class="reading-progress" style="--progress: 81.25%"></div>
+<div class="reading-progress" style="--progress: 83.33%"></div>
 <main>
   <header class="article-hero">
     <a class="back-link" href="index.html">← Series home</a>
-    <p class="eyebrow">Part 13 of 16 · Case study</p>
+    <p class="eyebrow">Part 15 of 18 · Case study</p>
     <h1>Comparing Sequence Models on Electricity Prediction</h1>
     <p class="dek">What happens when nine very different architectures receive exactly the same week of raw demand history?</p>
   </header>
@@ -235,7 +235,7 @@ y: [batch, 24]
 <p>It does <strong>not</strong> establish that GRU is universally best for electricity, that Transformers are poor forecasters, or that differences smaller than one percent are stable. A stronger benchmark would add boosted trees, multiple seeds, rolling forecast periods, credible tuning budgets, and matched architectural capacity.</p>
 <p>Most importantly, this comparison answers only the raw-history question. Real forecasting systems often know more than the past target values. They know the hour, weekday, holidays, weather forecasts, prices, or operational schedules. Practitioners also add explicit daily and weekly lags or rolling summaries.</p>
 <p>Those additions change the problem. They may provide genuinely new future-known information, re-express information already present, or quietly extend the amount of history a model can access.</p>
-<p>Part 14 asks that separate question: <strong>when do calendar variables and engineered lagged features actually help these sequence models?</strong></p>
+<p>Part 16 asks that separate question: <strong>when do calendar variables and engineered lagged features actually help these sequence models?</strong></p>
 <hr/>
 </article>
     <aside class="toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#the-prediction-task">The prediction task</a></li><li><a href="#a-chronological-evaluation">A chronological evaluation</a></li><li><a href="#the-raw-history-leaderboard">The raw-history leaderboard</a></li><li><a href="#the-important-benchmark-this-notebook-does-not-include">The important benchmark this notebook does not include</a></li><li><a href="#result-1-gru-wins-but-there-is-no-runaway-winner">Result 1: GRU wins, but there is no runaway winner</a></li><li><a href="#result-2-recurrence-is-effective-not-automatically-necessary">Result 2: recurrence is effective, not automatically necessary</a></li><li><a href="#result-3-the-linear-model-is-surprisingly-hard-to-beat">Result 3: the linear model is surprisingly hard to beat</a></li><li><a href="#result-4-global-access-alone-does-not-guarantee-a-win">Result 4: global access alone does not guarantee a win</a></li><li><a href="#result-5-receptive-field-and-aggregation-choices-matter">Result 5: receptive field and aggregation choices matter</a></li><li><a href="#what-the-parameter-counts-reveal">What the parameter counts reveal</a></li><li><a href="#what-we-can-and-cannot-conclude">What we can and cannot conclude</a></li></ol></aside>

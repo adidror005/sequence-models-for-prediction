@@ -2,7 +2,7 @@
 
 *How a multilayer perceptron models time without recurrence, convolution, or attention*
 
-**Series:** Sequence Models for Prediction, Part 4 of 16
+**Series:** Sequence Models for Prediction, Part 4 of 18
 **Suggested Medium tags:** Neural Networks, MLP, Time Series, Forecasting, Deep Learning
 
 The multilayer perceptron asks a blunt but surprisingly powerful question:

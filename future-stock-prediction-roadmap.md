@@ -7,7 +7,7 @@
 
 Electricity demand is rhythmic. Stock prices are adversarial.
 
-Part 16 now establishes the multi-symbol data design: construct sequences inside one ticker and session, combine the finished per-symbol datasets, and optionally condition one shared temporal encoder on a learned ticker embedding. Its saved META output is the single-symbol control; the local-versus-global comparison remains to be run across multiple stocks.
+Part 18 now establishes the multi-symbol data design: construct sequences inside one ticker and session, combine the finished per-symbol datasets, and optionally condition one shared temporal encoder on a learned ticker embedding. Its saved META output is the single-symbol control; the local-versus-global comparison remains to be run across multiple stocks.
 
 Household power consumption repeats daily and weekly behaviors that remain visible in a short chart. Markets adapt, regimes shift, and easy patterns attract capital until they weaken. A model that performs well on electricity therefore deserves a second test where predictability is smaller and evaluation traps are larger.
 
@@ -116,7 +116,7 @@ All rolling and normalization operations must use information available before t
 
 ## Keep the raw information budget equal
 
-Part 14 showed how a lag channel can secretly extend historical reach. The stock experiment will avoid that ambiguity.
+Part 16 showed how a lag channel can secretly extend historical reach. The stock experiment will avoid that ambiguity.
 
 Every derived feature must be computed from the same permitted 168 raw trading days. If a 63-day statistic is attached to every row, early rows would require data outside the window. We will use one of two clean designs:
 

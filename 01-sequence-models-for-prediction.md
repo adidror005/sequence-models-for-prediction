@@ -2,16 +2,16 @@
 
 *How inputs, outputs, memory, and model families fit together before we write any architecture code*
 
-**Series:** Sequence Models for Prediction, Part 1 of 16
+**Series:** Sequence Models for Prediction, Part 1 of 18
 **Suggested Medium tags:** Time Series, Forecasting, Deep Learning, Neural Networks, Machine Learning
 
 A sequence is an ordered collection in which position and context matter.
 
 It might contain words, sensor measurements, transactions, medical events, audio samples, video frames, or market observations. Nearby elements may be related, patterns may repeat at several scales, and the meaning of one element can depend on what came before it.
 
-Before comparing LSTMs, convolutional networks, Transformers, and N-BEATS, we need a shared language for sequence prediction. Otherwise architecture names conceal differences in data, targets, and evaluation.
+Before comparing LSTMs, convolutional networks, Transformers, state-space models, Mamba, and N-BEATS, we need a shared language for sequence prediction. Otherwise architecture names conceal differences in data, targets, and evaluation.
 
-This article builds that language. Part 2 builds the shared PyTorch data pipeline, Parts 3–11 explain the algorithms one at a time, and Part 12 compares them as design choices. Electricity forecasting and one-minute financial direction appear later as case studies rather than the premise of the series.
+This article builds that language. Part 2 builds the shared PyTorch data pipeline, Parts 3–13 explain the algorithms one at a time, and Part 14 compares them as design choices. Electricity forecasting and one-minute financial direction appear later as case studies rather than the premise of the series.
 
 ## The series roadmap
 
@@ -28,11 +28,13 @@ This article also serves as the evolving table of contents:
 9. [Transformer Forecasting](08-transformer-forecaster.md) — content-dependent global access.
 10. [Patch Transformer Forecasting](09-patch-transformer-forecaster.md) — local segments as attention tokens.
 11. [N-BEATS-Style Forecasting](10-nbeats-style-forecaster.md) — backcast and forecast residual refinement.
-12. [Which Time-Series Model Should You Use?](11-choosing-a-sequence-model.md) — a practical selection framework.
-13. [Comparing Sequence Models on Electricity Prediction](12-electricity-results-and-interpretation.md) — raw-history results.
-14. [Do Calendar and Lagged Features Help?](13-calendar-and-lagged-features.md) — the later representation experiment.
-15. [How to Design an Experiment You Can Trust](14-designing-a-trustworthy-experiment.md) — evaluation discipline.
-16. [One Model Per Stock or One Model for the Market?](15-finance-direction-case-study.md) — per-symbol datasets, pooled learning, and learned ticker embeddings.
+12. [State-Space Models for Forecasting](state-space-models-for-forecasting.md) — stable latent dynamics and learnable memory scales.
+13. [Mamba for Time-Series Forecasting](mamba-for-time-series.md) — input-dependent selective state-space memory.
+14. [Which Time-Series Model Should You Use?](11-choosing-a-sequence-model.md) — a practical selection framework.
+15. [Comparing Sequence Models on Electricity Prediction](12-electricity-results-and-interpretation.md) — raw-history results.
+16. [Do Calendar and Lagged Features Help?](13-calendar-and-lagged-features.md) — the later representation experiment.
+17. [How to Design an Experiment You Can Trust](14-designing-a-trustworthy-experiment.md) — evaluation discipline.
+18. [One Model Per Stock or One Model for the Market?](15-finance-direction-case-study.md) — per-symbol datasets, pooled learning, and learned ticker embeddings.
 
 As each installment goes live, replace its local draft link with the public Medium URL. Unpublished titles can remain plain text so readers never encounter a dead link.
 
@@ -154,7 +156,7 @@ These do not change within the sequence: location, customer type, device categor
 
 ### Derived historical variables
 
-Lags, differences, rolling means, and rolling volatility summarize observed history. They can be useful, redundant, or misleading depending on how they are constructed. Part 14 treats that as its own question.
+Lags, differences, rolling means, and rolling volatility summarize observed history. They can be useful, redundant, or misleading depending on how they are constructed. Part 16 treats that as its own question.
 
 The algorithm articles do not assume a particular feature recipe. Each model can receive one channel or many.
 
@@ -215,7 +217,7 @@ If CatBoost wins, the lesson is not that sequence models are useless. It is that
 
 ## The model families in this series
 
-The next nine articles form a progression of inductive biases.
+The next eleven algorithm articles form a progression of inductive biases.
 
 ### Linear forecaster
 
@@ -252,6 +254,14 @@ Short segments become tokens, reducing attention cost and learning representatio
 ### N-BEATS
 
 Fully connected residual blocks repeatedly explain the historical window and add contributions to the forecast.
+
+### State-space model
+
+A structured linear dynamical system carries several stable decay modes through time. Its recurrence and its implied long convolution are two views of the same model.
+
+### Mamba
+
+A selective state-space model lets the current input change how memory is updated and read, adding content dependence without constructing a pairwise attention matrix.
 
 The goal is not to rank them in the abstract. Each architecture makes a different assumption about how temporal information should be reused, compressed, and retrieved.
 

@@ -2,7 +2,7 @@
 
 *Why a single dense layer is often the most revealing model in a time-series experiment*
 
-**Series:** Sequence Models for Prediction, Part 3 of 16
+**Series:** Sequence Models for Prediction, Part 3 of 18
 **Suggested Medium tags:** Linear Regression, Time Series, Forecasting, Machine Learning, Baselines
 
 A linear forecaster is easy to underestimate.
